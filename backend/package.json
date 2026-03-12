@@ -1,5 +1,5 @@
 {
-  "name": "crm-growup-backend",
+  "name": "growsorcio-backend",
   "version": "1.0.0",
   "type": "commonjs",
   "scripts": {
@@ -7,7 +7,6 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "better-sqlite3": "^9.4.3",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "^4.18.3"

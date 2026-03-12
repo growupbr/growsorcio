@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3334';
 const BASE = `${BASE_URL}/api`;
 
 async function request(path, options = {}) {
@@ -10,7 +10,7 @@ async function request(path, options = {}) {
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
   } catch {
-    throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3001.');
+    throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3334.');
   }
 
   const text = await res.text();
@@ -36,11 +36,14 @@ export const api = {
   buscarLead: (id) => request(`/leads/${id}`),
   criarLead: (dados) => request('/leads', { method: 'POST', body: dados }),
   atualizarLead: (id, dados) => request(`/leads/${id}`, { method: 'PUT', body: dados }),
-  moverEtapa: (id, etapa_funil) =>
-    request(`/leads/${id}/etapa`, { method: 'PATCH', body: { etapa_funil } }),
+  moverEtapa: (id, etapa_funil, motivo_descarte) =>
+    request(`/leads/${id}/etapa`, { method: 'PATCH', body: { etapa_funil, motivo_descarte } }),
+  snooze: (id, snooze_ate) =>
+    request(`/leads/${id}/snooze`, { method: 'PATCH', body: { snooze_ate } }),
   excluirLead: (id) => request(`/leads/${id}`, { method: 'DELETE' }),
   resumoStats: (periodo = 'total') => request(`/leads/stats/resumo?periodo=${periodo}`),
   evolucaoLeads: () => request('/leads/stats/evolucao'),
+  motivosDescarte: () => request('/leads/motivos-descarte'),
 
   // Interações
   criarInteracao: (dados) => request('/interacoes', { method: 'POST', body: dados }),
@@ -56,4 +59,3 @@ export const api = {
     window.open(`${BASE_URL}/api/leads/export/csv`, '_blank');
   },
 };
-// Mon Mar  9 16:25:55 -04 2026

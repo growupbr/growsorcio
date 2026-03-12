@@ -7,10 +7,10 @@ import Modal from '../components/Modal';
 import LeadPerfil from './LeadPerfil';
 
 const ETAPAS = [
-  'Lead Anúncio', 'Analisar Perfil', 'Seguiu Perfil', 'Abordagem Enviada', 'Respondeu',
-  'Em Desenvolvimento', 'Follow-up Ativo', 'Lead Capturado',
-  'Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada',
-  'Follow-up Proposta', 'Fechado', 'Perdido',
+  'Lead Novo', 'Tentativa de Contato', 'Em Qualificação',
+  'Reunião Agendada', 'Reunião Realizada', 'Simulação Enviada',
+  'Follow-up / Negociação', 'Análise de Crédito / Docs',
+  'Fechado (Ganho)', 'Descartado (Perda)',
 ];
 
 const ORIGENS = [
@@ -30,7 +30,7 @@ const PERIODOS = [
   { valor: 'semana',  label: 'Esta semana' },
 ];
 
-const FILTRO_KEY = 'crm_filtro_periodo';
+const FILTRO_KEY = 'growsorcio_filtro_periodo';
 
 function filtrosPadrao() {
   // Lê filtro injetado pela notificação desktop (se houver) e limpa
@@ -226,7 +226,7 @@ export default function Leads() {
             </span>
             <input
               className="input pl-9"
-              placeholder="Buscar por nome ou @instagram..."
+              placeholder="Buscar por nome, WhatsApp ou e-mail..."
               value={filtros.busca}
               onChange={(e) => setFiltro('busca', e.target.value)}
             />
@@ -390,7 +390,7 @@ export default function Leads() {
               gridTemplateColumns: '2fr 1fr 1.2fr 1fr 1fr',
             }}
           >
-            {['Lead', 'Administradora', 'Etapa', 'Temperatura', 'Próxima ação'].map((h) => (
+            {['Lead', 'Tipo de bem', 'Etapa', 'Temperatura', 'Próxima ação'].map((h) => (
               <span
                 key={h}
                 className="section-label"
@@ -440,32 +440,18 @@ export default function Leads() {
                         </span>
                       )}
                     </div>
-                    {lead.instagram && (
-                      <a
-                        href={`https://ig.me/m/${lead.instagram.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1 mt-0.5 cursor-pointer"
-                        style={{ color: '#8B949E', fontSize: 12 }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#FF4500'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#8B949E'}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 11, height: 11, flexShrink: 0 }}>
-                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                          <circle cx="12" cy="12" r="4"/>
-                          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-                        </svg>
-                        <span className="truncate">{lead.instagram}</span>
-                      </a>
+                    {lead.whatsapp && (
+                      <p className="text-xs mt-0.5 truncate" style={{ color: '#8B949E' }}>
+                        {lead.whatsapp}
+                      </p>
                     )}
                   </div>
                 </div>
 
-                {/* Administradora */}
+                {/* Tipo de bem */}
                 <div className="flex items-center">
                   <span className="text-sm truncate" style={{ color: '#8B949E' }}>
-                    {lead.administradora || '—'}
+                    {lead.tipo_de_bem || '—'}
                   </span>
                 </div>
 

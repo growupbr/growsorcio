@@ -7,15 +7,20 @@ import Modal from '../components/Modal';
 import LeadForm from './LeadForm';
 
 const ETAPAS = [
-  'Analisar Perfil', 'Seguiu Perfil', 'Abordagem Enviada', 'Respondeu',
-  'Em Desenvolvimento', 'Follow-up Ativo', 'Lead Capturado',
-  'Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada',
-  'Follow-up Proposta', 'Fechado', 'Perdido',
+  'Lead Novo', 'Tentativa de Contato', 'Em Qualificação',
+  'Reunião Agendada', 'Reunião Realizada', 'Simulação Enviada',
+  'Follow-up / Negociação', 'Análise de Crédito / Docs',
+  'Fechado (Ganho)', 'Descartado (Perda)',
+];
+
+const MOTIVOS_DESCARTE = [
+  'Sem margem', 'Restrição CPF', 'Apenas curioso',
+  'Parou de responder', 'Optou por financiamento', 'Sem recurso para lance',
+  'Urgência incompatível', 'Outro',
 ];
 
 const TIPOS_INTERACAO = ['DM', 'WhatsApp', 'Ligação', 'Reunião', 'E-mail', 'Anotação'];
 
-// SVG icons por tipo de interação
 const TIPO_SVG = {
   DM: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
@@ -60,11 +65,16 @@ function formatarData(str) {
   return `${d}/${m}/${a}`;
 }
 
+function formatarMoeda(val) {
+  if (val == null || val === '') return '—';
+  return Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+}
+
 function hoje() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// ─── Formulário de edição de interação ───────────────────────────────────────
+// ─── Formulário edição de interação ───────────────────────────────────────────
 
 function EditarInteracaoForm({ interacao, onSalvo, onCancelar }) {
   const [form, setForm] = useState({
@@ -75,7 +85,6 @@ function EditarInteracaoForm({ interacao, onSalvo, onCancelar }) {
   });
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
-
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
 
   async function handleSubmit(e) {
@@ -93,11 +102,8 @@ function EditarInteracaoForm({ interacao, onSalvo, onCancelar }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-xl p-4 space-y-3"
-      style={{ background: '#161B22', border: '1px solid rgba(255,69,0,0.30)' }}
-    >
+    <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-3"
+      style={{ background: '#161B22', border: '1px solid rgba(255,69,0,0.30)' }}>
       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF4500' }}>Editar interação</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -113,26 +119,15 @@ function EditarInteracaoForm({ interacao, onSalvo, onCancelar }) {
       </div>
       <div>
         <label className="label">O que foi feito / dito</label>
-        <textarea
-          className="input resize-none"
-          rows={2}
-          value={form.descricao}
-          onChange={set('descricao')}
-        />
+        <textarea className="input resize-none" rows={2} value={form.descricao} onChange={set('descricao')} />
       </div>
       <div>
         <label className="label">Próxima ação (opcional)</label>
-        <input
-          className="input"
-          value={form.proxima_acao}
-          onChange={set('proxima_acao')}
-        />
+        <input className="input" value={form.proxima_acao} onChange={set('proxima_acao')} />
       </div>
       {erro && <p className="text-sm" style={{ color: '#f87171' }}>{erro}</p>}
       <div className="flex items-center gap-2 justify-end">
-        <button type="button" className="btn-ghost text-xs py-1" onClick={onCancelar}>
-          Cancelar
-        </button>
+        <button type="button" className="btn-ghost text-xs py-1" onClick={onCancelar}>Cancelar</button>
         <button type="submit" className="btn-primary text-xs py-1" disabled={salvando}>
           {salvando ? 'Salvando...' : 'Salvar'}
         </button>
@@ -141,13 +136,12 @@ function EditarInteracaoForm({ interacao, onSalvo, onCancelar }) {
   );
 }
 
-// ─── Formulário de nova interação ─────────────────────────────────────────────
+// ─── Formulário nova interação ─────────────────────────────────────────────────
 
 function NovaInteracaoForm({ leadId, onSalvo }) {
-  const [form, setForm] = useState({ data: hoje(), tipo: 'DM', descricao: '', proxima_acao: '' });
+  const [form, setForm] = useState({ data: hoje(), tipo: 'WhatsApp', descricao: '', proxima_acao: '' });
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
-
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
 
   async function handleSubmit(e) {
@@ -158,7 +152,7 @@ function NovaInteracaoForm({ leadId, onSalvo }) {
     try {
       await api.criarInteracao({ ...form, lead_id: leadId });
       onSalvo();
-      setForm({ data: hoje(), tipo: 'DM', descricao: '', proxima_acao: '' });
+      setForm({ data: hoje(), tipo: 'WhatsApp', descricao: '', proxima_acao: '' });
     } catch (err) {
       setErro(err.message);
     } finally {
@@ -167,11 +161,8 @@ function NovaInteracaoForm({ leadId, onSalvo }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-xl p-4 space-y-3"
-      style={{ background: '#0D1117', border: '1px solid #1C2333' }}
-    >
+    <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-3"
+      style={{ background: '#0D1117', border: '1px solid #1C2333' }}>
       <p className="text-sm font-semibold" style={{ color: '#F0F6FC' }}>Registrar interação</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -187,22 +178,13 @@ function NovaInteracaoForm({ leadId, onSalvo }) {
       </div>
       <div>
         <label className="label">O que foi feito / dito</label>
-        <textarea
-          className="input resize-none"
-          rows={2}
-          value={form.descricao}
-          onChange={set('descricao')}
-          placeholder="Descreva a interação..."
-        />
+        <textarea className="input resize-none" rows={2} value={form.descricao} onChange={set('descricao')}
+          placeholder="Descreva a interação..." />
       </div>
       <div>
         <label className="label">Próxima ação (opcional)</label>
-        <input
-          className="input"
-          value={form.proxima_acao}
-          onChange={set('proxima_acao')}
-          placeholder="Ex: Enviar proposta amanhã"
-        />
+        <input className="input" value={form.proxima_acao} onChange={set('proxima_acao')}
+          placeholder="Ex: Enviar simulação amanhã" />
       </div>
       {erro && <p className="text-sm" style={{ color: '#f87171' }}>{erro}</p>}
       <div className="flex justify-end">
@@ -227,29 +209,20 @@ function CadenciaChecklist({ cadencia, onToggle }) {
   return (
     <div className="space-y-2">
       {[...pendentes, ...concluidos].map((item) => (
-        <div
-          key={item.id}
-          className="flex items-start gap-3 p-3 rounded-lg transition-colors"
+        <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg transition-colors"
           style={{
             background: item.concluido ? 'transparent' : '#0D1117',
             border: `1px solid ${item.concluido ? '#161B22' : '#1C2333'}`,
             opacity: item.concluido ? 0.5 : 1,
-          }}
-        >
-          <button
-            onClick={() => onToggle(item)}
+          }}>
+          <button onClick={() => onToggle(item)}
             className="flex-shrink-0 w-4 h-4 mt-0.5 rounded transition-all cursor-pointer flex items-center justify-center"
             style={{
               background: item.concluido ? '#22c55e' : 'transparent',
               border: `1.5px solid ${item.concluido ? '#22c55e' : '#30363D'}`,
             }}
-            onMouseEnter={e => {
-              if (!item.concluido) e.currentTarget.style.borderColor = '#FF4500';
-            }}
-            onMouseLeave={e => {
-              if (!item.concluido) e.currentTarget.style.borderColor = '#30363D';
-            }}
-          >
+            onMouseEnter={e => { if (!item.concluido) e.currentTarget.style.borderColor = '#FF4500'; }}
+            onMouseLeave={e => { if (!item.concluido) e.currentTarget.style.borderColor = '#30363D'; }}>
             {item.concluido && (
               <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="w-2.5 h-2.5">
                 <polyline points="20 6 9 17 4 12"/>
@@ -257,13 +230,10 @@ function CadenciaChecklist({ cadencia, onToggle }) {
             )}
           </button>
           <div className="flex-1 min-w-0">
-            <p
-              className="text-sm"
-              style={{
-                color: item.concluido ? '#484F58' : '#F0F6FC',
-                textDecoration: item.concluido ? 'line-through' : 'none',
-              }}
-            >
+            <p className="text-sm" style={{
+              color: item.concluido ? '#484F58' : '#F0F6FC',
+              textDecoration: item.concluido ? 'line-through' : 'none',
+            }}>
               {item.descricao}
             </p>
             <div className="flex items-center gap-2 mt-1">
@@ -279,6 +249,130 @@ function CadenciaChecklist({ cadencia, onToggle }) {
   );
 }
 
+// ─── Modal: Mover Etapa ───────────────────────────────────────────────────────
+
+function MoverEtapaModal({ lead, onMover, onFechar }) {
+  const [etapaSelecionada, setEtapaSelecionada] = useState(lead.etapa_funil);
+  const [motivo, setMotivo] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  const descartando = etapaSelecionada === 'Descartado (Perda)';
+
+  async function confirmar() {
+    if (descartando && !motivo) return;
+    setSalvando(true);
+    await onMover(etapaSelecionada, descartando ? motivo : undefined);
+    setSalvando(false);
+  }
+
+  return (
+    <Modal title="Mover para etapa" onClose={onFechar}>
+      <div className="space-y-1 mb-4">
+        {ETAPAS.map((etapa) => (
+          <button key={etapa} onClick={() => setEtapaSelecionada(etapa)}
+            className="w-full text-left px-4 py-3 rounded-lg text-sm transition-all duration-150 flex items-center gap-3 cursor-pointer"
+            style={{
+              background: etapaSelecionada === etapa ? 'rgba(255,69,0,0.10)' : 'transparent',
+              color: etapaSelecionada === etapa ? '#FF4500' : '#8B949E',
+              border: `1px solid ${etapaSelecionada === etapa ? 'rgba(255,69,0,0.25)' : 'transparent'}`,
+            }}
+            onMouseEnter={e => {
+              if (etapaSelecionada !== etapa) {
+                e.currentTarget.style.background = '#161B22';
+                e.currentTarget.style.color = '#F0F6FC';
+              }
+            }}
+            onMouseLeave={e => {
+              if (etapaSelecionada !== etapa) {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#8B949E';
+              }
+            }}>
+            {etapaSelecionada === etapa && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3.5 h-3.5 flex-shrink-0">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            )}
+            <span className={etapaSelecionada === etapa ? 'font-semibold' : ''}>{etapa}</span>
+          </button>
+        ))}
+      </div>
+
+      {descartando && (
+        <div className="mb-4 p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+          <label className="label" style={{ color: '#ef4444' }}>Motivo do descarte *</label>
+          <select className="input" value={motivo} onChange={e => setMotivo(e.target.value)}
+            style={{ borderColor: !motivo ? 'rgba(239,68,68,0.50)' : undefined }}>
+            <option value="">Selecione o motivo...</option>
+            {MOTIVOS_DESCARTE.map((m) => <option key={m}>{m}</option>)}
+          </select>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3">
+        <button className="btn-ghost" onClick={onFechar}>Cancelar</button>
+        <button
+          className="btn-primary"
+          onClick={confirmar}
+          disabled={salvando || (descartando && !motivo) || etapaSelecionada === lead.etapa_funil}
+        >
+          {salvando ? 'Movendo...' : 'Confirmar'}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Modal: Snooze / Congelar ─────────────────────────────────────────────────
+
+function SnoozeModal({ lead, onSalvo, onFechar }) {
+  const [data, setData] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 21);
+    return d.toISOString().slice(0, 10);
+  });
+  const [salvando, setSalvando] = useState(false);
+
+  async function confirmar() {
+    setSalvando(true);
+    await onSalvo(data);
+    setSalvando(false);
+  }
+
+  async function remover() {
+    setSalvando(true);
+    await onSalvo(null);
+    setSalvando(false);
+  }
+
+  return (
+    <Modal title="Congelar lead — Régua 21 dias" onClose={onFechar}>
+      <div className="space-y-4">
+        <p className="text-sm" style={{ color: '#8B949E' }}>
+          Congela o lead em <strong style={{ color: '#F0F6FC' }}>Follow-up / Negociação</strong> e aciona
+          a régua de reengajamento de 21 dias via webhook no n8n.
+        </p>
+        <div>
+          <label className="label">Reativar em</label>
+          <input type="date" className="input" value={data} onChange={e => setData(e.target.value)}
+            min={hoje()} />
+        </div>
+        <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid #1C2333' }}>
+          {lead.snooze_ate ? (
+            <button className="btn-ghost text-sm" onClick={remover} disabled={salvando}>Descongelar</button>
+          ) : <div />}
+          <div className="flex gap-3">
+            <button className="btn-ghost" onClick={onFechar}>Cancelar</button>
+            <button className="btn-primary" onClick={confirmar} disabled={salvando}>
+              {salvando ? 'Salvando...' : '❄ Congelar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ─── Lead Perfil Principal ────────────────────────────────────────────────────
 
 export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
@@ -288,6 +382,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
   const [editando, setEditando] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [mudandoEtapa, setMudandoEtapa] = useState(false);
+  const [snoozeModal, setSnoozeModal] = useState(false);
   const [editandoInteracaoId, setEditandoInteracaoId] = useState(null);
 
   const carregar = useCallback(async () => {
@@ -303,9 +398,16 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  async function handleMoverEtapa(etapa) {
-    await api.moverEtapa(lead.id, etapa);
+  async function handleMoverEtapa(etapa, motivo_descarte) {
+    await api.moverEtapa(lead.id, etapa, motivo_descarte);
     setMudandoEtapa(false);
+    carregar();
+    onAtualizado?.();
+  }
+
+  async function handleSnooze(snooze_ate) {
+    await api.snooze(lead.id, snooze_ate);
+    setSnoozeModal(false);
     carregar();
     onAtualizado?.();
   }
@@ -330,15 +432,15 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
   if (carregando) {
     return (
       <div className="flex items-center justify-center h-48">
-        <div
-          className="w-6 h-6 rounded-full border-2 animate-spin"
-          style={{ borderColor: '#1C2333', borderTopColor: '#FF4500' }}
-        />
+        <div className="w-6 h-6 rounded-full border-2 animate-spin"
+          style={{ borderColor: '#1C2333', borderTopColor: '#FF4500' }} />
       </div>
     );
   }
 
   if (!lead) return null;
+
+  const snoozado = lead.snooze_ate && lead.snooze_ate > hoje();
 
   const abas = [
     { id: 'historico', label: 'Histórico', count: lead.interacoes?.length },
@@ -346,35 +448,39 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
     { id: 'dados',     label: 'Dados' },
   ];
 
-  // Info rápida
   const infoItems = [
-    { label: 'WhatsApp',       valor: lead.whatsapp || '—' },
-    { label: 'Administradora', valor: lead.administradora || '—' },
-    { label: 'Atuação',        valor: lead.tempo_atuacao || '—' },
-    { label: 'Volume mensal',  valor: lead.volume_mensal || '—' },
+    { label: 'WhatsApp',         valor: lead.whatsapp || '—' },
+    { label: 'E-mail',           valor: lead.email || '—' },
+    { label: 'Tipo de bem',      valor: lead.tipo_de_bem || '—' },
+    { label: 'Valor da carta',   valor: formatarMoeda(lead.valor_da_carta) },
+    { label: 'Lance disponível', valor: formatarMoeda(lead.recurso_para_lance) },
+    { label: 'Urgência',         valor: lead.urgencia || '—' },
   ];
 
   return (
     <>
-      {/* ─── Header do lead ─────────────────────────────────────────── */}
+      {/* ─── Header ─────────────────────────────────────────────────── */}
       <div className="mb-6">
-        {/* Nome + ações */}
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <TemperaturaBadge temperatura={lead.temperatura} />
               <EtapaTag etapa={lead.etapa_funil} />
+              {lead.restricao_cpf === 1 && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold"
+                  style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.30)', color: '#ef4444' }}>
+                  ⚠ Restrição CPF
+                </span>
+              )}
+              {snoozado && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold"
+                  style={{ background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.30)', color: '#38bdf8' }}>
+                  ❄ Congelado até {formatarData(lead.snooze_ate)}
+                </span>
+              )}
               {lead.origem === 'anuncio' && (
-                <span
-                  className="px-2 py-0.5 rounded-full"
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    background: 'rgba(124,58,237,0.15)',
-                    border: '1px solid rgba(124,58,237,0.35)',
-                    color: '#a78bfa',
-                  }}
-                >
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold"
+                  style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.35)', color: '#a78bfa' }}>
                   📢 Anúncio
                 </span>
               )}
@@ -382,35 +488,25 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
             <h2 className="font-extrabold leading-tight" style={{ fontSize: 24, color: '#F0F6FC' }}>
               {lead.nome}
             </h2>
-            {lead.instagram && (
-              <p className="text-sm mt-1 font-medium" style={{ color: '#FF4500' }}>
-                {lead.instagram}
+            {lead.motivo_descarte && (
+              <p className="text-sm mt-1 font-medium" style={{ color: '#ef4444' }}>
+                Descartado: {lead.motivo_descarte}
               </p>
             )}
           </div>
+
           <div className="flex items-center gap-2 flex-wrap">
             {lead.whatsapp && (
               <button
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md cursor-pointer transition-all duration-200"
-                style={{
-                  background: 'rgba(34,197,94,0.12)',
-                  border: '1px solid rgba(34,197,94,0.28)',
-                  color: '#22c55e',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(34,197,94,0.20)';
-                  e.currentTarget.style.borderColor = 'rgba(34,197,94,0.50)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(34,197,94,0.12)';
-                  e.currentTarget.style.borderColor = 'rgba(34,197,94,0.28)';
-                }}
+                style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.28)', color: '#22c55e' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.20)'; e.currentTarget.style.borderColor = 'rgba(34,197,94,0.50)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.12)'; e.currentTarget.style.borderColor = 'rgba(34,197,94,0.28)'; }}
                 onClick={() => {
                   const digits = lead.whatsapp.replace(/\D/g, '');
                   const phone = digits.startsWith('55') ? digits : `55${digits}`;
                   abrirWhatsApp(`https://web.whatsapp.com/send?phone=${phone}`);
-                }}
-              >
+                }}>
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                   <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.849L.057 23.428a.75.75 0 00.916.916l5.579-1.471A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.694-.5-5.241-1.377l-.375-.214-3.882 1.023 1.023-3.742-.228-.386A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
@@ -418,35 +514,28 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
                 Abrir WhatsApp
               </button>
             )}
-            {lead.instagram && (
-              <a
-                href={`https://ig.me/m/${lead.instagram.replace('@', '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                  <circle cx="12" cy="12" r="4"/>
-                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
-                </svg>
-                Abrir DM
-              </a>
+            {lead.etapa_funil === 'Follow-up / Negociação' && (
+              <button
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md cursor-pointer transition-all duration-200"
+                style={{
+                  background: snoozado ? 'rgba(14,165,233,0.18)' : 'rgba(14,165,233,0.10)',
+                  border: `1px solid ${snoozado ? 'rgba(14,165,233,0.45)' : 'rgba(14,165,233,0.25)'}`,
+                  color: '#38bdf8',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,165,233,0.20)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = snoozado ? 'rgba(14,165,233,0.18)' : 'rgba(14,165,233,0.10)'; }}
+                onClick={() => setSnoozeModal(true)}>
+                ❄ {snoozado ? 'Congelado' : 'Congelar lead'}
+              </button>
             )}
-            <button className="btn-ghost" onClick={() => setMudandoEtapa(true)}>
-              Mover etapa
-            </button>
-            <button className="btn-ghost" onClick={() => setEditando(true)}>
-              Editar
-            </button>
-            <button className="btn-danger" onClick={() => setConfirmandoExclusao(true)}>
-              Excluir
-            </button>
+            <button className="btn-ghost" onClick={() => setMudandoEtapa(true)}>Mover etapa</button>
+            <button className="btn-ghost" onClick={() => setEditando(true)}>Editar</button>
+            <button className="btn-danger" onClick={() => setConfirmandoExclusao(true)}>Excluir</button>
           </div>
         </div>
 
-        {/* Info rápida em grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Info rápida */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {infoItems.map(({ label, valor }) => (
             <div key={label} className="rounded-lg p-3" style={{ background: '#161B22', border: '1px solid #1C2333' }}>
               <p className="text-[11px] uppercase tracking-widest font-medium mb-1" style={{ color: '#484F58' }}>{label}</p>
@@ -457,13 +546,8 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
 
         {/* Próxima ação */}
         {lead.data_proxima_acao && (
-          <div
-            className="mt-3 flex items-center gap-3 rounded-lg px-4 py-3"
-            style={{
-              background: 'rgba(255,69,0,0.07)',
-              border: '1px solid rgba(255,69,0,0.20)',
-            }}
-          >
+          <div className="mt-3 flex items-center gap-3 rounded-lg px-4 py-3"
+            style={{ background: 'rgba(255,69,0,0.07)', border: '1px solid rgba(255,69,0,0.20)' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="#FF4500" strokeWidth={2} className="w-4 h-4 flex-shrink-0">
               <rect x="3" y="4" width="18" height="18" rx="2"/>
               <line x1="16" y1="2" x2="16" y2="6"/>
@@ -478,35 +562,23 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
       </div>
 
       {/* ─── Abas ──────────────────────────────────────────────────── */}
-      <div
-        className="flex gap-0 mb-5"
-        style={{ borderBottom: '1px solid #1C2333' }}
-      >
+      <div className="flex gap-0 mb-5" style={{ borderBottom: '1px solid #1C2333' }}>
         {abas.map((aba) => (
-          <button
-            key={aba.id}
-            onClick={() => setAbaAtiva(aba.id)}
+          <button key={aba.id} onClick={() => setAbaAtiva(aba.id)}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-150 cursor-pointer border-b-2 -mb-px"
             style={{
               color: abaAtiva === aba.id ? '#F0F6FC' : '#8B949E',
               borderColor: abaAtiva === aba.id ? '#FF4500' : 'transparent',
             }}
-            onMouseEnter={e => {
-              if (abaAtiva !== aba.id) e.currentTarget.style.color = '#C9D1D9';
-            }}
-            onMouseLeave={e => {
-              if (abaAtiva !== aba.id) e.currentTarget.style.color = '#8B949E';
-            }}
-          >
+            onMouseEnter={e => { if (abaAtiva !== aba.id) e.currentTarget.style.color = '#C9D1D9'; }}
+            onMouseLeave={e => { if (abaAtiva !== aba.id) e.currentTarget.style.color = '#8B949E'; }}>
             {aba.label}
             {aba.count != null && aba.count > 0 && (
-              <span
-                className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums"
+              <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums"
                 style={{
                   background: abaAtiva === aba.id ? 'rgba(255,69,0,0.15)' : '#161B22',
                   color: abaAtiva === aba.id ? '#FF4500' : '#484F58',
-                }}
-              >
+                }}>
                 {aba.count}
               </span>
             )}
@@ -520,17 +592,11 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
         <div className="space-y-4">
           <NovaInteracaoForm leadId={lead.id} onSalvo={carregar} />
           {lead.interacoes?.length === 0 && (
-            <p className="text-sm text-center py-6" style={{ color: '#484F58' }}>
-              Nenhuma interação registrada.
-            </p>
+            <p className="text-sm text-center py-6" style={{ color: '#484F58' }}>Nenhuma interação registrada.</p>
           )}
           <div className="space-y-3">
             {lead.interacoes?.map((interacao) => (
-              <div
-                key={interacao.id}
-                className="rounded-xl p-4"
-                style={{ background: '#0D1117', border: '1px solid #1C2333' }}
-              >
+              <div key={interacao.id} className="rounded-xl p-4" style={{ background: '#0D1117', border: '1px solid #1C2333' }}>
                 {editandoInteracaoId === interacao.id ? (
                   <EditarInteracaoForm
                     interacao={interacao}
@@ -539,10 +605,8 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
                   />
                 ) : (
                   <div className="flex items-start gap-3">
-                    <div
-                      className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ background: 'rgba(255,69,0,0.08)', color: '#FF4500' }}
-                    >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ background: 'rgba(255,69,0,0.08)', color: '#FF4500' }}>
                       {TIPO_SVG[interacao.tipo] || TIPO_SVG['Anotação']}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -550,26 +614,20 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
                         <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8B949E' }}>
                           {interacao.tipo}
                         </span>
-                        <span className="text-xs" style={{ color: '#484F58' }}>
-                          {formatarData(interacao.data)}
-                        </span>
+                        <span className="text-xs" style={{ color: '#484F58' }}>{formatarData(interacao.data)}</span>
                         <div className="flex items-center gap-1 ml-auto">
-                          <button
-                            onClick={() => setEditandoInteracaoId(interacao.id)}
+                          <button onClick={() => setEditandoInteracaoId(interacao.id)}
                             className="text-xs px-2 py-0.5 rounded cursor-pointer transition-colors"
                             style={{ color: '#484F58', background: 'transparent' }}
                             onMouseEnter={e => { e.currentTarget.style.color = '#8B949E'; e.currentTarget.style.background = '#161B22'; }}
-                            onMouseLeave={e => { e.currentTarget.style.color = '#484F58'; e.currentTarget.style.background = 'transparent'; }}
-                          >
+                            onMouseLeave={e => { e.currentTarget.style.color = '#484F58'; e.currentTarget.style.background = 'transparent'; }}>
                             Editar
                           </button>
-                          <button
-                            onClick={() => handleExcluirInteracao(interacao.id)}
+                          <button onClick={() => handleExcluirInteracao(interacao.id)}
                             className="text-xs px-2 py-0.5 rounded cursor-pointer transition-colors"
                             style={{ color: '#484F58', background: 'transparent' }}
                             onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.color = '#484F58'; e.currentTarget.style.background = 'transparent'; }}
-                          >
+                            onMouseLeave={e => { e.currentTarget.style.color = '#484F58'; e.currentTarget.style.background = 'transparent'; }}>
                             Excluir
                           </button>
                         </div>
@@ -595,68 +653,46 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
 
       {abaAtiva === 'dados' && (
         <div className="space-y-4">
-          {lead.origem === 'anuncio' && lead.observacoes && (() => {
-            const campos = {};
-            lead.observacoes.split(' | ').forEach(parte => {
-              const idx = parte.indexOf(': ');
-              if (idx > -1) {
-                const chave = parte.slice(0, idx).trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                const valor = parte.slice(idx + 2).trim().replace(/_/g, ' ');
-                campos[chave] = valor;
-              }
-            });
-            const fmt = (v) => v ? v.charAt(0).toUpperCase() + v.slice(1) : '—';
-            const cards = [
-              { label: 'Como atua', valor: campos['Como atua'], icon: '👤' },
-              { label: 'Investe em tráfego', valor: campos['Investe em trafego'], icon: '💰' },
-              { label: 'Maior problema', valor: campos['Maior problema'], icon: '🎯' },
-              { label: 'Investe R$1.500/mês', valor: campos['Investe R$1.500'], icon: '✅' },
-            ].filter(c => c.valor);
-            const ads = [
-              { label: 'Campanha', valor: campos['Campanha'] },
-              { label: 'Anúncio', valor: campos['Anuncio'] },
-            ].filter(c => c.valor);
-            return (
-              <>
-                {cards.length > 0 && (
-                  <div>
-                    <p className="text-[11px] uppercase tracking-widest font-medium mb-3" style={{ color: '#484F58' }}>Informações do formulário</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {cards.map(({ label, valor, icon }) => (
-                        <div key={label} className="rounded-xl p-4" style={{ background: '#0D1117', border: '1px solid rgba(124,58,237,0.25)' }}>
-                          <p className="text-[11px] uppercase tracking-widest font-medium mb-1" style={{ color: '#a78bfa' }}>{icon} {label}</p>
-                          <p className="text-sm font-semibold" style={{ color: '#F0F6FC' }}>{fmt(valor)}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {ads.length > 0 && (
-                  <div>
-                    <p className="text-[11px] uppercase tracking-widest font-medium mb-3" style={{ color: '#484F58' }}>Origem do anúncio</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {ads.map(({ label, valor }) => (
-                        <div key={label} className="rounded-xl p-4" style={{ background: '#0D1117', border: '1px solid #1C2333' }}>
-                          <p className="text-[11px] uppercase tracking-widest font-medium mb-1" style={{ color: '#484F58' }}>{label}</p>
-                          <p className="text-sm font-medium" style={{ color: '#C9D1D9' }}>{valor}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            );
-          })()}
-          {lead.observacoes && lead.origem !== 'anuncio' && (
+          <div>
+            <p className="text-[11px] uppercase tracking-widest font-medium mb-3" style={{ color: '#484F58' }}>
+              Filtro Blessed 4.0
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Tipo de bem',      valor: lead.tipo_de_bem || '—',                   icon: '🏠' },
+                { label: 'Valor da carta',   valor: formatarMoeda(lead.valor_da_carta),         icon: '💰' },
+                { label: 'Lance disponível', valor: formatarMoeda(lead.recurso_para_lance),     icon: '🎯' },
+                { label: 'Urgência',         valor: lead.urgencia || '—',                       icon: '⏱' },
+                { label: 'Restrição CPF',    valor: lead.restricao_cpf ? '⚠ Sim' : '✅ Não',   icon: '📋' },
+              ].map(({ label, valor, icon }) => (
+                <div key={label} className="rounded-xl p-4"
+                  style={{
+                    background: '#0D1117',
+                    border: `1px solid ${label === 'Restrição CPF' && lead.restricao_cpf ? 'rgba(239,68,68,0.30)' : '#1C2333'}`,
+                  }}>
+                  <p className="text-[11px] uppercase tracking-widest font-medium mb-1" style={{ color: '#484F58' }}>
+                    {icon} {label}
+                  </p>
+                  <p className="text-sm font-semibold"
+                    style={{ color: label === 'Restrição CPF' && lead.restricao_cpf ? '#ef4444' : '#F0F6FC' }}>
+                    {valor}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {lead.observacoes && (
             <div className="rounded-xl p-4" style={{ background: '#0D1117', border: '1px solid #1C2333' }}>
               <p className="text-[11px] uppercase tracking-widest font-medium mb-2" style={{ color: '#484F58' }}>Observações</p>
               <p className="text-sm whitespace-pre-wrap" style={{ color: '#C9D1D9' }}>{lead.observacoes}</p>
             </div>
           )}
+
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Seguiu em', valor: formatarData(lead.data_seguiu) },
-              { label: 'Criado em', valor: formatarData(lead.criado_em) },
+              { label: 'Origem',        valor: lead.origem || '—' },
+              { label: 'Criado em',     valor: formatarData(lead.criado_em) },
               { label: 'Atualizado em', valor: formatarData(lead.atualizado_em) },
             ].map(({ label, valor }) => (
               <div key={label} className="rounded-lg p-3" style={{ background: '#161B22', border: '1px solid #1C2333' }}>
@@ -668,46 +704,16 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
         </div>
       )}
 
-      {/* ─── Modal: mover etapa ─────────────────────────────────────── */}
+      {/* ─── Modais ──────────────────────────────────────────────────── */}
+
       {mudandoEtapa && (
-        <Modal title="Mover para etapa" onClose={() => setMudandoEtapa(false)}>
-          <div className="space-y-1">
-            {ETAPAS.map((etapa) => (
-              <button
-                key={etapa}
-                onClick={() => handleMoverEtapa(etapa)}
-                className="w-full text-left px-4 py-3 rounded-lg text-sm transition-all duration-150 flex items-center gap-3 cursor-pointer"
-                style={{
-                  background: etapa === lead.etapa_funil ? 'rgba(255,69,0,0.10)' : 'transparent',
-                  color: etapa === lead.etapa_funil ? '#FF4500' : '#8B949E',
-                  border: `1px solid ${etapa === lead.etapa_funil ? 'rgba(255,69,0,0.25)' : 'transparent'}`,
-                }}
-                onMouseEnter={e => {
-                  if (etapa !== lead.etapa_funil) {
-                    e.currentTarget.style.background = '#161B22';
-                    e.currentTarget.style.color = '#F0F6FC';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (etapa !== lead.etapa_funil) {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = '#8B949E';
-                  }
-                }}
-              >
-                {etapa === lead.etapa_funil && (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3.5 h-3.5 flex-shrink-0">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-                <span className={etapa === lead.etapa_funil ? 'font-semibold' : ''}>{etapa}</span>
-              </button>
-            ))}
-          </div>
-        </Modal>
+        <MoverEtapaModal lead={lead} onMover={handleMoverEtapa} onFechar={() => setMudandoEtapa(false)} />
       )}
 
-      {/* ─── Modal: editar lead ─────────────────────────────────────── */}
+      {snoozeModal && (
+        <SnoozeModal lead={lead} onSalvo={handleSnooze} onFechar={() => setSnoozeModal(false)} />
+      )}
+
       {editando && (
         <Modal title="Editar lead" onClose={() => setEditando(false)} wide>
           <LeadForm
@@ -718,13 +724,12 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
         </Modal>
       )}
 
-      {/* ─── Modal: confirmar exclusão ──────────────────────────────── */}
       {confirmandoExclusao && (
         <Modal title="Confirmar exclusão" onClose={() => setConfirmandoExclusao(false)}>
           <p className="text-sm mb-6" style={{ color: '#8B949E' }}>
             Tem certeza que deseja excluir{' '}
-            <strong style={{ color: '#F0F6FC' }}>{lead.nome}</strong>?
-            {' '}Esta ação não pode ser desfeita.
+            <strong style={{ color: '#F0F6FC' }}>{lead.nome}</strong>?{' '}
+            Esta ação não pode ser desfeita.
           </p>
           <div className="flex justify-end gap-3">
             <button className="btn-ghost" onClick={() => setConfirmandoExclusao(false)}>Cancelar</button>
@@ -735,4 +740,3 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
     </>
   );
 }
-

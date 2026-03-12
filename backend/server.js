@@ -3,7 +3,7 @@ const cors = require('cors');
 const { initDb } = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3334;
 
 app.use(cors());
 app.use(express.json());
@@ -18,5 +18,5 @@ app.use('/api/cadencia', require('./routes/cadencia'));
 app.use('/api/webhook', require('./routes/webhook'));
 
 app.listen(PORT, () => {
-  console.log(`CRM Grow Up — Backend rodando em http://localhost:${PORT}`);
+  console.log(`GrowSorcio — Backend rodando em http://localhost:${PORT}`);
 });

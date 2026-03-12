@@ -1,8 +1,12 @@
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'crm.db');
-const db = new Database(DB_PATH);
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'growsorcio.db');
+const db = new DatabaseSync(DB_PATH);
+
+// Habilita WAL e FK via PRAGMA
+db.exec(`PRAGMA journal_mode = WAL`);
+db.exec(`PRAGMA foreign_keys = ON`);
 
 function run(sql, ...params) {
   return db.prepare(sql).run(...params);
@@ -32,21 +36,23 @@ function transaction(fn) {
 }
 
 function initDb() {
-  exec(`PRAGMA journal_mode = WAL`);
-  exec(`PRAGMA foreign_keys = ON`);
-
   exec(`
     CREATE TABLE IF NOT EXISTS leads (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id TEXT DEFAULT 'default',
       nome TEXT NOT NULL,
-      instagram TEXT,
       whatsapp TEXT,
-      administradora TEXT,
-      tempo_atuacao TEXT,
-      volume_mensal TEXT,
+      email TEXT,
+      instagram TEXT,
+      tipo_de_bem TEXT,
+      valor_da_carta REAL,
+      recurso_para_lance REAL,
+      restricao_cpf INTEGER DEFAULT 0,
+      urgencia TEXT,
       temperatura TEXT DEFAULT 'frio',
-      etapa_funil TEXT DEFAULT 'Analisar Perfil',
-      data_seguiu TEXT,
+      etapa_funil TEXT DEFAULT 'Lead Novo',
+      motivo_descarte TEXT,
+      snooze_ate TEXT,
       data_proxima_acao TEXT,
       tipo_proxima_acao TEXT,
       observacoes TEXT,
@@ -55,13 +61,6 @@ function initDb() {
       atualizado_em TEXT DEFAULT (datetime('now', 'localtime'))
     )
   `);
-
-  // Migration: adiciona coluna origem se ainda não existir (banco existente)
-  try {
-    exec(`ALTER TABLE leads ADD COLUMN origem TEXT DEFAULT 'prospeccao'`);
-  } catch (_) {
-    // Coluna já existe — ignora
-  }
 
   exec(`
     CREATE TABLE IF NOT EXISTS interacoes (
@@ -97,38 +96,38 @@ function inserirDadosExemplo() {
   if (count.total > 0) return;
 
   const leads = [
-    ['Carlos Mendes', '@carlosmendes.consorcio', '11999001111', 'Porto Seguro', '3 anos', '8 cartas/mês', 'quente', 'Reunião Agendada', '2026-02-10', '2026-03-07', 'Reunião', 'Muito engajado no Instagram, conteúdo de qualidade. Mencionou interesse em expandir carteira.'],
-    ['Ana Paula Freitas', '@anapaula.consorte', '21988002222', 'Embracon', '1.5 anos', '4 cartas/mês', 'morno', 'Em Desenvolvimento', '2026-02-15', '2026-03-08', 'Enviar mensagem', 'Respondeu bem à abordagem inicial, ainda avaliando.'],
-    ['Roberto Alves', '@roberto.consorcio.oficial', '31977003333', 'Banco do Brasil', '5 anos', '15 cartas/mês', 'quente', 'Lead Capturado', '2026-02-01', '2026-03-06', 'Agendar reunião', 'Alta produção, parceiros com várias imobiliárias.'],
-    ['Fernanda Costa', '@fercosta.consorcio', '41966004444', 'Itaú', '2 anos', '6 cartas/mês', 'frio', 'Follow-up Ativo', '2026-01-20', '2026-03-10', 'Enviar mensagem', 'Parou de responder depois de 2 trocas de mensagem.'],
-    ['Marcelo Souza', '@marcelo_especialista', '51955005555', 'Caixa', '4 anos', '10 cartas/mês', 'morno', 'Proposta Enviada', '2026-01-05', '2026-03-07', 'Follow-up proposta', 'Reunião muito positiva. Proposta enviada em 28/02.'],
-    ['Juliana Martins', '@juli.consorcio', '85944006666', 'Sompo', '8 meses', '2 cartas/mês', 'frio', 'Abordagem Enviada', '2026-02-28', '2026-03-09', 'Aguardar resposta', 'Perfil novo, pouco histórico. Abordagem enviada hoje.'],
-    ['Diego Ramos', '@diego.ramos.consorte', '62933007777', 'Porto Seguro', '3.5 anos', '12 cartas/mês', 'quente', 'Fechado', '2025-12-01', null, null, 'Cliente convertido! Onboarding concluído em jan/2026.'],
-    ['Luciana Pereira', '@lu.pereira.consorcio', '71922008888', 'Embracon', '2.5 anos', '5 cartas/mês', 'frio', 'Perdido', '2026-01-10', null, null, 'Não tinha interesse no momento.'],
+    ['Carlos Mendes', '11999001111', 'carlos@email.com', 'Imóvel', 350000, 50000, 0, 'Imediata', 'quente', 'Reunião Agendada', '2026-03-15', 'Reunião', 'Servidor público, renda estável. Quer carta para comprar apartamento na planta. Lance próprio de R$ 50k.', 'anuncio'],
+    ['Ana Paula Freitas', '21988002222', 'anapaula@email.com', 'Veículo', 80000, 15000, 0, '3 a 6 meses', 'morno', 'Em Qualificação', '2026-03-13', 'Enviar simulação', 'Quer trocar carro. Avaliando consórcio vs financiamento. Sem restrição no CPF.', 'anuncio'],
+    ['Roberto Alves', '31977003333', null, 'Imóvel', 500000, 0, 0, 'Planejamento longo', 'frio', 'Tentativa de Contato', '2026-03-12', 'Ligar', 'Lead via Meta Ads. Ainda não respondeu. 3ª tentativa de contato.', 'anuncio'],
+    ['Fernanda Costa', '41966004444', 'fernanda@email.com', 'Imóvel', 280000, 30000, 1, 'Imediata', 'frio', 'Descartado (Perda)', null, null, 'CPF com restrição confirmada. Não pode aderir no momento.', 'anuncio'],
+    ['Marcelo Souza', '51955005555', 'marcelo@email.com', 'Veículo', 120000, 25000, 0, '3 a 6 meses', 'quente', 'Simulação Enviada', '2026-03-14', 'Follow-up simulação', 'Simulação enviada em 10/03. Comparativo consórcio vs financiamento no WhatsApp.', 'prospeccao'],
+    ['Juliana Martins', '85944006666', null, 'Serviços', 60000, 5000, 0, 'Planejamento longo', 'frio', 'Lead Novo', null, null, null, 'anuncio'],
+    ['Diego Ramos', '62933007777', 'diego@email.com', 'Imóvel', 420000, 80000, 0, 'Imediata', 'quente', 'Fechado (Ganho)', null, null, 'Contrato assinado em 05/03/2026. Adesão paga. Grupo 0847.', 'prospeccao'],
+    ['Luciana Pereira', '71922008888', null, 'Veículo', 70000, 0, 0, '3 a 6 meses', 'frio', 'Descartado (Perda)', null, null, 'Parou de responder após 5 tentativas. Apenas curioso.', 'anuncio'],
   ];
 
   transaction(() => {
     for (const l of leads) {
       run(
-        `INSERT INTO leads (nome, instagram, whatsapp, administradora, tempo_atuacao, volume_mensal, temperatura, etapa_funil, data_seguiu, data_proxima_acao, tipo_proxima_acao, observacoes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO leads (nome, whatsapp, email, tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia, temperatura, etapa_funil, data_proxima_acao, tipo_proxima_acao, observacoes, origem)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ...l
       );
     }
+    run(`UPDATE leads SET motivo_descarte = 'Restrição CPF' WHERE nome = 'Fernanda Costa'`);
+    run(`UPDATE leads SET motivo_descarte = 'Parou de responder' WHERE nome = 'Luciana Pereira'`);
   });
 
-  // Interações de exemplo
   const interacoes = [
-    [1, '2026-02-10', 'DM', 'Seguiu o perfil. Mensagem de boas-vindas enviada.', 'Aguardar resposta'],
-    [1, '2026-02-12', 'DM', 'Respondeu positivamente, demonstrou interesse.', 'Agendar reunião'],
-    [1, '2026-02-20', 'WhatsApp', 'Reunião agendada para 07/03 às 14h.', 'Preparar material'],
-    [2, '2026-02-15', 'DM', 'Abordagem inicial enviada.', 'Aguardar resposta'],
-    [2, '2026-02-17', 'DM', 'Respondeu. Iniciando desenvolvimento da conversa.', 'Enviar case'],
-    [3, '2026-02-01', 'DM', 'Seguiu e abordou. Resposta imediata.', 'Qualificar'],
-    [3, '2026-02-10', 'WhatsApp', 'Dados coletados. Lead qualificado com alto potencial.', 'Agendar reunião'],
-    [5, '2026-01-05', 'DM', 'Primeiro contato.', null],
-    [5, '2026-02-01', 'Reunião', 'Reunião de qualificação realizada. Muito positiva.', 'Enviar proposta'],
-    [5, '2026-02-28', 'WhatsApp', 'Proposta enviada via WhatsApp.', 'Follow-up em 7 dias'],
+    [1, '2026-03-01', 'WhatsApp', 'Lead entrou pelo Meta Ads. Primeiro contato feito.', 'Qualificar Blessed 4.0'],
+    [1, '2026-03-05', 'Ligação', 'Qualificação completa: carta R$350k, lance R$50k, sem restrição. Reunião agendada.', 'Preparar simulação'],
+    [2, '2026-03-08', 'WhatsApp', 'Lead respondeu. Aplicando filtro Blessed 4.0.', 'Confirmar valor da carta'],
+    [2, '2026-03-10', 'WhatsApp', 'Enviou comprovante de renda. Qualificado parcialmente.', 'Enviar simulação comparativa'],
+    [3, '2026-03-10', 'WhatsApp', '1ª tentativa. Sem resposta.', 'Ligar amanhã'],
+    [3, '2026-03-11', 'Ligação', '2ª tentativa. Caixa postal.', 'Tentar novamente'],
+    [5, '2026-03-08', 'WhatsApp', 'Reunião realizada. Diagnóstico: lance embutido, prazo 180 meses.', 'Montar simulação'],
+    [5, '2026-03-10', 'WhatsApp', 'Simulação enviada: consórcio R$120k vs financiamento. Economia de R$45k.', 'Follow-up em 3 dias'],
+    [7, '2026-02-20', 'Reunião', 'Reunião de fechamento. Contrato assinado. Adesão paga.', null],
   ];
 
   transaction(() => {
@@ -140,10 +139,9 @@ function inserirDadosExemplo() {
     }
   });
 
-  // Cadência para o lead 1 (Reunião Agendada em 07/03)
-  criarCadenciaReuniao(1, '2026-03-07');
+  criarCadenciaReuniao(1, '2026-03-15');
 
-  console.log('Dados de exemplo inseridos.');
+  console.log('GrowSorcio — dados de exemplo inseridos.');
 }
 
 function criarCadenciaReuniao(leadId, dataReuniao) {
@@ -153,16 +151,15 @@ function criarCadenciaReuniao(leadId, dataReuniao) {
   const sub = (n) => { const r = new Date(base); r.setDate(r.getDate() - n); return r; };
 
   const itens = [
-    ['Enviar resumo sobre a Grow Up', fmt(new Date()), 'Pré-reunião'],
-    ['Enviar case de sucesso relevante', fmt(sub(2)), 'Pré-reunião'],
-    ['Reforçar pauta da reunião + conteúdo do Instagram', fmt(sub(1)), 'Pré-reunião'],
+    ['Enviar material explicativo sobre consórcio', fmt(sub(3)), 'Pré-reunião'],
+    ['Confirmar reunião e enviar pauta', fmt(sub(1)), 'Pré-reunião'],
     ['Lembrete da reunião (manhã do dia)', fmt(base), 'Pré-reunião'],
-    ['Ligar para o lead (1h antes, se sem resposta)', fmt(base), 'Pré-reunião'],
-    ['Enviar agradecimento e resumo dos pontos', fmt(base), 'Pós-reunião'],
-    ['Oferecer esclarecimentos e convidar para nova conversa', fmt(add(3)), 'Pós-reunião'],
-    ['Enviar testemunho ou case adicional', fmt(add(7)), 'Pós-reunião'],
-    ['Criar senso de urgência para fechamento', fmt(add(14)), 'Pós-reunião'],
-    ['Follow-up final e solicitar feedback', fmt(add(21)), 'Pós-reunião'],
+    ['Realizar diagnóstico: lance próprio vs embutido', fmt(base), 'Reunião'],
+    ['Enviar simulação comparativa Consórcio vs Financiamento', fmt(add(1)), 'Pós-reunião'],
+    ['Follow-up simulação — tirar dúvidas', fmt(add(3)), 'Pós-reunião'],
+    ['Enviar case de contemplação de cliente similar', fmt(add(7)), 'Pós-reunião'],
+    ['Verificar decisão — criar senso de urgência (assembleia)', fmt(add(14)), 'Negociação'],
+    ['Follow-up final — solicitar documentos para adesão', fmt(add(21)), 'Negociação'],
   ];
 
   transaction(() => {

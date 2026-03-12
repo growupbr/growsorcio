@@ -48,12 +48,22 @@ router.post('/lead', (req, res) => {
   }
   const observacoes = (body.observacoes) || (linhasObs.length ? linhasObs.join(' | ') : null);
 
+  // Extrai campos específicos de consórcio do body
+  const { tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia } = body;
+
   const result = run(
-    `INSERT INTO leads (nome, instagram, whatsapp, temperatura, etapa_funil, observacoes, origem)
-     VALUES (?, ?, ?, 'frio', 'Lead Anúncio', ?, 'anuncio')`,
+    `INSERT INTO leads (nome, instagram, whatsapp, temperatura, etapa_funil,
+      tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia,
+      observacoes, origem)
+     VALUES (?, ?, ?, 'frio', 'Lead Novo', ?, ?, ?, ?, ?, ?, 'anuncio')`,
     nomeResolvido,
     instagram || null,
     whatsapp || null,
+    tipo_de_bem || null,
+    valor_da_carta ? Number(valor_da_carta) : null,
+    recurso_para_lance ? Number(recurso_para_lance) : null,
+    restricao_cpf ? 1 : 0,
+    urgencia || null,
     observacoes
   );
 

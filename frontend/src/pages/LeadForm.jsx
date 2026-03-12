@@ -2,57 +2,81 @@ import { useState } from 'react';
 import { api } from '../api/client';
 
 const ETAPAS = [
-  'Analisar Perfil', 'Seguiu Perfil', 'Abordagem Enviada', 'Respondeu',
-  'Em Desenvolvimento', 'Follow-up Ativo', 'Lead Capturado',
-  'Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada',
-  'Follow-up Proposta', 'Fechado', 'Perdido',
+  'Lead Novo', 'Tentativa de Contato', 'Em Qualificação',
+  'Reunião Agendada', 'Reunião Realizada', 'Simulação Enviada',
+  'Follow-up / Negociação', 'Análise de Crédito / Docs',
+  'Fechado (Ganho)', 'Descartado (Perda)',
 ];
 
+const TIPOS_BEM = ['Imóvel', 'Veículo', 'Pesados', 'Serviços'];
+const URGENCIAS = ['Imediata', '3 a 6 meses', 'Planejamento longo'];
 const TIPOS_ACAO = [
-  'Enviar mensagem', 'Ligar', 'Reunião', 'Agendar reunião',
-  'Follow-up proposta', 'Aguardar resposta', 'Enviar case',
+  'Ligar', 'Enviar mensagem', 'Reunião', 'Agendar reunião',
+  'Enviar simulação', 'Follow-up simulação', 'Solicitar documentos',
+  'Aguardar resposta',
+];
+const MOTIVOS_DESCARTE = [
+  'Sem margem', 'Restrição CPF', 'Apenas curioso',
+  'Parou de responder', 'Optou por financiamento', 'Sem recurso para lance',
+  'Urgência incompatível', 'Outro',
 ];
 
 function SectionTitle({ children }) {
   return (
-    <p
-      className="text-[11px] font-semibold uppercase tracking-widest mb-3"
-      style={{ color: '#484F58' }}
-    >
+    <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#484F58' }}>
       {children}
     </p>
   );
 }
 
+function formatMoeda(val) {
+  if (!val && val !== 0) return '';
+  return String(val);
+}
+
 export default function LeadForm({ lead, onSalvo, onCancelar }) {
   const [form, setForm] = useState({
-    nome:              lead?.nome || '',
-    instagram:         lead?.instagram || '',
-    whatsapp:          lead?.whatsapp || '',
-    administradora:    lead?.administradora || '',
-    tempo_atuacao:     lead?.tempo_atuacao || '',
-    volume_mensal:     lead?.volume_mensal || '',
-    temperatura:       lead?.temperatura || 'frio',
-    etapa_funil:       lead?.etapa_funil || 'Analisar Perfil',
-    data_seguiu:       lead?.data_seguiu || '',
-    data_proxima_acao: lead?.data_proxima_acao || '',
-    tipo_proxima_acao: lead?.tipo_proxima_acao || '',
-    observacoes:       lead?.observacoes || '',
+    nome:               lead?.nome || '',
+    whatsapp:           lead?.whatsapp || '',
+    email:              lead?.email || '',
+    instagram:          lead?.instagram || '',
+    tipo_de_bem:        lead?.tipo_de_bem || '',
+    valor_da_carta:     formatMoeda(lead?.valor_da_carta),
+    recurso_para_lance: formatMoeda(lead?.recurso_para_lance),
+    restricao_cpf:      lead?.restricao_cpf ? true : false,
+    urgencia:           lead?.urgencia || '',
+    temperatura:        lead?.temperatura || 'frio',
+    etapa_funil:        lead?.etapa_funil || 'Lead Novo',
+    motivo_descarte:    lead?.motivo_descarte || '',
+    data_proxima_acao:  lead?.data_proxima_acao || '',
+    tipo_proxima_acao:  lead?.tipo_proxima_acao || '',
+    observacoes:        lead?.observacoes || '',
   });
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
 
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
+  const setCheck = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.checked }));
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.nome.trim()) { setErro('Nome é obrigatório'); return; }
+    if (form.etapa_funil === 'Descartado (Perda)' && !form.motivo_descarte) {
+      setErro('Selecione o motivo do descarte');
+      return;
+    }
     setSalvando(true);
     setErro('');
     try {
+      const payload = {
+        ...form,
+        valor_da_carta:     form.valor_da_carta     ? Number(form.valor_da_carta.replace(/\./g, '').replace(',', '.'))     : null,
+        recurso_para_lance: form.recurso_para_lance ? Number(form.recurso_para_lance.replace(/\./g, '').replace(',', '.')) : null,
+        restricao_cpf:      form.restricao_cpf ? 1 : 0,
+      };
       const salvo = lead?.id
-        ? await api.atualizarLead(lead.id, form)
-        : await api.criarLead(form);
+        ? await api.atualizarLead(lead.id, payload)
+        : await api.criarLead(payload);
       onSalvo(salvo);
     } catch (err) {
       setErro(err.message);
@@ -60,6 +84,8 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
       setSalvando(false);
     }
   }
+
+  const descartando = form.etapa_funil === 'Descartado (Perda)';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -73,24 +99,89 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
             <input className="input" value={form.nome} onChange={set('nome')} placeholder="Nome completo" />
           </div>
           <div>
-            <label className="label">Instagram</label>
-            <input className="input" value={form.instagram} onChange={set('instagram')} placeholder="@usuario" />
-          </div>
-          <div>
             <label className="label">WhatsApp</label>
             <input className="input" value={form.whatsapp} onChange={set('whatsapp')} placeholder="11999000000" />
           </div>
           <div>
-            <label className="label">Administradora</label>
-            <input className="input" value={form.administradora} onChange={set('administradora')} placeholder="Ex: Porto Seguro" />
+            <label className="label">E-mail</label>
+            <input className="input" type="email" value={form.email} onChange={set('email')} placeholder="email@exemplo.com" />
           </div>
           <div>
-            <label className="label">Tempo de atuação</label>
-            <input className="input" value={form.tempo_atuacao} onChange={set('tempo_atuacao')} placeholder="Ex: 3 anos" />
+            <label className="label">Instagram</label>
+            <input className="input" value={form.instagram} onChange={set('instagram')} placeholder="@usuario" />
+          </div>
+        </div>
+      </section>
+
+      {/* Método Blessed 4.0 */}
+      <section
+        className="rounded-xl p-4"
+        style={{ background: '#161B22', border: '1px solid rgba(255,69,0,0.20)' }}
+      >
+        <SectionTitle>Filtro Blessed 4.0</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="label">Tipo de bem</label>
+            <select className="input" value={form.tipo_de_bem} onChange={set('tipo_de_bem')}>
+              <option value="">Selecione...</option>
+              {TIPOS_BEM.map((t) => <option key={t}>{t}</option>)}
+            </select>
           </div>
           <div>
-            <label className="label">Volume mensal</label>
-            <input className="input" value={form.volume_mensal} onChange={set('volume_mensal')} placeholder="Ex: 8 cartas/mês" />
+            <label className="label">Urgência</label>
+            <select className="input" value={form.urgencia} onChange={set('urgencia')}>
+              <option value="">Selecione...</option>
+              {URGENCIAS.map((u) => <option key={u}>{u}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Valor da carta (R$)</label>
+            <input
+              className="input"
+              value={form.valor_da_carta}
+              onChange={set('valor_da_carta')}
+              placeholder="Ex: 350000"
+              inputMode="numeric"
+            />
+          </div>
+          <div>
+            <label className="label">Recurso para lance (R$)</label>
+            <input
+              className="input"
+              value={form.recurso_para_lance}
+              onChange={set('recurso_para_lance')}
+              placeholder="Ex: 50000"
+              inputMode="numeric"
+            />
+          </div>
+        </div>
+        {/* Restrição CPF — destaque visual */}
+        <div
+          className="mt-3 flex items-center gap-3 p-3 rounded-lg cursor-pointer"
+          style={{
+            background: form.restricao_cpf ? 'rgba(239,68,68,0.08)' : 'transparent',
+            border: `1px solid ${form.restricao_cpf ? 'rgba(239,68,68,0.30)' : '#1C2333'}`,
+          }}
+          onClick={() => setForm(f => ({ ...f, restricao_cpf: !f.restricao_cpf }))}
+        >
+          <div
+            className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+            style={{
+              background: form.restricao_cpf ? '#ef4444' : 'transparent',
+              border: `2px solid ${form.restricao_cpf ? '#ef4444' : '#30363D'}`,
+            }}
+          >
+            {form.restricao_cpf && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="w-3 h-3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: form.restricao_cpf ? '#ef4444' : '#8B949E' }}>
+              Restrição no CPF
+            </p>
+            <p className="text-xs" style={{ color: '#484F58' }}>Marque se o lead tem CPF negativado ou restrito</p>
           </div>
         </div>
       </section>
@@ -100,8 +191,8 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
         className="rounded-xl p-4"
         style={{ background: '#161B22', border: '1px solid #1C2333' }}
       >
-        <SectionTitle>Funil &amp; Qualificação</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <SectionTitle>Funil de Vendas</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="label">Etapa do funil</label>
             <select className="input" value={form.etapa_funil} onChange={set('etapa_funil')}>
@@ -116,11 +207,21 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
               <option value="quente">Quente</option>
             </select>
           </div>
-          <div>
-            <label className="label">Data que seguiu</label>
-            <input type="date" className="input" value={form.data_seguiu} onChange={set('data_seguiu')} />
-          </div>
         </div>
+        {descartando && (
+          <div className="mt-3">
+            <label className="label" style={{ color: '#ef4444' }}>Motivo do descarte *</label>
+            <select
+              className="input"
+              value={form.motivo_descarte}
+              onChange={set('motivo_descarte')}
+              style={{ borderColor: !form.motivo_descarte ? 'rgba(239,68,68,0.50)' : undefined }}
+            >
+              <option value="">Selecione o motivo...</option>
+              {MOTIVOS_DESCARTE.map((m) => <option key={m}>{m}</option>)}
+            </select>
+          </div>
+        )}
       </section>
 
       {/* Próxima ação */}
@@ -153,14 +254,9 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
         />
       </section>
 
-      {erro && (
-        <p className="text-sm" style={{ color: '#f87171' }}>{erro}</p>
-      )}
+      {erro && <p className="text-sm" style={{ color: '#f87171' }}>{erro}</p>}
 
-      <div
-        className="flex justify-end gap-3 pt-2"
-        style={{ borderTop: '1px solid #1C2333' }}
-      >
+      <div className="flex justify-end gap-3 pt-2" style={{ borderTop: '1px solid #1C2333' }}>
         <button type="button" className="btn-ghost" onClick={onCancelar}>Cancelar</button>
         <button type="submit" className="btn-primary" disabled={salvando}>
           {salvando ? 'Salvando...' : lead?.id ? 'Salvar alterações' : 'Criar lead'}
