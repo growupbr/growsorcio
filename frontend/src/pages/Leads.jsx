@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import TemperaturaBadge from '../components/TemperaturaBadge';
@@ -144,6 +144,9 @@ export default function Leads() {
   const [carregando, setCarregando] = useState(true);
   const [leadAberto, setLeadAberto] = useState(null);
   const [filtros, setFiltros]       = useState(filtrosPadrao);
+  // Busca com debounce de 350ms para evitar fetch a cada tecla
+  const [buscaInput, setBuscaInput] = useState(filtrosPadrao().busca);
+  const buscaDebounceRef = useRef(null);
 
   // Carrega da API com todos os filtros (incluindo período server-side)
   const carregarLeads = useCallback(async () => {
@@ -171,7 +174,18 @@ export default function Leads() {
     setFiltros((f) => ({ ...f, [campo]: f[campo] === valor ? '' : valor }));
   }
 
+  function handleBuscaChange(e) {
+    const valor = e.target.value;
+    setBuscaInput(valor);
+    clearTimeout(buscaDebounceRef.current);
+    buscaDebounceRef.current = setTimeout(() => {
+      setFiltros((f) => ({ ...f, busca: valor }));
+    }, 350);
+  }
+
   function limparFiltros() {
+    setBuscaInput('');
+    clearTimeout(buscaDebounceRef.current);
     setFiltros({ busca: '', etapa: '', temperatura: '', periodo: '', origem: '', ordem: 'proxima_acao' });
   }
 
@@ -227,8 +241,8 @@ export default function Leads() {
             <input
               className="input pl-9"
               placeholder="Buscar por nome, WhatsApp ou e-mail..."
-              value={filtros.busca}
-              onChange={(e) => setFiltro('busca', e.target.value)}
+              value={buscaInput}
+              onChange={handleBuscaChange}
             />
           </div>
           <div style={{ minWidth: 160 }}>

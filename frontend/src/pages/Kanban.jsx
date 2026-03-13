@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   DndContext, DragOverlay, PointerSensor, closestCenter,
   useSensor, useSensors, useDroppable, useDraggable,
@@ -381,12 +381,15 @@ export default function Kanban() {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  // Agrupa leads por etapa
-  const leadsPorEtapa = {};
-  ETAPAS.forEach(({ nome }) => { leadsPorEtapa[nome] = []; });
-  leads.forEach((lead) => {
-    if (leadsPorEtapa[lead.etapa_funil]) leadsPorEtapa[lead.etapa_funil].push(lead);
-  });
+  // Agrupa leads por etapa — memoizado para não reprocessar em cada drag/hover
+  const leadsPorEtapa = useMemo(() => {
+    const mapa = {};
+    ETAPAS.forEach(({ nome }) => { mapa[nome] = []; });
+    leads.forEach((lead) => {
+      if (mapa[lead.etapa_funil]) mapa[lead.etapa_funil].push(lead);
+    });
+    return mapa;
+  }, [leads]);
 
   // Criação inline (estilo Trello)
   async function handleAdicionarLead(nome, etapaNome) {

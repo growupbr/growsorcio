@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api/client';
 import { abrirWhatsApp } from '../utils/waWindow';
 import TemperaturaBadge from '../components/TemperaturaBadge';
@@ -385,16 +385,21 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
   const [snoozeModal, setSnoozeModal] = useState(false);
   const [editandoInteracaoId, setEditandoInteracaoId] = useState(null);
 
+  // onFechar é arrow inline no pai — instável a cada render.
+  // Guardamos em ref para que `carregar` só recrie quando `leadId` muda.
+  const onFecharRef = useRef(onFechar);
+  useEffect(() => { onFecharRef.current = onFechar; }, [onFechar]);
+
   const carregar = useCallback(async () => {
     try {
       const dados = await api.buscarLead(leadId);
       setLead(dados);
     } catch {
-      onFechar();
+      onFecharRef.current();
     } finally {
       setCarregando(false);
     }
-  }, [leadId, onFechar]);
+  }, [leadId]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -528,9 +533,9 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
                 ❄ {snoozado ? 'Congelado' : 'Congelar lead'}
               </button>
             )}
-            <button className="btn-ghost" onClick={() => setMudandoEtapa(true)}>Mover etapa</button>
-            <button className="btn-ghost" onClick={() => setEditando(true)}>Editar</button>
-            <button className="btn-danger" onClick={() => setConfirmandoExclusao(true)}>Excluir</button>
+            <button className="btn-ghost min-h-[44px] min-w-[44px]" onClick={() => setMudandoEtapa(true)}>Mover etapa</button>
+            <button className="btn-ghost min-h-[44px] min-w-[44px]" onClick={() => setEditando(true)}>Editar</button>
+            <button className="btn-danger min-h-[44px] min-w-[44px]" onClick={() => setConfirmandoExclusao(true)}>Excluir</button>
           </div>
         </div>
 

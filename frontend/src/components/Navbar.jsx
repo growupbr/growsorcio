@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import QuickAddModal from './QuickAddModal';
 import { abrirWhatsApp, isWaOpen } from '../utils/waWindow';
@@ -53,13 +53,35 @@ export default function Navbar() {
   const [showModal, setShowModal] = useState(false);
   const [waAberto, setWaAberto] = useState(false);
 
-  // Polling para detectar quando a janela WA é fechada pelo usuário
-  useEffect(() => {
-    const id = setInterval(() => {
-      setWaAberto(isWaOpen());
-    }, 800);
-    return () => clearInterval(id);
+  // Polling para detectar quando a janela WA é fechada pelo usuário.
+  // Pausa quando a aba está em background para não queimar CPU/bateria em campo.
+  const waIntervalRef = useRef(null);
+
+  const syncWaEstado = useCallback(() => {
+    setWaAberto(isWaOpen());
   }, []);
+
+  useEffect(() => {
+    function iniciarPolling() {
+      if (waIntervalRef.current) return;
+      waIntervalRef.current = setInterval(syncWaEstado, 800);
+    }
+    function pararPolling() {
+      clearInterval(waIntervalRef.current);
+      waIntervalRef.current = null;
+    }
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') iniciarPolling();
+      else pararPolling();
+    }
+
+    iniciarPolling();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      pararPolling();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [syncWaEstado]);
 
   function handleWhatsApp() {
     abrirWhatsApp();
