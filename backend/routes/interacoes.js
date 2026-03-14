@@ -1,19 +1,33 @@
 const express = require('express');
 const router = express.Router();
-const { run, get, all } = require('../database');
+const { supabase, getOrganizationId, handleSupabaseError } = require('../supabase');
 
 const TIPOS_VALIDOS = ['DM', 'WhatsApp', 'Ligação', 'Reunião', 'E-mail', 'Anotação'];
 
 // GET /api/interacoes?lead_id=X
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { lead_id } = req.query;
   if (!lead_id) return res.status(400).json({ erro: 'lead_id é obrigatório' });
 
-  res.json(all('SELECT * FROM interacoes WHERE lead_id = ? ORDER BY data DESC, id DESC', lead_id));
+  try {
+    const organizationId = await getOrganizationId();
+    const { data, error } = await supabase
+      .from('interacoes')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('lead_id', Number(lead_id))
+      .order('data', { ascending: false })
+      .order('id', { ascending: false });
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao listar interações');
+    return res.json(data || []);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao listar interações');
+  }
 });
 
 // POST /api/interacoes
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { lead_id, data, tipo, descricao, proxima_acao } = req.body;
 
   if (!lead_id || !data || !tipo || !descricao) {
@@ -23,43 +37,107 @@ router.post('/', (req, res) => {
     return res.status(400).json({ erro: 'Tipo inválido' });
   }
 
-  const result = run(
-    `INSERT INTO interacoes (lead_id, data, tipo, descricao, proxima_acao) VALUES (?, ?, ?, ?, ?)`,
-    lead_id, data, tipo, descricao, proxima_acao || null
-  );
+  try {
+    const organizationId = await getOrganizationId();
 
-  res.status(201).json(get('SELECT * FROM interacoes WHERE id = ?', result.lastInsertRowid));
+    const { data: lead, error: leadError } = await supabase
+      .from('leads')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('id', Number(lead_id))
+      .maybeSingle();
+
+    if (leadError) return handleSupabaseError(res, leadError, 'Erro ao validar lead');
+    if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
+
+    const { data: created, error } = await supabase
+      .from('interacoes')
+      .insert({
+        organization_id: organizationId,
+        lead_id: Number(lead_id),
+        data,
+        tipo,
+        descricao,
+        proxima_acao: proxima_acao || null,
+      })
+      .select('*')
+      .single();
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao criar interação');
+    return res.status(201).json(created);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao criar interação');
+  }
 });
 
 // PUT /api/interacoes/:id
-router.put('/:id', (req, res) => {
-  const interacao = get('SELECT * FROM interacoes WHERE id = ?', req.params.id);
-  if (!interacao) return res.status(404).json({ erro: 'Interação não encontrada' });
-
+router.put('/:id', async (req, res) => {
   const { data, tipo, descricao, proxima_acao } = req.body;
   if (tipo && !TIPOS_VALIDOS.includes(tipo)) {
     return res.status(400).json({ erro: 'Tipo inválido' });
   }
 
-  run(
-    `UPDATE interacoes SET data = ?, tipo = ?, descricao = ?, proxima_acao = ? WHERE id = ?`,
-    data ?? interacao.data,
-    tipo ?? interacao.tipo,
-    descricao ?? interacao.descricao,
-    proxima_acao !== undefined ? proxima_acao : interacao.proxima_acao,
-    req.params.id
-  );
+  try {
+    const organizationId = await getOrganizationId();
 
-  res.json(get('SELECT * FROM interacoes WHERE id = ?', req.params.id));
+    const { data: interacao, error: findError } = await supabase
+      .from('interacoes')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('id', Number(req.params.id))
+      .maybeSingle();
+
+    if (findError) return handleSupabaseError(res, findError, 'Erro ao buscar interação');
+    if (!interacao) return res.status(404).json({ erro: 'Interação não encontrada' });
+
+    const payload = {
+      data: data ?? interacao.data,
+      tipo: tipo ?? interacao.tipo,
+      descricao: descricao ?? interacao.descricao,
+      proxima_acao: proxima_acao !== undefined ? proxima_acao : interacao.proxima_acao,
+    };
+
+    const { data: updated, error } = await supabase
+      .from('interacoes')
+      .update(payload)
+      .eq('organization_id', organizationId)
+      .eq('id', Number(req.params.id))
+      .select('*')
+      .single();
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao atualizar interação');
+    return res.json(updated);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao atualizar interação');
+  }
 });
 
 // DELETE /api/interacoes/:id
-router.delete('/:id', (req, res) => {
-  const interacao = get('SELECT * FROM interacoes WHERE id = ?', req.params.id);
-  if (!interacao) return res.status(404).json({ erro: 'Interação não encontrada' });
+router.delete('/:id', async (req, res) => {
+  try {
+    const organizationId = await getOrganizationId();
 
-  run('DELETE FROM interacoes WHERE id = ?', req.params.id);
-  res.json({ mensagem: 'Interação removida' });
+    const { data: interacao, error: findError } = await supabase
+      .from('interacoes')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('id', Number(req.params.id))
+      .maybeSingle();
+
+    if (findError) return handleSupabaseError(res, findError, 'Erro ao remover interação');
+    if (!interacao) return res.status(404).json({ erro: 'Interação não encontrada' });
+
+    const { error } = await supabase
+      .from('interacoes')
+      .delete()
+      .eq('organization_id', organizationId)
+      .eq('id', Number(req.params.id));
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao remover interação');
+    return res.json({ mensagem: 'Interação removida' });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao remover interação');
+  }
 });
 
 module.exports = router;

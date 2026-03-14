@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { run } = require('../database');
+const { supabase, getOrganizationId, handleSupabaseError } = require('../supabase');
 
 // Campos que mapeiam diretamente para colunas da tabela leads
 const CAMPOS_COLUNA = new Set(['nome', 'instagram', 'whatsapp']);
@@ -17,7 +17,7 @@ function checkRate(ip, limit = 20, windowMs = 60_000) {
 }
 
 // POST /api/webhook/lead
-router.post('/lead', (req, res) => {
+router.post('/lead', async (req, res) => {
   const ip = req.ip || req.socket?.remoteAddress || 'unknown';
   if (!checkRate(ip)) {
     return res.status(429).json({ success: false, erro: 'Muitas requisições. Tente novamente em breve.' });
@@ -51,23 +51,36 @@ router.post('/lead', (req, res) => {
   // Extrai campos específicos de consórcio do body
   const { tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia } = body;
 
-  const result = run(
-    `INSERT INTO leads (nome, instagram, whatsapp, temperatura, etapa_funil,
-      tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia,
-      observacoes, origem)
-     VALUES (?, ?, ?, 'frio', 'Lead Novo', ?, ?, ?, ?, ?, ?, 'anuncio')`,
-    nomeResolvido,
-    instagram || null,
-    whatsapp || null,
-    tipo_de_bem || null,
-    valor_da_carta ? Number(valor_da_carta) : null,
-    recurso_para_lance ? Number(recurso_para_lance) : null,
-    restricao_cpf ? 1 : 0,
-    urgencia || null,
-    observacoes
-  );
+  try {
+    const organizationId = await getOrganizationId();
 
-  res.status(201).json({ success: true, lead_id: result.lastInsertRowid });
+    const payload = {
+      organization_id: organizationId,
+      nome: nomeResolvido,
+      instagram: instagram || null,
+      whatsapp: whatsapp || null,
+      temperatura: 'frio',
+      etapa_funil: 'Lead Novo',
+      tipo_de_bem: tipo_de_bem || null,
+      valor_da_carta: valor_da_carta ? Number(valor_da_carta) : null,
+      recurso_para_lance: recurso_para_lance ? Number(recurso_para_lance) : null,
+      restricao_cpf: Boolean(restricao_cpf),
+      urgencia: urgencia || null,
+      observacoes,
+      origem: 'anuncio',
+    };
+
+    const { data, error } = await supabase
+      .from('leads')
+      .insert(payload)
+      .select('id')
+      .single();
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao inserir lead do webhook');
+    return res.status(201).json({ success: true, lead_id: data.id });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao inserir lead do webhook');
+  }
 });
 
 module.exports = router;
