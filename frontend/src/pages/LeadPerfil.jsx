@@ -103,7 +103,7 @@ function EditarInteracaoForm({ interacao, onSalvo, onCancelar }) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-3"
-      style={{ background: '#161B22', border: '1px solid rgba(255,69,0,0.30)' }}>
+      style={{ background: '#1E293B', border: '1px solid rgba(255,69,0,0.32)' }}>
       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF4500' }}>Editar interação</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -162,7 +162,7 @@ function NovaInteracaoForm({ leadId, onSalvo }) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-3"
-      style={{ background: '#0D1117', border: '1px solid #1C2333' }}>
+      style={{ background: '#0F172A', border: '1px solid #334155' }}>
       <p className="text-sm font-semibold" style={{ color: '#F0F6FC' }}>Registrar interação</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -211,8 +211,8 @@ function CadenciaChecklist({ cadencia, onToggle }) {
       {[...pendentes, ...concluidos].map((item) => (
         <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg transition-colors"
           style={{
-            background: item.concluido ? 'transparent' : '#0D1117',
-            border: `1px solid ${item.concluido ? '#161B22' : '#1C2333'}`,
+            background: item.concluido ? 'transparent' : '#0F172A',
+            border: `1px solid ${item.concluido ? '#1E293B' : '#334155'}`,
             opacity: item.concluido ? 0.5 : 1,
           }}>
           <button onClick={() => onToggle(item)}
@@ -357,7 +357,7 @@ function SnoozeModal({ lead, onSalvo, onFechar }) {
           <input type="date" className="input" value={data} onChange={e => setData(e.target.value)}
             min={hoje()} />
         </div>
-        <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid #1C2333' }}>
+        <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid #334155' }}>
           {lead.snooze_ate ? (
             <button className="btn-ghost text-sm" onClick={remover} disabled={salvando}>Descongelar</button>
           ) : <div />}
@@ -490,7 +490,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
                 </span>
               )}
             </div>
-            <h2 className="font-extrabold leading-tight" style={{ fontSize: 24, color: '#F0F6FC' }}>
+            <h2 className="font-extrabold leading-tight" style={{ fontSize: 24, color: '#F8FAFC' }}>
               {lead.nome}
             </h2>
             {lead.motivo_descarte && (
@@ -542,9 +542,9 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
         {/* Info rápida */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {infoItems.map(({ label, valor }) => (
-            <div key={label} className="rounded-lg p-3" style={{ background: '#161B22', border: '1px solid #1C2333' }}>
-              <p className="text-[11px] uppercase tracking-widest font-medium mb-1" style={{ color: '#484F58' }}>{label}</p>
-              <p className="text-sm font-medium" style={{ color: '#F0F6FC' }}>{valor}</p>
+            <div key={label} className="rounded-xl p-3" style={{ background: '#1E293B', border: '1px solid #334155' }}>
+              <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#94A3B8' }}>{label}</p>
+              <p className="text-sm font-semibold" style={{ color: '#F8FAFC' }}>{valor}</p>
             </div>
           ))}
         </div>
@@ -567,7 +567,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
       </div>
 
       {/* ─── Abas ──────────────────────────────────────────────────── */}
-      <div className="flex gap-0 mb-5" style={{ borderBottom: '1px solid #1C2333' }}>
+      <div className="flex gap-0 mb-5" style={{ borderBottom: '1px solid #334155' }}>
         {abas.map((aba) => (
           <button key={aba.id} onClick={() => setAbaAtiva(aba.id)}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-150 cursor-pointer border-b-2 -mb-px"
@@ -601,7 +601,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
           )}
           <div className="space-y-3">
             {lead.interacoes?.map((interacao) => (
-              <div key={interacao.id} className="rounded-xl p-4" style={{ background: '#0D1117', border: '1px solid #1C2333' }}>
+              <div key={interacao.id} className="rounded-xl p-4" style={{ background: '#0F172A', border: '1px solid #334155' }}>
                 {editandoInteracaoId === interacao.id ? (
                   <EditarInteracaoForm
                     interacao={interacao}
@@ -672,14 +672,14 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
               ].map(({ label, valor, icon }) => (
                 <div key={label} className="rounded-xl p-4"
                   style={{
-                    background: '#0D1117',
-                    border: `1px solid ${label === 'Restrição CPF' && lead.restricao_cpf ? 'rgba(239,68,68,0.30)' : '#1C2333'}`,
+                    background: '#0F172A',
+                    border: `1px solid ${label === 'Restrição CPF' && lead.restricao_cpf ? 'rgba(239,68,68,0.35)' : '#334155'}`,
                   }}>
-                  <p className="text-[11px] uppercase tracking-widest font-medium mb-1" style={{ color: '#484F58' }}>
-                    {icon} {label}
+                  <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#94A3B8' }}>
+                    {label}
                   </p>
                   <p className="text-sm font-semibold"
-                    style={{ color: label === 'Restrição CPF' && lead.restricao_cpf ? '#ef4444' : '#F0F6FC' }}>
+                    style={{ color: label === 'Restrição CPF' && lead.restricao_cpf ? '#ef4444' : '#F8FAFC' }}>
                     {valor}
                   </p>
                 </div>
@@ -688,9 +688,9 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
           </div>
 
           {lead.observacoes && (
-            <div className="rounded-xl p-4" style={{ background: '#0D1117', border: '1px solid #1C2333' }}>
-              <p className="text-[11px] uppercase tracking-widest font-medium mb-2" style={{ color: '#484F58' }}>Observações</p>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: '#C9D1D9' }}>{lead.observacoes}</p>
+            <div className="rounded-xl p-4" style={{ background: '#0F172A', border: '1px solid #334155' }}>
+              <p className="text-[11px] uppercase tracking-widest font-semibold mb-2" style={{ color: '#94A3B8' }}>Observações</p>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: '#CBD5E1' }}>{lead.observacoes}</p>
             </div>
           )}
 
@@ -700,9 +700,9 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
               { label: 'Criado em',     valor: formatarData(lead.criado_em) },
               { label: 'Atualizado em', valor: formatarData(lead.atualizado_em) },
             ].map(({ label, valor }) => (
-              <div key={label} className="rounded-lg p-3" style={{ background: '#161B22', border: '1px solid #1C2333' }}>
-                <p className="text-[11px] uppercase tracking-widest font-medium mb-1" style={{ color: '#484F58' }}>{label}</p>
-                <p className="text-sm font-medium" style={{ color: '#C9D1D9' }}>{valor}</p>
+              <div key={label} className="rounded-xl p-3" style={{ background: '#1E293B', border: '1px solid #334155' }}>
+                <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#94A3B8' }}>{label}</p>
+                <p className="text-sm font-medium" style={{ color: '#CBD5E1' }}>{valor}</p>
               </div>
             ))}
           </div>

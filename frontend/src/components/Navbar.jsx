@@ -92,7 +92,7 @@ export default function Navbar() {
     <>
       <nav
         className="fixed top-0 left-0 right-0 z-50 h-14 flex items-stretch"
-        style={{ background: '#080B14', borderBottom: '1px solid #1C2333' }}
+        style={{ background: '#0F172A', borderBottom: '1px solid rgba(51,65,85,0.6)' }}
       >
         <div className="max-w-7xl mx-auto px-6 flex items-stretch justify-between w-full">
 
@@ -112,11 +112,11 @@ export default function Navbar() {
                 to={to}
                 end={to === '/'}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 text-sm font-medium
-                   transition-colors duration-150 cursor-pointer relative border-b-2 -mb-px ${
+                  `flex items-center gap-2 px-4 text-sm font-semibold
+                   transition-all duration-150 cursor-pointer relative border-b-2 -mb-px ${
                      isActive
-                       ? 'border-[#FF4500] text-[#F0F6FC]'
-                       : 'border-transparent text-[#8B949E] hover:text-[#F0F6FC] hover:border-[#30363D]'
+                       ? 'border-[#FF4500] text-[#F8FAFC]'
+                       : 'border-transparent text-[#94A3B8] hover:text-[#F8FAFC] hover:border-slate-600'
                    }`
                 }
               >

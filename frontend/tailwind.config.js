@@ -4,32 +4,34 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Montserrat', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
       },
       colors: {
-        // Grow Up — GitHub Dark-inspired palette
+        // GrowSorcio Design System
+        bg:         '#020617',
+        surface:    '#0F172A',
+        'surface-2':'#1E293B',
+        'surface-3':'#334155',
+        text:       '#F8FAFC',
+        muted:      '#94A3B8',
+        accent:     '#FF4500',
+        success:    '#22C55E',
+        danger:     '#EF4444',
+        info:       '#3B82F6',
+        warning:    '#F59E0B',
+        // backward-compat aliases (usados em classes Tailwind existentes)
         dark: {
-          950: '#080B14',   // page background
-          900: '#0D1117',   // card / panel background
-          800: '#0a0f1a',   // gradient end
-          700: '#161B22',   // elevated / inputs
-          600: '#1C2333',   // borders
-          500: '#30363D',   // subtle borders / hover borders
-          400: '#484F58',   // tertiary text
-          300: '#8B949E',   // secondary text
-          200: '#C9D1D9',   // dimmed primary
-          100: '#F0F6FC',   // primary text
+          950: '#020617',
+          900: '#0F172A',
+          800: '#1E293B',
+          700: '#1E293B',
+          600: '#334155',
+          500: '#334155',
+          400: '#94A3B8',
+          300: '#94A3B8',
+          200: '#CBD5E1',
+          100: '#F8FAFC',
         },
-        // Grow Up Orange
-        accent: {
-          DEFAULT: '#FF4500',
-          hover:   '#e03d00',
-          light:   '#ff6a33',
-          muted:   'rgba(255,69,0,0.12)',
-        },
-        success: '#22c55e',
-        danger:  '#ef4444',
-        warning: '#f59e0b',
       },
       boxShadow: {
         'glow-sm':  '0 0 12px rgba(255,69,0,0.12)',

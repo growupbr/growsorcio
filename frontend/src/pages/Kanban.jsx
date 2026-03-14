@@ -118,9 +118,9 @@ function InlineAddForm({ etapaNome, onAdd, onCancel }) {
         rows={2}
         className="w-full rounded-lg px-3 py-2 text-sm resize-none"
         style={{
-          background: '#0D1117',
+          background: '#1E293B',
           border: '1px solid #FF4500',
-          color: '#F0F6FC',
+          color: '#F8FAFC',
           outline: 'none',
           boxShadow: '0 0 0 3px rgba(255,69,0,0.12)',
         }}
@@ -253,11 +253,11 @@ function LeadCard({ lead, onClick }) {
 function LeadCardOverlay({ lead }) {
   return (
     <div
-      className="rounded-lg p-3 w-56 cursor-grabbing select-none"
+      className="rounded-xl p-3 w-56 cursor-grabbing select-none"
       style={{
-        background: '#161B22',
-        border: '1px solid rgba(255,69,0,0.5)',
-        boxShadow: '0 0 30px rgba(255,69,0,0.15), 0 16px 48px rgba(0,0,0,0.7)',
+        background: '#1E293B',
+        border: '1px solid rgba(255,69,0,0.55)',
+        boxShadow: '0 0 30px rgba(255,69,0,0.18), 0 16px 48px rgba(0,0,0,0.7)',
         transform: 'rotate(2deg)',
       }}
     >
@@ -302,10 +302,10 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
         className="flex-1 rounded-xl p-2 space-y-2"
         style={{
           minHeight: 500,
-          background: isOver ? (isAnuncio ? 'rgba(124,58,237,0.05)' : 'rgba(255,69,0,0.04)') : '#0D1117',
-          border: `1px solid ${isOver ? (isAnuncio ? 'rgba(124,58,237,0.35)' : 'rgba(255,69,0,0.30)') : '#1C2333'}`,
-          boxShadow: isOver ? (isAnuncio ? '0 0 16px rgba(124,58,237,0.08) inset' : '0 0 16px rgba(255,69,0,0.06) inset') : '0 4px 24px rgba(0,0,0,0.3)',
-          transition: 'border-color 150ms ease, background 150ms ease',
+          background: isOver ? (isAnuncio ? 'rgba(124,58,237,0.06)' : 'rgba(255,69,0,0.05)') : '#0F172A',
+          border: `1px solid ${isOver ? (isAnuncio ? 'rgba(124,58,237,0.38)' : 'rgba(255,69,0,0.32)') : '#334155'}`,
+          boxShadow: isOver ? (isAnuncio ? '0 0 16px rgba(124,58,237,0.08) inset' : '0 0 16px rgba(255,69,0,0.07) inset') : '0 4px 24px rgba(0,0,0,0.35)',
+          transition: 'border-color 150ms ease-out, background 150ms ease-out',
         }}
       >
         {leads.map((lead) => (
@@ -317,10 +317,10 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
             className="flex items-center justify-center rounded-lg"
             style={{
               height: 80,
-              border: `1px dashed ${isOver ? 'rgba(255,69,0,0.40)' : '#1C2333'}`,
+              border: `1px dashed ${isOver ? 'rgba(255,69,0,0.42)' : '#334155'}`,
             }}
           >
-            <span className="text-xs" style={{ color: '#30363D' }}>Vazio</span>
+            <span className="text-xs" style={{ color: '#475569' }}>Vazio</span>
           </div>
         )}
       </div>
@@ -462,10 +462,10 @@ export default function Kanban() {
       {/* Header */}
       <div
         className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-        style={{ borderBottom: '1px solid #1C2333' }}
+        style={{ borderBottom: '1px solid #334155' }}
       >
         <div className="flex items-center gap-6">
-          <h1 className="text-lg font-extrabold" style={{ color: '#F0F6FC' }}>Kanban</h1>
+          <h1 className="text-lg font-extrabold" style={{ color: '#F8FAFC' }}>Kanban</h1>
           <div className="flex items-center gap-4">
             {Object.entries(FASE_STYLE).map(([fase, style]) => (
               <span
@@ -488,7 +488,7 @@ export default function Kanban() {
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
+      <div className="flex-1 overflow-x-auto overflow-y-auto" style={{ scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}>
         <div className="px-6 py-5" style={{ minWidth: 'max-content', minHeight: '100%' }}>
           <DndContext
             sensors={sensors}

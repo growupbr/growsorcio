@@ -110,8 +110,8 @@ const Icons = {
 function Sk({ className }) {
   return (
     <div
-      className={`animate-pulse rounded-lg ${className}`}
-      style={{ background: '#161B22' }}
+      className={`animate-pulse rounded-xl ${className}`}
+      style={{ background: '#1E293B' }}
     />
   );
 }
@@ -163,16 +163,16 @@ function CustomTooltip({ active, payload, label }) {
 function MetricaCard({ label, valor, sub, destaque, icon: Icon }) {
   return (
     <div
-      className="rounded-xl p-6 relative overflow-hidden transition-all duration-200 cursor-default"
+      className="rounded-2xl p-5 relative overflow-hidden transition-all duration-150 cursor-default"
       style={{
         background: destaque
-          ? 'linear-gradient(135deg, rgba(255,69,0,0.14) 0%, #0a0f1a 70%)'
-          : 'linear-gradient(135deg, #0D1117 0%, #0a0f1a 100%)',
-        border: `1px solid ${destaque ? 'rgba(255,69,0,0.30)' : '#1C2333'}`,
+          ? 'linear-gradient(135deg, rgba(255,69,0,0.12) 0%, #0F172A 70%)'
+          : '#0F172A',
+        border: `1px solid ${destaque ? 'rgba(255,69,0,0.32)' : '#334155'}`,
       }}
     >
       {/* Label */}
-      <p style={{ fontSize: 11, letterSpacing: '0.1em', color: '#8B949E', fontWeight: 500 }}
+      <p style={{ fontSize: 11, letterSpacing: '0.1em', color: '#94A3B8', fontWeight: 600 }}
          className="uppercase mb-4">
         {label}
       </p>
@@ -180,7 +180,7 @@ function MetricaCard({ label, valor, sub, destaque, icon: Icon }) {
       {/* Valor */}
       <p
         className="tabular-nums leading-none"
-        style={{ fontSize: 36, fontWeight: 800, color: destaque ? '#FF4500' : '#F0F6FC' }}
+        style={{ fontSize: 36, fontWeight: 800, color: destaque ? '#FF4500' : '#F8FAFC' }}
       >
         {valor}
       </p>
@@ -537,26 +537,26 @@ node server.js`}
       </div>
 
       {/* ── Origem dos Leads ── */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-5">
-          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#8B949E'}}>📢 Leads Anúncio</p>
-          <p className="text-3xl font-extrabold" style={{color:'#7c3aed'}}>{totalAnuncio}</p>
-          <p className="text-xs mt-1" style={{color:'#8B949E'}}>{totalAnuncio > 0 ? `${taxaResposta}% responderam` : '—'}</p>
+          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#94A3B8'}}>Leads Anúncio</p>
+          <p className="text-3xl font-extrabold tabular-nums" style={{color:'#8B5CF6'}}>{totalAnuncio}</p>
+          <p className="text-xs mt-1" style={{color:'#94A3B8'}}>{totalAnuncio > 0 ? `${taxaResposta}% responderam` : '—'}</p>
         </div>
         <div className="card p-5">
-          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#8B949E'}}>🔍 Prospecção</p>
-          <p className="text-3xl font-extrabold" style={{color:'#FF4500'}}>{totalProspeccao}</p>
-          <p className="text-xs mt-1" style={{color:'#8B949E'}}>orgânico + indicação</p>
+          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#94A3B8'}}>Prospecção</p>
+          <p className="text-3xl font-extrabold tabular-nums" style={{color:'#FF4500'}}>{totalProspeccao}</p>
+          <p className="text-xs mt-1" style={{color:'#94A3B8'}}>orgânico + indicação</p>
         </div>
         <div className="card p-5">
-          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#8B949E'}}>📅 Reuniões Anúncio</p>
-          <p className="text-3xl font-extrabold" style={{color:'#7c3aed'}}>{reunioesAnuncio}</p>
-          <p className="text-xs mt-1" style={{color:'#8B949E'}}>{totalAnuncio > 0 ? `${Math.round((reunioesAnuncio/totalAnuncio)*100)}% de conv.` : '—'}</p>
+          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#94A3B8'}}>Reuniões Anúncio</p>
+          <p className="text-3xl font-extrabold tabular-nums" style={{color:'#8B5CF6'}}>{reunioesAnuncio}</p>
+          <p className="text-xs mt-1" style={{color:'#94A3B8'}}>{totalAnuncio > 0 ? `${Math.round((reunioesAnuncio/totalAnuncio)*100)}% de conv.` : '—'}</p>
         </div>
         <div className="card p-5">
-          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#8B949E'}}>📅 Reuniões Prospecção</p>
-          <p className="text-3xl font-extrabold" style={{color:'#FF4500'}}>{reunioesProspeccao}</p>
-          <p className="text-xs mt-1" style={{color:'#8B949E'}}>{totalProspeccao > 0 ? `${Math.round((reunioesProspeccao/totalProspeccao)*100)}% de conv.` : '—'}</p>
+          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#94A3B8'}}>Reuniões Prospecção</p>
+          <p className="text-3xl font-extrabold tabular-nums" style={{color:'#FF4500'}}>{reunioesProspeccao}</p>
+          <p className="text-xs mt-1" style={{color:'#94A3B8'}}>{totalProspeccao > 0 ? `${Math.round((reunioesProspeccao/totalProspeccao)*100)}% de conv.` : '—'}</p>
         </div>
       </div>
 
@@ -592,7 +592,7 @@ node server.js`}
               <CartesianGrid strokeDasharray="3 3" stroke="#1C2333" vertical={false} />
               <XAxis
                 dataKey="etapa"
-                tick={{ fill: '#484F58', fontSize: 10, fontFamily: 'Montserrat' }}
+                tick={{ fill: '#484F58', fontSize: 10, fontFamily: 'Plus Jakarta Sans' }}
                 angle={-35}
                 textAnchor="end"
                 interval={0}
@@ -600,7 +600,7 @@ node server.js`}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Montserrat' }}
+                tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
                 allowDecimals={false}
                 axisLine={false}
                 tickLine={false}
@@ -610,7 +610,7 @@ node server.js`}
                 <LabelList
                   dataKey="total"
                   position="top"
-                  style={{ fill: '#8B949E', fontSize: 11, fontFamily: 'Montserrat', fontWeight: 600 }}
+                  style={{ fill: '#8B949E', fontSize: 11, fontFamily: 'Plus Jakarta Sans', fontWeight: 600 }}
                 />
                 {dadosBarras.map((_, index) => (
                   <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} fillOpacity={0.9} />
@@ -645,7 +645,7 @@ node server.js`}
                   iconType="circle"
                   iconSize={7}
                   formatter={(value) => (
-                    <span style={{ color: '#8B949E', fontSize: 12, fontFamily: 'Montserrat' }}>
+                    <span style={{ color: '#8B949E', fontSize: 12, fontFamily: 'Plus Jakarta Sans' }}>
                       {value}
                     </span>
                   )}
@@ -686,12 +686,12 @@ node server.js`}
                 <CartesianGrid strokeDasharray="3 3" stroke="#1C2333" vertical={false} />
                 <XAxis
                   dataKey="semana"
-                  tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Montserrat' }}
+                  tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
                   axisLine={{ stroke: '#1C2333' }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Montserrat' }}
+                  tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
                   allowDecimals={false}
                   axisLine={false}
                   tickLine={false}

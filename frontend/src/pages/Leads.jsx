@@ -225,8 +225,8 @@ export default function Leads() {
 
       {/* ── Painel de filtros ── */}
       <div
-        className="rounded-xl p-5 mb-6 space-y-4"
-        style={{ background: '#0D1117', border: '1px solid #1C2333' }}
+        className="rounded-2xl p-5 mb-6 space-y-4"
+        style={{ background: '#0F172A', border: '1px solid #334155' }}
       >
 
         {/* Linha 1: Busca + Ordenar */}
@@ -359,14 +359,14 @@ export default function Leads() {
             <div
               key={i}
               className="h-[68px] rounded-xl animate-pulse"
-              style={{ background: '#0D1117', border: '1px solid #1C2333' }}
+              style={{ background: '#0F172A', border: '1px solid #334155' }}
             />
           ))}
         </div>
       ) : leads.length === 0 ? (
         <div
-          className="rounded-xl py-20 text-center"
-          style={{ background: '#0D1117', border: '1px solid #1C2333' }}
+          className="rounded-2xl py-20 text-center"
+          style={{ background: '#0F172A', border: '1px solid #334155' }}
         >
           {temFiltroAtivo ? (
             <>
@@ -392,15 +392,15 @@ export default function Leads() {
         </div>
       ) : (
         <div
-          className="rounded-xl overflow-hidden"
-          style={{ border: '1px solid #1C2333', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}
+          className="rounded-2xl overflow-hidden"
+          style={{ border: '1px solid #334155', boxShadow: '0 4px 24px rgba(0,0,0,0.35)' }}
         >
           {/* Header */}
           <div
             className="grid px-6 py-3"
             style={{
-              background: '#0D1117',
-              borderBottom: '1px solid #1C2333',
+              background: '#0F172A',
+              borderBottom: '1px solid #334155',
               gridTemplateColumns: '2fr 1fr 1.2fr 1fr 1fr',
             }}
           >
@@ -423,12 +423,12 @@ export default function Leads() {
                 className="grid px-6 py-4 cursor-pointer"
                 style={{
                   gridTemplateColumns: '2fr 1fr 1.2fr 1fr 1fr',
-                  borderBottom: idx < leads.length - 1 ? '1px solid #1C2333' : 'none',
+                  borderBottom: idx < leads.length - 1 ? '1px solid #334155' : 'none',
                   borderLeft: lead.origem === 'anuncio' ? '3px solid #7c3aed' : '3px solid transparent',
                   background: 'transparent',
-                  transition: 'background 150ms ease',
+                  transition: 'background 150ms ease-out',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.025)'}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(30,41,59,0.7)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 {/* Lead */}

@@ -1,6 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── CSS Design Tokens ─────────────────────────────────────────────────────── */
+:root {
+  --color-bg:        #020617;
+  --color-surface:   #0F172A;
+  --color-surface-2: #1E293B;
+  --color-surface-3: #334155;
+  --color-text:      #F8FAFC;
+  --color-muted:     #94A3B8;
+  --color-accent:    #FF4500;
+  --color-success:   #22C55E;
+  --color-danger:    #EF4444;
+  --color-info:      #3B82F6;
+  --color-warning:   #F59E0B;
+}
 
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(-6px); }
@@ -9,19 +26,19 @@
 
 @layer base {
   body {
-    background: #080B14;
-    color: #F0F6FC;
-    font-family: 'Montserrat', sans-serif;
-    /* Garante que inputs nativos (select, date, number) usem tema escuro do OS */
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 16px;
     color-scheme: dark;
     @apply antialiased;
   }
 
   /* Scrollbar */
   ::-webkit-scrollbar         { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track   { background: #080B14; }
-  ::-webkit-scrollbar-thumb   { background: #1C2333; border-radius: 9999px; }
-  ::-webkit-scrollbar-thumb:hover { background: #484F58; }
+  ::-webkit-scrollbar-track   { background: var(--color-bg); }
+  ::-webkit-scrollbar-thumb   { background: var(--color-surface-3); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
 
   /* Remove spinner nos inputs date no Firefox */
   input[type="date"]::-webkit-inner-spin-button,
@@ -37,62 +54,63 @@
   /* ─── Cards ─────────────────────────────────────────────────────────────── */
 
   .card {
-    background: linear-gradient(135deg, #0D1117 0%, #0a0f1a 100%);
-    border: 1px solid #1C2333;
+    background: var(--color-surface);
+    border: 1px solid var(--color-surface-3);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    @apply rounded-xl;
+    @apply rounded-2xl;
   }
 
   /* Card com hover interativo (orange glow) */
   .card-hover {
-    background: linear-gradient(135deg, #0D1117 0%, #0a0f1a 100%);
-    border: 1px solid #1C2333;
+    background: var(--color-surface);
+    border: 1px solid var(--color-surface-3);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    @apply rounded-xl cursor-pointer;
-    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+    @apply rounded-2xl cursor-pointer;
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out;
   }
   .card-hover:hover {
-    border-color: rgba(255, 69, 0, 0.40);
-    box-shadow: 0 0 20px rgba(255, 69, 0, 0.10), 0 8px 32px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 69, 0, 0.45);
+    box-shadow: 0 0 20px rgba(255, 69, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.5);
     transform: translateY(-1px);
   }
 
   /* Card com borda laranja no topo */
   .card-brand {
-    background: linear-gradient(135deg, #0D1117 0%, #0a0f1a 100%);
-    border: 1px solid #1C2333;
-    border-top: 2px solid #FF4500;
+    background: var(--color-surface);
+    border: 1px solid var(--color-surface-3);
+    border-top: 2px solid var(--color-accent);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    @apply rounded-xl;
+    @apply rounded-2xl;
   }
 
   /* Card de métrica KPI */
   .card-metric {
-    background: linear-gradient(135deg, #0D1117 0%, #0a0f1a 100%);
-    border: 1px solid #1C2333;
+    background: var(--color-surface);
+    border: 1px solid var(--color-surface-3);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    @apply rounded-xl p-6 relative overflow-hidden cursor-default;
-    transition: border-color 200ms ease, box-shadow 200ms ease;
+    @apply rounded-2xl p-5 relative overflow-hidden cursor-default;
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
   }
   .card-metric:hover {
-    border-color: rgba(255, 69, 0, 0.30);
+    border-color: rgba(255, 69, 0, 0.35);
     box-shadow: 0 0 20px rgba(255, 69, 0, 0.08), 0 4px 24px rgba(0, 0, 0, 0.5);
   }
 
   /* Card de alerta */
   .card-alert {
-    background: linear-gradient(135deg, #0D1117 0%, #0a0f1a 100%);
-    border: 1px solid #1C2333;
-    @apply rounded-xl p-4 transition-all duration-150;
+    background: var(--color-surface);
+    border: 1px solid var(--color-surface-3);
+    @apply rounded-2xl p-4 transition-all duration-150;
   }
 
   /* ─── Botões ─────────────────────────────────────────────────────────────── */
 
   .btn-primary {
-    background: #FF4500;
+    background: var(--color-accent);
     color: #fff;
+    min-height: 44px;
     @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold
-           tracking-wide rounded-md transition-all duration-200 cursor-pointer
+           tracking-wide rounded-lg transition-all duration-150 cursor-pointer
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary:hover:not(:disabled) {
@@ -105,61 +123,63 @@
   }
 
   .btn-ghost {
-    background: #161B22;
-    border: 1px solid #1C2333;
-    color: #8B949E;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-surface-3);
+    color: var(--color-muted);
+    min-height: 44px;
     @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium
-           rounded-md transition-all duration-200 cursor-pointer;
+           rounded-lg transition-all duration-150 cursor-pointer;
   }
   .btn-ghost:hover {
-    border-color: #30363D;
-    color: #F0F6FC;
-    background: #1C2333;
+    border-color: #475569;
+    color: var(--color-text);
+    background: var(--color-surface-3);
   }
 
   .btn-danger {
     background: rgba(239, 68, 68, 0.10);
-    border: 1px solid rgba(239, 68, 68, 0.20);
+    border: 1px solid rgba(239, 68, 68, 0.22);
     color: #f87171;
+    min-height: 44px;
     @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium
-           rounded-md transition-all duration-200 cursor-pointer;
+           rounded-lg transition-all duration-150 cursor-pointer;
   }
   .btn-danger:hover {
     background: rgba(239, 68, 68, 0.18);
-    border-color: rgba(239, 68, 68, 0.35);
+    border-color: rgba(239, 68, 68, 0.40);
     color: #fca5a5;
   }
 
   /* ─── Inputs e Formulários ───────────────────────────────────────────────── */
 
   .input {
-    background: #0D1117;
-    border: 1px solid #1C2333;
-    color: #F0F6FC;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-surface-3);
+    color: var(--color-text);
     @apply rounded-lg px-3 py-2.5 w-full text-sm font-medium
-           transition-all duration-200;
+           transition-all duration-150;
   }
   .input::placeholder {
-    color: #484F58;
+    color: var(--color-muted);
   }
   .input:hover:not(:focus) {
-    border-color: #30363D;
+    border-color: #475569;
   }
   .input:focus {
     outline: none;
-    border-color: rgba(255, 69, 0, 0.5);
-    box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.08);
+    border-color: rgba(255, 69, 0, 0.55);
+    box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.10);
   }
 
   .label {
-    color: #8B949E;
+    color: var(--color-muted);
     @apply text-[11px] font-medium uppercase tracking-widest mb-1.5 block;
   }
 
   /* ─── Section header (uppercase label de seção) ──────────────────────────── */
 
   .section-label {
-    color: #8B949E;
+    color: var(--color-muted);
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
@@ -170,19 +190,19 @@
 
   .badge-quente {
     background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    border: 1px solid rgba(239, 68, 68, 0.28);
     color: #f87171;
     @apply inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full;
   }
   .badge-morno {
     background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.25);
+    border: 1px solid rgba(245, 158, 11, 0.28);
     color: #fbbf24;
     @apply inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full;
   }
   .badge-frio {
     background: rgba(59, 130, 246, 0.12);
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    border: 1px solid rgba(59, 130, 246, 0.28);
     color: #60a5fa;
     @apply inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full;
   }
@@ -190,41 +210,41 @@
   /* ─── Seletor de período ─────────────────────────────────────────────────── */
 
   .period-selector {
-    background: #0D1117;
-    border: 1px solid #1C2333;
+    background: var(--color-surface);
+    border: 1px solid var(--color-surface-3);
     @apply flex gap-1 p-1 rounded-xl w-fit;
   }
   .period-btn {
+    min-height: 36px;
     @apply px-4 py-1.5 rounded-lg text-sm font-medium
-           transition-all duration-200 cursor-pointer;
+           transition-all duration-150 cursor-pointer;
   }
   .period-btn-active {
-    background: #FF4500;
+    background: var(--color-accent);
     color: #fff;
     box-shadow: 0 2px 12px rgba(255, 69, 0, 0.30);
   }
   .period-btn-inactive {
-    color: #8B949E;
+    color: var(--color-muted);
   }
   .period-btn-inactive:hover {
-    color: #F0F6FC;
-    background: #161B22;
+    color: var(--color-text);
+    background: var(--color-surface-2);
   }
 
   /* ─── Kanban card ────────────────────────────────────────────────────────── */
 
   .kanban-card {
-    background: #0D1117;
-    border: 1px solid #1C2333;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-surface-3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
     min-height: 72px;
-    /* touch-action: none obrigatório para @dnd-kit não competir com scroll nativo no iOS/Android */
     touch-action: none;
-    @apply rounded-lg p-4 select-none cursor-grab;
-    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+    @apply rounded-xl p-4 select-none cursor-grab;
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out;
   }
   .kanban-card:hover {
-    border-color: rgba(255, 69, 0, 0.40);
+    border-color: rgba(255, 69, 0, 0.45);
     box-shadow: 0 0 20px rgba(255, 69, 0, 0.10), 0 4px 16px rgba(0, 0, 0, 0.5);
     transform: translateY(-1px);
   }
@@ -245,7 +265,7 @@
     top: 24px;
     bottom: 0;
     width: 1px;
-    background: #1C2333;
+    background: var(--color-surface-3);
   }
   .timeline-item:last-child::before {
     @apply hidden;
@@ -260,28 +280,28 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #161B22;
-    border: 2px solid #1C2333;
+    background: var(--color-surface-2);
+    border: 2px solid var(--color-surface-3);
     font-size: 11px;
   }
   .timeline-dot-accent {
-    border-color: #FF4500;
+    border-color: var(--color-accent);
     background: rgba(255, 69, 0, 0.10);
-    color: #FF4500;
+    color: var(--color-accent);
   }
 
   /* ─── Divisor de seção ───────────────────────────────────────────────────── */
 
   .divider {
-    border-color: #1C2333;
+    border-color: var(--color-surface-3);
     @apply border-t;
   }
 
   /* ─── Avatar (inicial do nome) ───────────────────────────────────────────── */
 
   .avatar {
-    background: rgba(255, 69, 0, 0.12);
-    color: #FF4500;
+    background: rgba(255, 69, 0, 0.14);
+    color: var(--color-accent);
     @apply w-9 h-9 rounded-full flex items-center justify-center
            text-sm font-bold flex-shrink-0 uppercase;
   }
@@ -290,16 +310,16 @@
 
   .icon-badge {
     background: rgba(255, 69, 0, 0.10);
-    color: #FF4500;
+    color: var(--color-accent);
     @apply p-2 rounded-lg flex items-center justify-center flex-shrink-0;
   }
 
   /* ─── Tooltip custom (recharts) ──────────────────────────────────────────── */
 
   .chart-tooltip {
-    background: #0D1117;
-    border: 1px solid rgba(255, 69, 0, 0.25);
+    background: var(--color-surface);
+    border: 1px solid rgba(255, 69, 0, 0.28);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-    @apply rounded-lg px-3 py-2 text-sm;
+    @apply rounded-xl px-3 py-2 text-sm;
   }
 }
