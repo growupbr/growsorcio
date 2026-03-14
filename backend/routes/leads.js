@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { run, get, all, criarCadenciaReuniao } = require('../database');
+const { supabase, getOrganizationId, handleSupabaseError } = require('../supabase');
 
 const ETAPAS_VALIDAS = [
   'Lead Novo',
@@ -39,6 +39,68 @@ function resolverTemperatura(etapa, temperaturaAtual) {
   return TEMP_AUTO[etapa] ?? temperaturaAtual;
 }
 
+function toDateOnly(value) {
+  if (!value) return null;
+  return String(value).slice(0, 10);
+}
+
+function groupCount(rows, key) {
+  const acc = new Map();
+  for (const row of rows) {
+    const value = row[key];
+    if (value == null || value === '') continue;
+    acc.set(value, (acc.get(value) || 0) + 1);
+  }
+  return Array.from(acc.entries()).map(([k, total]) => ({ [key]: k, total }));
+}
+
+function dateKeyForWeek(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+async function criarCadenciaReuniao(organizationId, leadId, dataReuniao) {
+  const base = dataReuniao ? new Date(dataReuniao) : new Date();
+  const fmt = (d) => d.toISOString().slice(0, 10);
+  const add = (n) => {
+    const r = new Date(base);
+    r.setDate(r.getDate() + n);
+    return r;
+  };
+  const sub = (n) => {
+    const r = new Date(base);
+    r.setDate(r.getDate() - n);
+    return r;
+  };
+
+  const itens = [
+    ['Enviar material explicativo sobre consórcio', fmt(sub(3)), 'Pré-reunião'],
+    ['Confirmar reunião e enviar pauta', fmt(sub(1)), 'Pré-reunião'],
+    ['Lembrete da reunião (manhã do dia)', fmt(base), 'Pré-reunião'],
+    ['Realizar diagnóstico: lance próprio vs embutido', fmt(base), 'Reunião'],
+    ['Enviar simulação comparativa Consórcio vs Financiamento', fmt(add(1)), 'Pós-reunião'],
+    ['Follow-up simulação — tirar dúvidas', fmt(add(3)), 'Pós-reunião'],
+    ['Enviar case de contemplação de cliente similar', fmt(add(7)), 'Pós-reunião'],
+    ['Verificar decisão — criar senso de urgência (assembleia)', fmt(add(14)), 'Negociação'],
+    ['Follow-up final — solicitar documentos para adesão', fmt(add(21)), 'Negociação'],
+  ];
+
+  const payload = itens.map(([descricao, data_prevista, etapa_relacionada]) => ({
+    organization_id: organizationId,
+    lead_id: leadId,
+    descricao,
+    data_prevista,
+    etapa_relacionada,
+  }));
+
+  const { error } = await supabase.from('cadencia_itens').insert(payload);
+  if (error) throw error;
+}
+
 function dataInicioPeriodo(periodo) {
   const hoje = new Date();
   switch (periodo) {
@@ -59,124 +121,161 @@ function dataInicioPeriodo(periodo) {
 // ─── ROTAS FIXAS ANTES DE /:id ────────────────────────────────────────────────
 
 // GET /api/leads/stats/resumo
-router.get('/stats/resumo', (req, res) => {
+router.get('/stats/resumo', async (req, res) => {
   const { periodo = 'total' } = req.query;
   const dataInicio = dataInicioPeriodo(periodo);
   const hoje = new Date().toISOString().slice(0, 10);
+  try {
+    const organizationId = await getOrganizationId();
 
-  let porEtapa, porTemperatura;
-  if (dataInicio) {
-    porEtapa = all(
-      `SELECT etapa_funil, COUNT(*) as total FROM leads WHERE criado_em >= ? GROUP BY etapa_funil`,
-      dataInicio
+    const { data: leads, error: leadsError } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('organization_id', organizationId);
+    if (leadsError) return handleSupabaseError(res, leadsError, 'Erro ao calcular resumo');
+
+    const leadList = leads || [];
+    const recorte = dataInicio
+      ? leadList.filter((l) => toDateOnly(l.criado_em) >= dataInicio)
+      : leadList;
+
+    const porEtapa = groupCount(recorte, 'etapa_funil');
+    const porTemperatura = groupCount(recorte, 'temperatura');
+    const totaisGerais = groupCount(leadList, 'etapa_funil');
+    const totaisTemp = groupCount(leadList, 'temperatura');
+    const porOrigem = groupCount(leadList, 'origem');
+
+    const followUpVencidos = leadList.filter(
+      (l) =>
+        l.data_proxima_acao &&
+        l.data_proxima_acao <= hoje &&
+        !['Fechado (Ganho)', 'Descartado (Perda)'].includes(l.etapa_funil)
     );
-    porTemperatura = all(
-      `SELECT temperatura, COUNT(*) as total FROM leads WHERE criado_em >= ? GROUP BY temperatura`,
-      dataInicio
+
+    const reunioesHoje = leadList.filter(
+      (l) => l.data_proxima_acao === hoje && l.tipo_proxima_acao === 'Reunião'
     );
-  } else {
-    porEtapa = all('SELECT etapa_funil, COUNT(*) as total FROM leads GROUP BY etapa_funil');
-    porTemperatura = all('SELECT temperatura, COUNT(*) as total FROM leads GROUP BY temperatura');
+
+    const totalAnuncio = leadList.filter((l) => l.origem === 'anuncio').length;
+    const anuncioResponderam = leadList.filter(
+      (l) =>
+        l.origem === 'anuncio' &&
+        !['Lead Novo', 'Tentativa de Contato', 'Descartado (Perda)'].includes(l.etapa_funil)
+    ).length;
+
+    const etapasReuniao = new Set([
+      'Reunião Agendada',
+      'Reunião Realizada',
+      'Simulação Enviada',
+      'Follow-up / Negociação',
+      'Análise de Crédito / Docs',
+      'Fechado (Ganho)',
+    ]);
+
+    const reunioesPorOrigem = groupCount(
+      leadList.filter((l) => etapasReuniao.has(l.etapa_funil)),
+      'origem'
+    );
+    const fechadosPorOrigem = groupCount(
+      leadList.filter((l) => l.etapa_funil === 'Fechado (Ganho)'),
+      'origem'
+    );
+
+    const porTipoBem = groupCount(
+      leadList.filter((l) => l.tipo_de_bem),
+      'tipo_de_bem'
+    );
+
+    const comRestricaoCPF = leadList.filter((l) => Boolean(l.restricao_cpf)).length;
+    const snoozados = leadList.filter(
+      (l) => l.snooze_ate && l.snooze_ate > hoje && l.etapa_funil === 'Follow-up / Negociação'
+    ).length;
+
+    const { data: cadenciaRows, error: cadenciaError } = await supabase
+      .from('cadencia_itens')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('concluido', false)
+      .lte('data_prevista', hoje);
+    if (cadenciaError) return handleSupabaseError(res, cadenciaError, 'Erro ao calcular resumo');
+
+    const leadNameById = new Map(leadList.map((l) => [l.id, l.nome]));
+    const cadenciaHoje = (cadenciaRows || []).map((c) => ({
+      ...c,
+      lead_nome: leadNameById.get(c.lead_id) || null,
+    }));
+
+    return res.json({
+      por_etapa: porEtapa,
+      por_etapa_total: totaisGerais,
+      por_temperatura: porTemperatura,
+      por_temperatura_total: totaisTemp,
+      follow_ups_vencidos: followUpVencidos,
+      cadencia_hoje: cadenciaHoje,
+      reunioes_hoje: reunioesHoje,
+      periodo,
+      por_origem: porOrigem,
+      total_anuncio: totalAnuncio,
+      anuncio_responderam: anuncioResponderam,
+      taxa_resposta_anuncio: totalAnuncio > 0 ? Math.round((anuncioResponderam / totalAnuncio) * 100) : 0,
+      reunioes_por_origem: reunioesPorOrigem,
+      fechados_por_origem: fechadosPorOrigem,
+      por_tipo_bem: porTipoBem,
+      com_restricao_cpf: comRestricaoCPF,
+      snoozados,
+    });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao calcular resumo');
   }
-
-  const followUpVencidos = all(
-    `SELECT * FROM leads WHERE data_proxima_acao <= ? AND etapa_funil NOT IN ('Fechado (Ganho)', 'Descartado (Perda)')`,
-    hoje
-  );
-  const cadenciaHoje = all(
-    `SELECT c.*, l.nome as lead_nome FROM cadencia_itens c
-     JOIN leads l ON c.lead_id = l.id
-     WHERE c.data_prevista <= ? AND c.concluido = 0`,
-    hoje
-  );
-  const reunioesHoje = all(
-    `SELECT * FROM leads WHERE data_proxima_acao = ? AND tipo_proxima_acao = 'Reunião'`,
-    hoje
-  );
-
-  const totaisGerais = all('SELECT etapa_funil, COUNT(*) as total FROM leads GROUP BY etapa_funil');
-  const totaisTemp = all('SELECT temperatura, COUNT(*) as total FROM leads GROUP BY temperatura');
-
-  const porOrigem = all('SELECT origem, COUNT(*) as total FROM leads GROUP BY origem');
-  const totalAnuncio = porOrigem.find(o => o.origem === 'anuncio')?.total || 0;
-  const anuncioResponderam = all(
-    `SELECT COUNT(*) as total FROM leads WHERE origem = 'anuncio' AND etapa_funil NOT IN ('Lead Novo', 'Tentativa de Contato', 'Descartado (Perda)')`
-  )[0]?.total || 0;
-  const reunioesPorOrigem = all(
-    `SELECT origem, COUNT(*) as total FROM leads
-     WHERE etapa_funil IN ('Reunião Agendada','Reunião Realizada','Simulação Enviada','Follow-up / Negociação','Análise de Crédito / Docs','Fechado (Ganho)')
-     GROUP BY origem`
-  );
-  const fechadosPorOrigem = all(
-    `SELECT origem, COUNT(*) as total FROM leads WHERE etapa_funil = 'Fechado (Ganho)' GROUP BY origem`
-  );
-
-  // Métricas Blessed 4.0
-  const porTipoBem = all('SELECT tipo_de_bem, COUNT(*) as total FROM leads WHERE tipo_de_bem IS NOT NULL GROUP BY tipo_de_bem');
-  const comRestricaoCPF = all(`SELECT COUNT(*) as total FROM leads WHERE restricao_cpf = 1`)[0]?.total || 0;
-  const snoozados = all(`SELECT COUNT(*) as total FROM leads WHERE snooze_ate IS NOT NULL AND snooze_ate > date('now') AND etapa_funil = 'Follow-up / Negociação'`)[0]?.total || 0;
-
-  res.json({
-    por_etapa: porEtapa,
-    por_etapa_total: totaisGerais,
-    por_temperatura: porTemperatura,
-    por_temperatura_total: totaisTemp,
-    follow_ups_vencidos: followUpVencidos,
-    cadencia_hoje: cadenciaHoje,
-    reunioes_hoje: reunioesHoje,
-    periodo,
-    por_origem: porOrigem,
-    total_anuncio: totalAnuncio,
-    anuncio_responderam: anuncioResponderam,
-    taxa_resposta_anuncio: totalAnuncio > 0 ? Math.round((anuncioResponderam / totalAnuncio) * 100) : 0,
-    reunioes_por_origem: reunioesPorOrigem,
-    fechados_por_origem: fechadosPorOrigem,
-    por_tipo_bem: porTipoBem,
-    com_restricao_cpf: comRestricaoCPF,
-    snoozados,
-  });
 });
 
 // GET /api/leads/stats/evolucao
-router.get('/stats/evolucao', (req, res) => {
-  const rows = all(`
-    SELECT
-      strftime('%Y-W%W', criado_em) as semana,
-      COUNT(*) as total
-    FROM leads
-    WHERE criado_em >= date('now', '-56 days')
-    GROUP BY semana
-    ORDER BY semana ASC
-  `);
+router.get('/stats/evolucao', async (req, res) => {
+  try {
+    const organizationId = await getOrganizationId();
+    const minDate = new Date(Date.now() - 56 * 86400000).toISOString();
 
-  const semanas = [];
-  for (let i = 7; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i * 7);
-    const ano = d.getFullYear();
-    const semNum = String(getWeekNumber(d)).padStart(2, '0');
-    const chave = `${ano}-W${semNum}`;
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const label = `${dd}/${mm}`;
-    const encontrado = rows.find((r) => r.semana === chave);
-    semanas.push({ semana: label, total: encontrado ? encontrado.total : 0 });
+    const { data: leads, error } = await supabase
+      .from('leads')
+      .select('criado_em')
+      .eq('organization_id', organizationId)
+      .gte('criado_em', minDate);
+    if (error) return handleSupabaseError(res, error, 'Erro ao calcular evolução');
+
+    const counts = new Map();
+    for (const row of leads || []) {
+      const key = dateKeyForWeek(new Date(row.criado_em));
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+
+    const semanas = [];
+    for (let i = 7; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i * 7);
+      const chave = dateKeyForWeek(d);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      semanas.push({ semana: `${dd}/${mm}`, total: counts.get(chave) || 0 });
+    }
+
+    return res.json(semanas);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao calcular evolução');
   }
-
-  res.json(semanas);
 });
 
-function getWeekNumber(d) {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const dayNum = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-}
-
 // GET /api/leads/export/csv
-router.get('/export/csv', (req, res) => {
-  const csvLeads = all('SELECT * FROM leads ORDER BY criado_em DESC');
+router.get('/export/csv', async (req, res) => {
+  try {
+    const organizationId = await getOrganizationId();
+    const { data: csvLeads, error } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('criado_em', { ascending: false });
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao exportar CSV');
+
   const cols = [
     'id','tenant_id','nome','whatsapp','email','instagram',
     'tipo_de_bem','valor_da_carta','recurso_para_lance','restricao_cpf','urgencia',
@@ -194,7 +293,10 @@ router.get('/export/csv', (req, res) => {
   const csv = [cols.join(','), ...csvLeads.map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="leads-growsorcio.csv"');
-  res.send('\uFEFF' + csv);
+    return res.send('\uFEFF' + csv);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao exportar CSV');
+  }
 });
 
 // GET /api/leads/motivos-descarte
@@ -205,52 +307,90 @@ router.get('/motivos-descarte', (req, res) => {
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 // GET /api/leads
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { etapa, temperatura, busca, ordem, origem, periodo, tipo_de_bem } = req.query;
-  const conds = ['1=1'];
-  const params = [];
+  try {
+    const organizationId = await getOrganizationId();
+    let query = supabase.from('leads').select('*').eq('organization_id', organizationId);
 
-  if (etapa)       { conds.push('etapa_funil = ?');                   params.push(etapa); }
-  if (temperatura) { conds.push('temperatura = ?');                   params.push(temperatura); }
-  if (origem)      { conds.push('origem = ?');                        params.push(origem); }
-  if (tipo_de_bem) { conds.push('tipo_de_bem = ?');                   params.push(tipo_de_bem); }
-  if (busca)       { conds.push('(nome LIKE ? OR whatsapp LIKE ? OR email LIKE ?)'); params.push(`%${busca}%`, `%${busca}%`, `%${busca}%`); }
+    if (etapa) query = query.eq('etapa_funil', etapa);
+    if (temperatura) query = query.eq('temperatura', temperatura);
+    if (origem) query = query.eq('origem', origem);
+    if (tipo_de_bem) query = query.eq('tipo_de_bem', tipo_de_bem);
 
-  if (periodo) {
-    const hoje = new Date().toISOString().slice(0, 10);
-    const fim  = new Date(Date.now() + 6 * 86_400_000).toISOString().slice(0, 10);
-    if (periodo === 'vencido') {
-      conds.push('data_proxima_acao < ?');             params.push(hoje);
-    } else if (periodo === 'hoje') {
-      conds.push('data_proxima_acao = ?');             params.push(hoje);
-    } else if (periodo === 'semana') {
-      conds.push('data_proxima_acao BETWEEN ? AND ?'); params.push(hoje, fim);
+    if (busca) {
+      const term = String(busca).replaceAll(',', ' ');
+      query = query.or(`nome.ilike.%${term}%,whatsapp.ilike.%${term}%,email.ilike.%${term}%`);
     }
-  }
 
-  const ordemMap = {
-    proxima_acao: 'data_proxima_acao ASC',
-    criado_em:    'criado_em DESC',
-    nome:         'nome ASC',
-    valor_carta:  'valor_da_carta DESC',
-  };
-  const sql = `SELECT * FROM leads WHERE ${conds.join(' AND ')} ORDER BY ${ordemMap[ordem] || 'criado_em DESC'}`;
-  res.json(all(sql, ...params));
+    if (periodo) {
+      const hoje = new Date().toISOString().slice(0, 10);
+      const fim = new Date(Date.now() + 6 * 86_400_000).toISOString().slice(0, 10);
+      if (periodo === 'vencido') query = query.lt('data_proxima_acao', hoje);
+      else if (periodo === 'hoje') query = query.eq('data_proxima_acao', hoje);
+      else if (periodo === 'semana') query = query.gte('data_proxima_acao', hoje).lte('data_proxima_acao', fim);
+    }
+
+    const ordemMap = {
+      proxima_acao: { column: 'data_proxima_acao', ascending: true },
+      criado_em: { column: 'criado_em', ascending: false },
+      nome: { column: 'nome', ascending: true },
+      valor_carta: { column: 'valor_da_carta', ascending: false },
+    };
+    const order = ordemMap[ordem] || ordemMap.criado_em;
+    query = query.order(order.column, { ascending: order.ascending, nullsFirst: false });
+
+    const { data, error } = await query;
+    if (error) return handleSupabaseError(res, error, 'Erro ao listar leads');
+    return res.json(data || []);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao listar leads');
+  }
 });
 
 // GET /api/leads/:id
-router.get('/:id', (req, res) => {
-  const lead = get('SELECT * FROM leads WHERE id = ?', req.params.id);
-  if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
+router.get('/:id', async (req, res) => {
+  try {
+    const organizationId = await getOrganizationId();
+    const leadId = Number(req.params.id);
 
-  const interacoes = all('SELECT * FROM interacoes WHERE lead_id = ? ORDER BY data DESC, id DESC', req.params.id);
-  const cadencia   = all('SELECT * FROM cadencia_itens WHERE lead_id = ? ORDER BY data_prevista ASC', req.params.id);
+    const { data: lead, error: leadError } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('id', leadId)
+      .maybeSingle();
 
-  res.json({ ...lead, interacoes, cadencia });
+    if (leadError) return handleSupabaseError(res, leadError, 'Erro ao buscar lead');
+    if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
+
+    const [{ data: interacoes, error: intError }, { data: cadencia, error: cadError }] = await Promise.all([
+      supabase
+        .from('interacoes')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .eq('lead_id', leadId)
+        .order('data', { ascending: false })
+        .order('id', { ascending: false }),
+      supabase
+        .from('cadencia_itens')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .eq('lead_id', leadId)
+        .order('data_prevista', { ascending: true }),
+    ]);
+
+    if (intError) return handleSupabaseError(res, intError, 'Erro ao buscar lead');
+    if (cadError) return handleSupabaseError(res, cadError, 'Erro ao buscar lead');
+
+    return res.json({ ...lead, interacoes: interacoes || [], cadencia: cadencia || [] });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao buscar lead');
+  }
 });
 
 // POST /api/leads
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const {
     nome, whatsapp, email, instagram,
     tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia,
@@ -266,56 +406,73 @@ router.post('/', (req, res) => {
     return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
   }
 
-  // Detecção de duplicatas
-  if (whatsapp || email) {
-    const dupConds = [];
-    const dupParams = [];
-    if (whatsapp) { dupConds.push('whatsapp = ?'); dupParams.push(whatsapp); }
-    if (email)    { dupConds.push('email = ?');    dupParams.push(email); }
-    const dup = get(`SELECT id, nome FROM leads WHERE ${dupConds.join(' OR ')}`, ...dupParams);
-    if (dup) {
-      return res.status(409).json({
-        erro: `Lead já cadastrado: ${dup.nome} (ID #${dup.id})`,
-        lead_id: dup.id,
-      });
+  try {
+    const organizationId = await getOrganizationId();
+
+    if (whatsapp || email) {
+      let dupQuery = supabase
+        .from('leads')
+        .select('id, nome')
+        .eq('organization_id', organizationId)
+        .limit(1);
+
+      if (whatsapp && email) dupQuery = dupQuery.or(`whatsapp.eq.${whatsapp},email.eq.${email}`);
+      else if (whatsapp) dupQuery = dupQuery.eq('whatsapp', whatsapp);
+      else dupQuery = dupQuery.eq('email', email);
+
+      const { data: dup, error: dupError } = await dupQuery.maybeSingle();
+      if (dupError) return handleSupabaseError(res, dupError, 'Erro ao validar duplicidade');
+      if (dup) {
+        return res.status(409).json({
+          erro: `Lead já cadastrado: ${dup.nome} (ID #${dup.id})`,
+          lead_id: dup.id,
+        });
+      }
     }
+
+    const etapaFinal = etapa_funil || 'Lead Novo';
+    const tempFinal = resolverTemperatura(etapaFinal, temperatura || 'frio');
+
+    const payload = {
+      organization_id: organizationId,
+      nome,
+      whatsapp: whatsapp || null,
+      email: email || null,
+      instagram: instagram || null,
+      tipo_de_bem: tipo_de_bem || null,
+      valor_da_carta: valor_da_carta != null ? Number(valor_da_carta) : null,
+      recurso_para_lance: recurso_para_lance != null ? Number(recurso_para_lance) : null,
+      restricao_cpf: Boolean(restricao_cpf),
+      urgencia: urgencia || null,
+      temperatura: tempFinal,
+      etapa_funil: etapaFinal,
+      motivo_descarte: motivo_descarte || null,
+      data_proxima_acao: data_proxima_acao || null,
+      tipo_proxima_acao: tipo_proxima_acao || null,
+      observacoes: observacoes || null,
+      origem: origem || 'prospeccao',
+    };
+
+    const { data: lead, error } = await supabase
+      .from('leads')
+      .insert(payload)
+      .select('*')
+      .single();
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao criar lead');
+
+    if (etapaFinal === 'Reunião Agendada') {
+      await criarCadenciaReuniao(organizationId, lead.id, data_proxima_acao);
+    }
+
+    return res.status(201).json(lead);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao criar lead');
   }
-
-  const etapaFinal = etapa_funil || 'Lead Novo';
-  const tempFinal  = resolverTemperatura(etapaFinal, temperatura || 'frio');
-
-  const result = run(
-    `INSERT INTO leads (nome, whatsapp, email, instagram,
-      tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia,
-      temperatura, etapa_funil, motivo_descarte,
-      data_proxima_acao, tipo_proxima_acao, observacoes, origem)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    nome,
-    whatsapp || null, email || null, instagram || null,
-    tipo_de_bem || null,
-    valor_da_carta != null ? Number(valor_da_carta) : null,
-    recurso_para_lance != null ? Number(recurso_para_lance) : null,
-    restricao_cpf ? 1 : 0,
-    urgencia || null,
-    tempFinal, etapaFinal,
-    motivo_descarte || null,
-    data_proxima_acao || null, tipo_proxima_acao || null,
-    observacoes || null, origem || 'prospeccao'
-  );
-
-  const lead = get('SELECT * FROM leads WHERE id = ?', result.lastInsertRowid);
-
-  if (etapaFinal === 'Reunião Agendada') {
-    criarCadenciaReuniao(lead.id, data_proxima_acao);
-  }
-
-  res.status(201).json(lead);
 });
 
 // PUT /api/leads/:id
-router.put('/:id', (req, res) => {
-  const atual = get('SELECT * FROM leads WHERE id = ?', req.params.id);
-  if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
+router.put('/:id', async (req, res) => {
 
   const {
     nome, whatsapp, email, instagram,
@@ -327,48 +484,70 @@ router.put('/:id', (req, res) => {
   if (etapa_funil && !ETAPAS_VALIDAS.includes(etapa_funil)) {
     return res.status(400).json({ erro: 'Etapa inválida' });
   }
-  const etapaFinal = etapa_funil ?? atual.etapa_funil;
-  if (etapaFinal === 'Descartado (Perda)' && !(motivo_descarte || atual.motivo_descarte)) {
-    return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
+  try {
+    const organizationId = await getOrganizationId();
+    const leadId = Number(req.params.id);
+
+    const { data: atual, error: findError } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('id', leadId)
+      .maybeSingle();
+
+    if (findError) return handleSupabaseError(res, findError, 'Erro ao atualizar lead');
+    if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
+
+    const etapaFinal = etapa_funil ?? atual.etapa_funil;
+    if (etapaFinal === 'Descartado (Perda)' && !(motivo_descarte || atual.motivo_descarte)) {
+      return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
+    }
+
+    const tempFinal = etapa_funil
+      ? resolverTemperatura(etapa_funil, atual.temperatura)
+      : (temperatura ?? atual.temperatura);
+
+    const payload = {
+      nome: nome ?? atual.nome,
+      whatsapp: whatsapp ?? atual.whatsapp,
+      email: email ?? atual.email,
+      instagram: instagram ?? atual.instagram,
+      tipo_de_bem: tipo_de_bem !== undefined ? tipo_de_bem : atual.tipo_de_bem,
+      valor_da_carta: valor_da_carta != null ? Number(valor_da_carta) : atual.valor_da_carta,
+      recurso_para_lance: recurso_para_lance != null ? Number(recurso_para_lance) : atual.recurso_para_lance,
+      restricao_cpf: restricao_cpf !== undefined ? Boolean(restricao_cpf) : Boolean(atual.restricao_cpf),
+      urgencia: urgencia !== undefined ? urgencia : atual.urgencia,
+      temperatura: tempFinal,
+      etapa_funil: etapaFinal,
+      motivo_descarte: motivo_descarte !== undefined ? motivo_descarte : atual.motivo_descarte,
+      data_proxima_acao: data_proxima_acao ?? atual.data_proxima_acao,
+      tipo_proxima_acao: tipo_proxima_acao ?? atual.tipo_proxima_acao,
+      observacoes: observacoes ?? atual.observacoes,
+      origem: origem ?? atual.origem,
+    };
+
+    const { data: updated, error } = await supabase
+      .from('leads')
+      .update(payload)
+      .eq('organization_id', organizationId)
+      .eq('id', leadId)
+      .select('*')
+      .single();
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao atualizar lead');
+
+    if (etapa_funil === 'Reunião Agendada' && atual.etapa_funil !== 'Reunião Agendada') {
+      await criarCadenciaReuniao(organizationId, atual.id, data_proxima_acao || atual.data_proxima_acao);
+    }
+
+    return res.json(updated);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao atualizar lead');
   }
-
-  const tempFinal = etapa_funil
-    ? resolverTemperatura(etapa_funil, atual.temperatura)
-    : (temperatura ?? atual.temperatura);
-
-  run(
-    `UPDATE leads SET
-      nome = ?, whatsapp = ?, email = ?, instagram = ?,
-      tipo_de_bem = ?, valor_da_carta = ?, recurso_para_lance = ?, restricao_cpf = ?, urgencia = ?,
-      temperatura = ?, etapa_funil = ?, motivo_descarte = ?,
-      data_proxima_acao = ?, tipo_proxima_acao = ?, observacoes = ?, origem = ?,
-      atualizado_em = datetime('now', 'localtime')
-     WHERE id = ?`,
-    nome ?? atual.nome,
-    whatsapp ?? atual.whatsapp, email ?? atual.email, instagram ?? atual.instagram,
-    tipo_de_bem !== undefined ? tipo_de_bem : atual.tipo_de_bem,
-    valor_da_carta != null ? Number(valor_da_carta) : atual.valor_da_carta,
-    recurso_para_lance != null ? Number(recurso_para_lance) : atual.recurso_para_lance,
-    restricao_cpf !== undefined ? (restricao_cpf ? 1 : 0) : atual.restricao_cpf,
-    urgencia !== undefined ? urgencia : atual.urgencia,
-    tempFinal, etapaFinal,
-    motivo_descarte !== undefined ? motivo_descarte : atual.motivo_descarte,
-    data_proxima_acao ?? atual.data_proxima_acao,
-    tipo_proxima_acao ?? atual.tipo_proxima_acao,
-    observacoes ?? atual.observacoes,
-    origem ?? atual.origem,
-    req.params.id
-  );
-
-  if (etapa_funil === 'Reunião Agendada' && atual.etapa_funil !== 'Reunião Agendada') {
-    criarCadenciaReuniao(atual.id, data_proxima_acao || atual.data_proxima_acao);
-  }
-
-  res.json(get('SELECT * FROM leads WHERE id = ?', req.params.id));
 });
 
 // PATCH /api/leads/:id/etapa
-router.patch('/:id/etapa', (req, res) => {
+router.patch('/:id/etapa', async (req, res) => {
   const { etapa_funil, motivo_descarte } = req.body;
   if (!etapa_funil || !ETAPAS_VALIDAS.includes(etapa_funil)) {
     return res.status(400).json({ erro: 'Etapa inválida' });
@@ -377,54 +556,112 @@ router.patch('/:id/etapa', (req, res) => {
     return res.status(400).json({ erro: 'Motivo do descarte é obrigatório ao descartar um lead' });
   }
 
-  const atual = get('SELECT * FROM leads WHERE id = ?', req.params.id);
-  if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
+  try {
+    const organizationId = await getOrganizationId();
+    const leadId = Number(req.params.id);
 
-  const novaTemp = resolverTemperatura(etapa_funil, atual.temperatura);
+    const { data: atual, error: findError } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('id', leadId)
+      .maybeSingle();
 
-  run(
-    `UPDATE leads SET etapa_funil = ?, temperatura = ?, motivo_descarte = COALESCE(?, motivo_descarte),
-     atualizado_em = datetime('now', 'localtime') WHERE id = ?`,
-    etapa_funil, novaTemp, motivo_descarte || null, req.params.id
-  );
+    if (findError) return handleSupabaseError(res, findError, 'Erro ao atualizar etapa');
+    if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
 
-  if (etapa_funil === 'Reunião Agendada' && atual.etapa_funil !== 'Reunião Agendada') {
-    criarCadenciaReuniao(atual.id, atual.data_proxima_acao);
+    const novaTemp = resolverTemperatura(etapa_funil, atual.temperatura);
+
+    const { data: updated, error } = await supabase
+      .from('leads')
+      .update({
+        etapa_funil,
+        temperatura: novaTemp,
+        motivo_descarte: motivo_descarte || atual.motivo_descarte,
+      })
+      .eq('organization_id', organizationId)
+      .eq('id', leadId)
+      .select('*')
+      .single();
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao atualizar etapa');
+
+    if (etapa_funil === 'Reunião Agendada' && atual.etapa_funil !== 'Reunião Agendada') {
+      await criarCadenciaReuniao(organizationId, atual.id, atual.data_proxima_acao);
+    }
+
+    return res.json(updated);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao atualizar etapa');
   }
-
-  res.json(get('SELECT * FROM leads WHERE id = ?', req.params.id));
 });
 
 // PATCH /api/leads/:id/snooze — congela o lead no Follow-up/Negociação
-router.patch('/:id/snooze', (req, res) => {
+router.patch('/:id/snooze', async (req, res) => {
   const { snooze_ate } = req.body;
-  const atual = get('SELECT * FROM leads WHERE id = ?', req.params.id);
-  if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
+  try {
+    const organizationId = await getOrganizationId();
+    const leadId = Number(req.params.id);
 
-  run(
-    `UPDATE leads SET snooze_ate = ?, atualizado_em = datetime('now', 'localtime') WHERE id = ?`,
-    snooze_ate || null,
-    req.params.id
-  );
+    const { data: atual, error: findError } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('id', leadId)
+      .maybeSingle();
 
-  // Se snooze_ate definido e lead não está em Follow-up/Negociação, move para lá
-  if (snooze_ate && atual.etapa_funil !== 'Follow-up / Negociação') {
-    run(
-      `UPDATE leads SET etapa_funil = 'Follow-up / Negociação', atualizado_em = datetime('now', 'localtime') WHERE id = ?`,
-      req.params.id
-    );
+    if (findError) return handleSupabaseError(res, findError, 'Erro ao aplicar snooze');
+    if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
+
+    const payload = {
+      snooze_ate: snooze_ate || null,
+      etapa_funil: snooze_ate && atual.etapa_funil !== 'Follow-up / Negociação'
+        ? 'Follow-up / Negociação'
+        : atual.etapa_funil,
+    };
+
+    const { data: updated, error } = await supabase
+      .from('leads')
+      .update(payload)
+      .eq('organization_id', organizationId)
+      .eq('id', leadId)
+      .select('*')
+      .single();
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao aplicar snooze');
+    return res.json(updated);
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao aplicar snooze');
   }
-
-  res.json(get('SELECT * FROM leads WHERE id = ?', req.params.id));
 });
 
 // DELETE /api/leads/:id
-router.delete('/:id', (req, res) => {
-  const lead = get('SELECT * FROM leads WHERE id = ?', req.params.id);
-  if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
+router.delete('/:id', async (req, res) => {
+  try {
+    const organizationId = await getOrganizationId();
+    const leadId = Number(req.params.id);
 
-  run('DELETE FROM leads WHERE id = ?', req.params.id);
-  res.json({ mensagem: 'Lead removido com sucesso' });
+    const { data: lead, error: findError } = await supabase
+      .from('leads')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('id', leadId)
+      .maybeSingle();
+
+    if (findError) return handleSupabaseError(res, findError, 'Erro ao remover lead');
+    if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
+
+    const { error } = await supabase
+      .from('leads')
+      .delete()
+      .eq('organization_id', organizationId)
+      .eq('id', leadId);
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao remover lead');
+    return res.json({ mensagem: 'Lead removido com sucesso' });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao remover lead');
+  }
 });
 
 module.exports = router;

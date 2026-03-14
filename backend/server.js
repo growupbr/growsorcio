@@ -1,15 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const { initDb } = require('./database');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3334;
 
 app.use(cors());
 app.use(express.json());
-
-// Inicializa banco de dados
-initDb();
 
 // Rotas
 app.use('/api/leads', require('./routes/leads'));
