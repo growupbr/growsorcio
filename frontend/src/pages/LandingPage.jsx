@@ -1,8 +1,9 @@
 // /frontend/src/pages/LandingPage.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, Brain, Calculator, ChevronDown, Menu, X, Star, MessageCircle } from 'lucide-react';
 import PricingSection from '../components/ui/PricingSection';
+import GrowsorcioLogo from '../components/GrowsorcioLogo';
 
 const FEATURES = [
   {
@@ -52,67 +53,6 @@ const TESTIMONIALS = [
   },
 ];
 
-const PLANOS = [
-  {
-    id: 'start',
-    nome: 'Grow START',
-    subtitulo: 'Corretor Solo',
-    preco: 'R$ 147',
-    destaque: false,
-    badge: null,
-    launchBadge: true,
-    features: [
-      'Funil Blessed 4.0',
-      'Integração Meta Ads',
-      'Qualificação Blessed',
-      'Click-to-Zap',
-      'Calculadora Grow (Watermarked)',
-    ],
-    btnLabel: 'Assinar Start',
-    btnClass:
-      'w-full py-3 rounded-lg border border-white/20 text-white font-semibold hover:border-white/40 transition-colors duration-150 min-h-[44px]',
-  },
-  {
-    id: 'pro',
-    nome: 'Grow PRO',
-    subtitulo: 'Pequenos Times',
-    preco: 'R$ 447',
-    destaque: true,
-    badge: 'Recomendado',
-    launchBadge: false,
-    features: [
-      'Tudo do START +',
-      'Até 03 usuários',
-      'Calculadora Personalizada',
-      'Cofre Digital',
-      'Follow-up Inteligente',
-      'Automação de Pré-Venda',
-      '01 Usuário WhatsApp API',
-    ],
-    btnLabel: 'Escalar com o Pro',
-    btnClass: 'w-full py-3 rounded-lg btn-shimmer text-white font-semibold transition-colors duration-150 min-h-[44px]',
-  },
-  {
-    id: 'elite',
-    nome: 'Grow ELITE AI',
-    subtitulo: 'Escritórios',
-    preco: 'R$ 997',
-    destaque: false,
-    badge: null,
-    launchBadge: false,
-    features: [
-      'Tudo do PRO +',
-      'Usuários Ilimitados',
-      'Agente IA 24/7',
-      'Lead Scoring IA',
-      'Agendamento Automático',
-      'Painel BI',
-    ],
-    btnLabel: 'Falar com Consultor',
-    btnClass:
-      'w-full py-3 rounded-lg border border-white/20 text-white font-semibold hover:border-white/40 transition-colors duration-150 min-h-[44px]',
-  },
-];
 
 const FAQ_ITEMS = [
   {
@@ -176,8 +116,8 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
 
           {/* Logo */}
-          <a href="#hero" className="flex items-center gap-0.5 text-xl font-bold text-white">
-            GrowSorcio<span className="text-[#FF4500]">.</span>
+          <a href="#hero" className="flex items-center">
+            <GrowsorcioLogo height={30} />
           </a>
 
           {/* Links centro — desktop */}
@@ -429,10 +369,10 @@ export default function LandingPage() {
         {/* Logos parceiros */}
         <div className="flex flex-wrap items-center justify-center gap-2 text-zinc-600 font-semibold text-sm">
           <span>Usado por corretores das principais administradoras:</span>
-          {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa', 'Itaú Consórcios'].map((brand, i, arr) => (
+          {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa', 'Itaú Consórcios'].map((brand, idx, arr) => (
             <span key={brand} className="flex items-center gap-2">
               <span>{brand}</span>
-              {i < arr.length - 1 && <span className="text-zinc-800">·</span>}
+              {idx < arr.length - 1 && <span className="text-zinc-800">·</span>}
             </span>
           ))}
         </div>

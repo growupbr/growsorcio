@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import QuickAddModal from './QuickAddModal';
 import { abrirWhatsApp, isWaOpen } from '../utils/waWindow';
-import logoGrowUp from '../assets/logo-growup.png';
+import GrowsorcioLogo from './GrowsorcioLogo';
 
 const NavIcons = {
   Dashboard: () => (
@@ -101,7 +101,7 @@ export default function Navbar() {
             onClick={() => navigate('/')}
             className="flex items-center cursor-pointer flex-shrink-0 mr-8"
           >
-            <img src={logoGrowUp} alt="Grow Up" style={{ height: 44, width: 'auto', mixBlendMode: 'screen' }} />
+            <GrowsorcioLogo height={32} />
           </button>
 
           {/* Nav links — underline indicator estilo Vercel */}
