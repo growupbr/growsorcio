@@ -101,7 +101,7 @@ export default function Navbar() {
             onClick={() => navigate('/')}
             className="flex items-center cursor-pointer flex-shrink-0 mr-8"
           >
-            <GrowsorcioLogo height={112} />
+            <GrowsorcioLogo height={202} />
           </button>
 
           {/* Nav links — underline indicator estilo Vercel */}

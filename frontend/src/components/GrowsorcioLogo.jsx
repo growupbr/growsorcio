@@ -11,7 +11,7 @@ export default function GrowsorcioLogo({ height = 36 }) {
       src={logoSrc}
       alt="Growsorcio"
       height={height}
-      style={{ height, width: 'auto', display: 'block' }}
+      style={{ height, width: 'auto', display: 'block', mixBlendMode: 'screen' }}
     />
   );
 }
