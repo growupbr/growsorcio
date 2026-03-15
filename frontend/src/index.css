@@ -49,8 +49,8 @@
   display: flex;
   align-items: center;
   width: max-content;
-  gap: 2.2rem;
-  animation: proof-scroll 34s linear infinite;
+  gap: 3rem;
+  animation: proof-scroll 38s linear infinite;
 }
 .proof-marquee:hover {
   animation-play-state: paused;
@@ -59,6 +59,21 @@
   overflow: hidden;
   mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+.proof-logo {
+  display: block;
+  width: auto;
+  height: 40px;
+  max-width: 180px;
+  object-fit: contain;
+  object-position: center;
+  filter: grayscale(1) saturate(0) brightness(1.8) contrast(0.9);
+  opacity: 0.55;
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+.proof-logo:hover {
+  filter: none;
+  opacity: 1;
 }
 
 @layer base {

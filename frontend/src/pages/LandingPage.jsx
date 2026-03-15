@@ -99,6 +99,17 @@ const KANBAN_COLS = [
   },
 ];
 
+const PROOF_LOGOS = [
+  { src: '/logos/ademicon.png',     alt: 'Ademicon' },
+  { src: '/logos/embracon.png',     alt: 'Embracon' },
+  { src: '/logos/honda.png',        alt: 'Honda Consórcio' },
+  { src: '/logos/hs-consorcios.png',alt: 'HS Consórcios' },
+  { src: '/logos/magalu.png',       alt: 'Consórcio Magalu' },
+  { src: '/logos/maggi.png',        alt: 'Consórcio Maggi' },
+  { src: '/logos/porto-seguro.png', alt: 'Porto Seguro Consórcio' },
+  { src: '/logos/rodobens.png',     alt: 'Rodobens Consórcio' },
+];
+
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
@@ -265,7 +276,7 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {FEATURES.map((f, i) => (
+          {FEATURES.map((f) => (
             <motion.div
               key={f.titulo}
               variants={fadeUp}
@@ -366,30 +377,20 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Carrossel de administradoras */}
-        <div className="border-t border-white/10 pt-8 flex items-center gap-4 overflow-hidden">
-          <span className="text-zinc-600 text-xs font-bold uppercase tracking-widest whitespace-nowrap flex-shrink-0">
-            Usado por corretores das principais administradoras:
-          </span>
-          <div className="proof-carousel flex-1 min-w-0">
+        {/* Carrossel de logos — administradoras */}
+        <div className="border-t border-white/10 pt-8">
+          <p className="text-zinc-600 text-xs font-bold uppercase tracking-widest text-center mb-6">
+            Usado por corretores das principais administradoras
+          </p>
+          <div className="proof-carousel">
             <div className="proof-marquee">
               {/* Set 1 */}
-              {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa Consórcios', 'Itaú Consórcios', 'Bradesco Consórcios', 'Santander Consórcios', 'BB Consórcios', 'Sicoob', 'HSBC Consórcios'].map((brand) => (
-                <span
-                  key={`a-${brand}`}
-                  className="text-zinc-400 text-sm font-semibold whitespace-nowrap px-4 py-1.5 rounded-full border border-white/10 bg-white/5"
-                >
-                  {brand}
-                </span>
+              {PROOF_LOGOS.map((logo) => (
+                <img key={`a-${logo.alt}`} src={logo.src} alt={logo.alt} className="proof-logo" />
               ))}
               {/* Set 2 — duplicado para loop contínuo */}
-              {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa Consórcios', 'Itaú Consórcios', 'Bradesco Consórcios', 'Santander Consórcios', 'BB Consórcios', 'Sicoob', 'HSBC Consórcios'].map((brand) => (
-                <span
-                  key={`b-${brand}`}
-                  className="text-zinc-400 text-sm font-semibold whitespace-nowrap px-4 py-1.5 rounded-full border border-white/10 bg-white/5"
-                >
-                  {brand}
-                </span>
+              {PROOF_LOGOS.map((logo) => (
+                <img key={`b-${logo.alt}`} src={logo.src} alt={logo.alt} className="proof-logo" />
               ))}
             </div>
           </div>
