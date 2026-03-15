@@ -136,7 +136,7 @@ export default function LandingPage() {
 
           {/* Logo */}
           <a href="#hero" className="flex items-center">
-            <GrowsorcioLogo height={30} />
+            <GrowsorcioLogo height={105} />
           </a>
 
           {/* Links centro — desktop */}
