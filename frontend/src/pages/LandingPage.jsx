@@ -1,22 +1,50 @@
 // /frontend/src/pages/LandingPage.jsx
-import { useState } from 'react';
-import { Zap, Brain, Calculator, Check, ChevronDown, Menu, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Zap, Brain, Calculator, Check, ChevronDown, Menu, X, Star, Shield, Instagram, MessageCircle } from 'lucide-react';
 
 const FEATURES = [
   {
     icon: <Zap size={22} className="text-[#FF4500]" />,
+    stat: '2 min',
     titulo: 'Captação Automática',
     descricao: 'Receba leads do Meta Ads via Webhook direto. Sem planilhas, sem atraso.',
   },
   {
     icon: <Brain size={22} className="text-[#FF4500]" />,
+    stat: '4 campos',
     titulo: 'Qualificação Blessed',
     descricao: "Saiba o valor da carta, lance e urgência antes mesmo de dar o primeiro 'Oi'.",
   },
   {
     icon: <Calculator size={22} className="text-[#FF4500]" />,
+    stat: '87%',
     titulo: 'Fechamento Veloz',
     descricao: 'Calculadora integrada para quebrar objeções financeiras na hora.',
+  },
+];
+
+const TESTIMONIALS = [
+  {
+    initials: 'RM',
+    name: 'Rodrigo M.',
+    location: 'São Paulo, SP',
+    text: 'Fechei 3 vendas no primeiro mês. O kanban me mostrou onde eu estava perdendo tempo.',
+    avatarClass: 'bg-orange-500/20 text-orange-400',
+  },
+  {
+    initials: 'PS',
+    name: 'Patricia S.',
+    location: 'Belo Horizonte, MG',
+    text: 'Antes eu usava planilha. Agora recebo lead do Meta e já sei o valor da carta na hora.',
+    avatarClass: 'bg-blue-500/20 text-blue-400',
+  },
+  {
+    initials: 'DL',
+    name: 'Diego L.',
+    location: 'Goiânia, GO',
+    text: 'O follow-up inteligente me poupou 2h por dia. Simples, direto, sem frescura.',
+    avatarClass: 'bg-emerald-500/20 text-emerald-400',
   },
 ];
 
@@ -28,6 +56,7 @@ const PLANOS = [
     preco: 'R$ 147',
     destaque: false,
     badge: null,
+    launchBadge: true,
     features: [
       'Funil Blessed 4.0',
       'Integração Meta Ads',
@@ -46,6 +75,7 @@ const PLANOS = [
     preco: 'R$ 447',
     destaque: true,
     badge: 'Recomendado',
+    launchBadge: false,
     features: [
       'Tudo do START +',
       'Até 03 usuários',
@@ -56,8 +86,7 @@ const PLANOS = [
       '01 Usuário WhatsApp API',
     ],
     btnLabel: 'Escalar com o Pro',
-    btnClass:
-      'w-full py-3 rounded-lg bg-[#FF4500] hover:bg-[#e03e00] text-white font-semibold transition-colors duration-150 min-h-[44px]',
+    btnClass: 'w-full py-3 rounded-lg btn-shimmer text-white font-semibold transition-colors duration-150 min-h-[44px]',
   },
   {
     id: 'elite',
@@ -66,6 +95,7 @@ const PLANOS = [
     preco: 'R$ 997',
     destaque: false,
     badge: null,
+    launchBadge: false,
     features: [
       'Tudo do PRO +',
       'Usuários Ilimitados',
@@ -91,10 +121,28 @@ const FAQ_ITEMS = [
   },
   {
     pergunta: 'A Calculadora serve para qualquer administradora?',
-    resposta:
-      'Sim, ela é multibandeira e foca na matemática financeira pura.',
+    resposta: 'Sim, ela é multibandeira e foca na matemática financeira pura.',
+  },
+  {
+    pergunta: 'O GrowSorcio funciona para qualquer administradora?',
+    resposta: 'Sim. O sistema é agnóstico de administradora. Você cadastra os produtos e regras de cada uma.',
+  },
+  {
+    pergunta: 'Preciso de computador para usar?',
+    resposta: 'Não. O GrowSorcio é 100% mobile-first. Funciona perfeitamente no celular, no campo, durante a visita.',
   },
 ];
+
+const KANBAN_COLS = [
+  { col: 'Lead Novo', cards: ['Ana Lima', 'Carlos R.', 'Priya S.'], color: 'border-zinc-600' },
+  { col: 'Em Qualificação', cards: ['Roberto F.', 'Marina T.'], color: 'border-blue-500/50' },
+  { col: 'Reunião Agendada', cards: ['Juliana M.'], color: 'border-[#FF4500]/50' },
+];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+};
 
 export default function LandingPage() {
   const [menuAberto, setMenuAberto] = useState(false);
@@ -143,23 +191,31 @@ export default function LandingPage() {
         </div>
 
         {/* Menu mobile dropdown */}
-        {menuAberto && (
-          <div className="md:hidden border-t border-white/10 bg-zinc-950/95 px-4 py-4 flex flex-col gap-4">
-            <a href="#recursos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Recursos</a>
-            <a href="#precos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Preços</a>
-            <a href="#faq" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">FAQ</a>
-            <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
-              <a href="#" className="text-zinc-400 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Entrar</a>
-              <a
-                href="#precos"
-                onClick={() => setMenuAberto(false)}
-                className="bg-[#FF4500] hover:bg-[#e03e00] text-white text-sm font-semibold px-4 py-3 rounded-md transition-colors duration-150 text-center min-h-[44px] flex items-center justify-center"
-              >
-                Criar Conta
-              </a>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {menuAberto && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="md:hidden border-t border-white/10 bg-zinc-950/95 px-4 py-4 flex flex-col gap-4"
+            >
+              <a href="#recursos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Recursos</a>
+              <a href="#precos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Preços</a>
+              <a href="#faq" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">FAQ</a>
+              <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
+                <a href="#" className="text-zinc-400 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Entrar</a>
+                <a
+                  href="#precos"
+                  onClick={() => setMenuAberto(false)}
+                  className="bg-[#FF4500] hover:bg-[#e03e00] text-white text-sm font-semibold px-4 py-3 rounded-md transition-colors duration-150 text-center min-h-[44px] flex items-center justify-center"
+                >
+                  Criar Conta
+                </a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
@@ -167,23 +223,45 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,69,0,0.15),transparent)]" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center text-center gap-8">
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs font-medium text-zinc-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF4500] inline-block" />
-            CRM verticalizado para consórcios
-          </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight leading-tight">
+          {/* Badge animado */}
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs font-medium text-zinc-400"
+          >
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            127 corretores ativos hoje
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+            className="font-['Space_Grotesk',sans-serif] font-bold text-4xl md:text-6xl text-white tracking-tight leading-tight"
+          >
             Pare de perder vendas para a sua própria desorganização.
-          </h1>
+          </motion.h1>
 
-          <p className="text-lg text-zinc-400 max-w-2xl">
-            O único CRM verticalizado para corretores de consórcio que integra Meta Ads, qualificação Blessed nativa e calculadora de investimentos em uma única tela.
-          </p>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.2 }}
+            className="text-lg text-zinc-400 max-w-2xl font-['Inter',sans-serif]"
+          >
+            O único CRM para corretores de consórcio com Meta Ads, qualificação Blessed e calculadora em uma tela.
+          </motion.p>
 
-          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.3 }}
+            className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+          >
             <a
               href="#precos"
-              className="bg-[#FF4500] hover:bg-[#e03e00] text-white font-semibold px-8 py-4 rounded-lg text-lg transition-colors duration-150 min-h-[44px] flex items-center justify-center"
+              className="cta-pulse bg-[#FF4500] hover:bg-[#e03e00] text-white font-semibold px-8 py-4 rounded-lg text-lg transition-colors duration-150 min-h-[44px] flex items-center justify-center"
             >
               Começar Agora →
             </a>
@@ -193,12 +271,27 @@ export default function LandingPage() {
             >
               Ver Demonstração
             </a>
-          </div>
+          </motion.div>
 
-          {/* Mock dashboard */}
-          <div className="w-full mt-4 aspect-video bg-white/5 border border-white/10 rounded-xl shadow-[0_0_80px_rgba(255,69,0,0.1)] flex items-center justify-center">
-            <span className="text-zinc-600 text-sm font-medium">Dashboard GrowSorcio</span>
-          </div>
+          {/* Kanban mock */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.4 }}
+            className="w-full mt-8 aspect-video bg-zinc-900 border border-white/10 rounded-xl shadow-[0_0_80px_rgba(255,69,0,0.08)] overflow-hidden p-4 flex gap-3"
+          >
+            {KANBAN_COLS.map((col) => (
+              <div key={col.col} className="flex-1 flex flex-col gap-2 min-w-0">
+                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider truncate">{col.col}</p>
+                {col.cards.map((name) => (
+                  <div key={name} className={`bg-white/5 border ${col.color} rounded-lg p-2.5`}>
+                    <p className="text-zinc-300 text-xs font-medium truncate">{name}</p>
+                    <p className="text-zinc-600 text-xs mt-0.5">Consórcio · R$ 85k</p>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -206,19 +299,76 @@ export default function LandingPage() {
       <section id="recursos" className="max-w-6xl mx-auto px-4 py-24">
         <div className="text-center mb-12">
           <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Recursos</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white">Tudo que você precisa para fechar mais</h2>
+          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Tudo que você precisa para fechar mais</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {FEATURES.map((f) => (
-            <div
+          {FEATURES.map((f, i) => (
+            <motion.div
               key={f.titulo}
-              className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur hover:border-white/20 transition-colors duration-150"
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+              whileHover={{ y: -4, borderColor: 'rgba(255,255,255,0.2)' }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur"
             >
-              <div className="mb-4">{f.icon}</div>
+              <p className="text-[#FF4500] font-['Space_Grotesk',sans-serif] font-bold text-3xl mb-1">{f.stat}</p>
+              <div className="p-3 rounded-lg bg-[#FF4500]/10 w-fit mb-4">
+                {f.icon}
+              </div>
               <h3 className="text-white font-semibold text-lg mb-2">{f.titulo}</h3>
               <p className="text-zinc-400 text-sm leading-relaxed">{f.descricao}</p>
-            </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── PROVA SOCIAL ─────────────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center mb-10">
+          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Depoimentos</p>
+          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Corretores que já escalam</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          {TESTIMONIALS.map((t, i) => (
+            <motion.div
+              key={t.name}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+              className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur flex flex-col gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${t.avatarClass}`}>
+                  {t.initials}
+                </div>
+                <div>
+                  <p className="text-white text-sm font-semibold">{t.name}</p>
+                  <p className="text-zinc-500 text-xs">{t.location}</p>
+                </div>
+              </div>
+              <div className="flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <Star key={j} size={12} className="text-[#FF4500] fill-[#FF4500]" />
+                ))}
+              </div>
+              <p className="text-zinc-400 text-sm leading-relaxed">"{t.text}"</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Logos parceiros */}
+        <div className="flex flex-wrap items-center justify-center gap-2 text-zinc-600 font-semibold text-sm">
+          <span>Corretores parceiros de:</span>
+          {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa', 'Itaú Consórcios'].map((brand, i, arr) => (
+            <span key={brand} className="flex items-center gap-2">
+              <span>{brand}</span>
+              {i < arr.length - 1 && <span className="text-zinc-800">·</span>}
+            </span>
           ))}
         </div>
       </section>
@@ -227,7 +377,7 @@ export default function LandingPage() {
       <section id="precos" className="max-w-6xl mx-auto px-4 py-24">
         <div className="text-center mb-12">
           <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Planos</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white">Escolha seu plano</h2>
+          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Escolha seu plano</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
@@ -248,7 +398,14 @@ export default function LandingPage() {
               )}
 
               <div>
-                <p className="text-white font-bold text-lg">{plano.nome}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-white font-bold text-lg">{plano.nome}</p>
+                  {plano.launchBadge && (
+                    <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">
+                      Oferta de Lançamento
+                    </span>
+                  )}
+                </div>
                 <p className="text-zinc-500 text-sm mt-0.5">{plano.subtitulo}</p>
               </div>
 
@@ -272,13 +429,19 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+
+        {/* Garantia */}
+        <div className="mt-8 flex items-center justify-center gap-2 text-zinc-500 text-sm">
+          <Shield size={14} className="text-[#FF4500]" />
+          <span>30 dias de garantia · Sem fidelidade · Cancele quando quiser</span>
+        </div>
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
       <section id="faq" className="max-w-2xl mx-auto px-4 py-24">
         <div className="text-center mb-12">
           <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">FAQ</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white">Dúvidas frequentes</h2>
+          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Dúvidas frequentes</h2>
         </div>
 
         <div className="flex flex-col">
@@ -313,10 +476,23 @@ export default function LandingPage() {
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}
       <footer className="border-t border-white/10 py-8">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-          <p className="text-zinc-500">© 2025 GrowSorcio. Todos os direitos reservados.</p>
-          <div className="flex items-center gap-6">
-            <a href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">Termos</a>
-            <a href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">Privacidade</a>
+          <div className="flex flex-col items-center sm:items-start gap-1">
+            <p className="text-zinc-500">© 2025 GrowSorcio. Todos os direitos reservados.</p>
+            <p className="text-zinc-600 text-sm">Feito para corretores de consórcio 🇧🇷</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex items-center gap-4">
+              <a href="#" className="text-zinc-500 hover:text-white transition-colors duration-150 flex items-center gap-1.5 min-h-[44px]">
+                <Instagram size={16} /> Instagram
+              </a>
+              <a href="#" className="text-zinc-500 hover:text-white transition-colors duration-150 flex items-center gap-1.5 min-h-[44px]">
+                <MessageCircle size={16} /> WhatsApp
+              </a>
+            </div>
+            <div className="flex items-center gap-6">
+              <a href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">Termos</a>
+              <a href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">Privacidade</a>
+            </div>
           </div>
         </div>
       </footer>
