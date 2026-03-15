@@ -1,7 +1,8 @@
 // /frontend/src/pages/LandingPage.jsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Brain, Calculator, Check, ChevronDown, Menu, X, Star, Shield, Instagram, MessageCircle } from 'lucide-react';
+import { Zap, Brain, Calculator, ChevronDown, Menu, X, Star, MessageCircle } from 'lucide-react';
+import PricingSection from '../components/ui/PricingSection';
 
 const FEATURES = [
   {
@@ -374,68 +375,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── PRICING ─────────────────────────────────────────────────────── */}
-      <section id="precos" className="max-w-6xl mx-auto px-4 py-24">
-        <div className="text-center mb-12">
-          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Planos</p>
-          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Escolha seu plano</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          {PLANOS.map((plano) => (
-            <div
-              key={plano.id}
-              className={[
-                'relative rounded-xl p-6 flex flex-col gap-6',
-                plano.destaque
-                  ? 'bg-white/5 border-2 border-[#FF4500] md:scale-105'
-                  : 'bg-white/5 border border-white/10',
-              ].join(' ')}
-            >
-              {plano.badge && (
-                <span className="bg-[#FF4500] text-white text-xs font-bold px-3 py-1 rounded-full absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  {plano.badge}
-                </span>
-              )}
-
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-white font-bold text-lg">{plano.nome}</p>
-                  {plano.launchBadge && (
-                    <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">
-                      Oferta de Lançamento
-                    </span>
-                  )}
-                </div>
-                <p className="text-zinc-500 text-sm mt-0.5">{plano.subtitulo}</p>
-              </div>
-
-              <div>
-                <span className="text-white text-4xl font-bold">{plano.preco}</span>
-                <span className="text-zinc-500 text-sm">/mês</span>
-              </div>
-
-              <ul className="flex flex-col gap-2.5">
-                {plano.features.map((feat) => (
-                  <li key={feat} className="flex items-start gap-2 text-sm text-zinc-300">
-                    <Check size={14} className="text-[#FF4500] mt-0.5 flex-shrink-0" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-
-              <button className={plano.btnClass}>
-                {plano.btnLabel}
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Garantia */}
-        <div className="mt-8 flex items-center justify-center gap-2 text-zinc-500 text-sm">
-          <Shield size={14} className="text-[#FF4500]" />
-          <span>30 dias de garantia · Sem fidelidade · Cancele quando quiser</span>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
       <section id="faq" className="max-w-2xl mx-auto px-4 py-24">
@@ -483,7 +423,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex items-center gap-4">
               <a href="#" className="text-zinc-500 hover:text-white transition-colors duration-150 flex items-center gap-1.5 min-h-[44px]">
-                <Instagram size={16} /> Instagram
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg> Instagram
               </a>
               <a href="#" className="text-zinc-500 hover:text-white transition-colors duration-150 flex items-center gap-1.5 min-h-[44px]">
                 <MessageCircle size={16} /> WhatsApp
