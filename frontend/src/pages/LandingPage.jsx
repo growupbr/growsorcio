@@ -8,20 +8,20 @@ const FEATURES = [
   {
     icon: <Zap size={22} className="text-[#FF4500]" />,
     stat: '2 min',
-    titulo: 'Captação Automática',
-    descricao: 'Receba leads do Meta Ads via Webhook direto. Sem planilhas, sem atraso.',
+    titulo: 'Lead do Meta direto no funil',
+    descricao: 'Seu lead clicou no anúncio agora. Em 2 minutos ele está no seu kanban, com nome, interesse e valor de carta preenchidos. Acabou o copia e cola.',
   },
   {
     icon: <Brain size={22} className="text-[#FF4500]" />,
     stat: '4 campos',
-    titulo: 'Qualificação Blessed',
-    descricao: "Saiba o valor da carta, lance e urgência antes mesmo de dar o primeiro 'Oi'.",
+    titulo: 'Sabe com quem vale o seu tempo',
+    descricao: 'Antes de ligar, você já sabe: qual carta quer, quanto tem de lance, se tem restrição no CPF e qual a urgência. Só você entra em contato com quem realmente tem perfil.',
   },
   {
     icon: <Calculator size={22} className="text-[#FF4500]" />,
     stat: '87%',
-    titulo: 'Fechamento Veloz',
-    descricao: 'Calculadora integrada para quebrar objeções financeiras na hora.',
+    titulo: 'Mata a objeção do financiamento na hora',
+    descricao: "O cliente diz 'prefiro financiar'. Você abre a calculadora, mostra quanto ele vai pagar a mais em juros e a conversa muda. Tudo dentro do CRM, em tempo real.",
   },
 ];
 
@@ -30,24 +30,24 @@ const TESTIMONIALS = [
     initials: 'RM',
     name: 'Rodrigo M.',
     location: 'São Paulo, SP',
-    text: 'Fechei 3 vendas no primeiro mês. O kanban me mostrou onde eu estava perdendo tempo.',
-    result: '3 vendas fechadas no 1º mês',
+    text: 'Antes eu perdia lead por esquecimento. Hoje o sistema me avisa quando um lead tá parado faz 3 dias. Fechei 3 contratos no primeiro mês só com quem eu já tinha na base.',
+    result: '3 contratos fechados com leads que já tinha',
     avatarClass: 'bg-orange-500/20 text-orange-400',
   },
   {
     initials: 'PS',
     name: 'Patricia S.',
     location: 'Belo Horizonte, MG',
-    text: 'Antes eu usava planilha. Agora recebo lead do Meta e já sei o valor da carta na hora.',
-    result: 'Zerou planilha, adotou em 1 dia',
+    text: 'Recebi um lead às 22h pelo Meta Ads. Quando acordei às 7h o lead já estava qualificado no sistema com valor de carta e tipo de bem. Entrei em contato na frente de todo mundo.',
+    result: 'Primeiro contato antes da concorrência',
     avatarClass: 'bg-blue-500/20 text-blue-400',
   },
   {
     initials: 'DL',
     name: 'Diego L.',
     location: 'Goiânia, GO',
-    text: 'O follow-up inteligente me poupou 2h por dia. Simples, direto, sem frescura.',
-    result: '2h/dia economizadas no follow-up',
+    text: 'Sou corretor autônomo, trabalho sozinho. Não tenho assistente. O GrowSorcio virou meu assistente de pré-venda. Reduzi o tempo de atendimento pela metade e aumentei minha carteira ativa em 40%.',
+    result: 'Carteira ativa cresceu 40% sem contratar',
     avatarClass: 'bg-emerald-500/20 text-emerald-400',
   },
 ];
@@ -116,24 +116,24 @@ const PLANOS = [
 
 const FAQ_ITEMS = [
   {
-    pergunta: 'O sistema é difícil de configurar?',
-    resposta: 'Não. Em 2 minutos você conecta seu Meta Ads e já começa a receber leads.',
+    pergunta: 'Em quanto tempo eu começo a usar de verdade?',
+    resposta: 'Em menos de 10 minutos você conecta seu Meta Ads, cadastra seu primeiro lead e já enxerga o funil funcionando. Sem onboarding de 2 semanas, sem treinamento obrigatório.',
   },
   {
     pergunta: 'Posso exportar meus dados se cancelar?',
-    resposta: 'Sim, seus dados são seus. Transparência total.',
+    resposta: 'Sim. Seus leads, histórico e documentos são seus. Você exporta tudo em CSV a qualquer momento, sem burocracia. A gente não segura dado como refém.',
   },
   {
-    pergunta: 'A Calculadora serve para qualquer administradora?',
-    resposta: 'Sim, ela é multibandeira e foca na matemática financeira pura.',
+    pergunta: 'Funciona com Porto, Embracon, Ademicon e as outras?',
+    resposta: 'Sim. O sistema é agnóstico de administradora. A calculadora usa matemática financeira pura — taxa de administração, fundo de reserva, parcela — e funciona para qualquer bandeira do mercado.',
   },
   {
     pergunta: 'O GrowSorcio funciona para qualquer administradora?',
     resposta: 'Sim. O sistema é agnóstico de administradora. Você cadastra os produtos e regras de cada uma.',
   },
   {
-    pergunta: 'Preciso de computador para usar?',
-    resposta: 'Não. O GrowSorcio é 100% mobile-first. Funciona perfeitamente no celular, no campo, durante a visita.',
+    pergunta: 'E se eu não for bom com tecnologia?',
+    resposta: 'Foi feito para corretor, não para programador. Se você usa WhatsApp, você usa o GrowSorcio. E se travar em alguma coisa, o suporte responde no WhatsApp mesmo.',
   },
 ];
 
@@ -196,7 +196,7 @@ export default function LandingPage() {
               href="#precos"
               className="bg-[#FF4500] hover:bg-[#e03e00] text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-150 min-h-[44px] flex items-center"
             >
-              Criar Conta
+              Testar Grátis 14 Dias
             </a>
           </div>
 
@@ -230,7 +230,7 @@ export default function LandingPage() {
                   onClick={() => setMenuAberto(false)}
                   className="bg-[#FF4500] hover:bg-[#e03e00] text-white text-sm font-semibold px-4 py-3 rounded-md transition-colors duration-150 text-center min-h-[44px] flex items-center justify-center"
                 >
-                  Criar Conta
+                  Testar Grátis 14 Dias
                 </a>
               </div>
             </motion.div>
@@ -252,7 +252,7 @@ export default function LandingPage() {
             className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs font-medium text-zinc-400"
           >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            127 corretores ativos hoje
+            ✦ Feito para o mercado de consórcio brasileiro
           </motion.div>
 
           <motion.h1
@@ -261,7 +261,7 @@ export default function LandingPage() {
             transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
             className="font-['Space_Grotesk',sans-serif] font-bold text-4xl md:text-6xl text-white tracking-tight leading-tight"
           >
-            Pare de perder vendas para a sua própria desorganização.
+            Você tá perdendo venda todo dia. E sabe disso.
           </motion.h1>
 
           <motion.p
@@ -270,7 +270,7 @@ export default function LandingPage() {
             transition={{ duration: 0.4, ease: 'easeOut', delay: 0.2 }}
             className="text-lg text-zinc-400 max-w-2xl font-['Inter',sans-serif]"
           >
-            O único CRM para corretores de consórcio com Meta Ads, qualificação Blessed e calculadora em uma tela.
+            O GrowSorcio organiza seu funil, qualifica seu lead antes do primeiro contato e te mostra exatamente onde o dinheiro está parado.
           </motion.p>
 
           <motion.div
@@ -289,7 +289,7 @@ export default function LandingPage() {
               href="#recursos"
               className="border border-white/20 hover:border-white/40 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-colors duration-150 min-h-[44px] flex items-center justify-center"
             >
-              Ver Demonstração
+              Ver como funciona
             </a>
           </motion.div>
 
@@ -319,8 +319,9 @@ export default function LandingPage() {
       {/* ── FEATURES ────────────────────────────────────────────────────── */}
       <section id="recursos" className="max-w-6xl mx-auto px-4 py-24">
         <div className="text-center mb-12">
-          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Recursos</p>
-          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Tudo que você precisa para fechar mais</h2>
+          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Por que funciona</p>
+          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Construído para o jeito que corretor de consórcio vende</h2>
+          <p className="text-zinc-500 text-base max-w-2xl mx-auto mt-3">Não é RD Station. Não é HubSpot. É um CRM que fala carta, lance, administradora e contemplação.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -346,11 +347,49 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── URGÊNCIA ─────────────────────────────────────────────────────── */}
+      <section className="max-w-4xl mx-auto px-4 py-16">
+        <div className="bg-white/5 border border-[#FF4500]/30 rounded-2xl p-8 md:p-12 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(255,69,0,0.08),transparent)] pointer-events-none" />
+          <div className="relative z-10">
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#FF4500]/10 border border-[#FF4500]/30 mb-6">
+              <span className="text-[#FF4500] text-4xl font-black">21x</span>
+            </div>
+            <h2 className="text-white text-2xl md:text-3xl font-bold tracking-tight mb-4">
+              Quem responde primeiro, fecha primeiro.
+            </h2>
+            <p className="text-zinc-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-6">
+              Pesquisa do MIT mostrou que responder um lead em até 5 minutos aumenta em{' '}
+              <span className="text-white font-semibold">21 vezes</span> a chance de fechar negócio.
+              Depois de 30 minutos, essa chance cai mais de 100 vezes.
+            </p>
+            <div className="w-12 h-px bg-[#FF4500]/40 mx-auto mb-6" />
+            <p className="text-zinc-300 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+              O GrowSorcio entrega o lead do Meta Ads direto no seu celular com nome, interesse e valor
+              de carta — e abre o WhatsApp com uma mensagem personalizada em{' '}
+              <span className="text-[#FF4500] font-semibold">menos de 2 minutos</span>.
+            </p>
+            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mt-8">
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Sem GrowSorcio</p>
+                <p className="text-white font-bold text-lg">+30 min</p>
+                <p className="text-zinc-500 text-xs mt-1">para o primeiro contato</p>
+              </div>
+              <div className="bg-[#FF4500]/10 rounded-xl p-4 border border-[#FF4500]/30">
+                <p className="text-[#FF4500] text-xs uppercase tracking-wider mb-1">Com GrowSorcio</p>
+                <p className="text-white font-bold text-lg">-2 min</p>
+                <p className="text-zinc-400 text-xs mt-1">do clique ao WhatsApp</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── PROVA SOCIAL ─────────────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 py-16">
         <div className="text-center mb-10">
-          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Depoimentos</p>
-          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Corretores que já escalam</h2>
+          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Quem já trocou a planilha</p>
+          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Resultado de quem parou de improvisar</h2>
         </div>
 
         {/* Fix #5: Depoimentos com resultado destacado */}
@@ -389,7 +428,7 @@ export default function LandingPage() {
 
         {/* Logos parceiros */}
         <div className="flex flex-wrap items-center justify-center gap-2 text-zinc-600 font-semibold text-sm">
-          <span>Corretores parceiros de:</span>
+          <span>Usado por corretores das principais administradoras:</span>
           {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa', 'Itaú Consórcios'].map((brand, i, arr) => (
             <span key={brand} className="flex items-center gap-2">
               <span>{brand}</span>
@@ -406,7 +445,7 @@ export default function LandingPage() {
       <section id="faq" className="max-w-2xl mx-auto px-4 py-24">
         <div className="text-center mb-12">
           <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">FAQ</p>
-          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Dúvidas frequentes</h2>
+          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Perguntas de quem tá quase convencido</h2>
         </div>
 
         <div className="flex flex-col">
@@ -443,8 +482,8 @@ export default function LandingPage() {
       <footer className="border-t border-white/10 py-8">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
           <div className="flex flex-col items-center sm:items-start gap-1">
-            <p className="text-zinc-500">© 2025 GrowSorcio. Todos os direitos reservados.</p>
-            <p className="text-zinc-600 text-sm">Feito para corretores de consórcio 🇧🇷</p>
+            <p className="text-zinc-500">© 2025 GrowSorcio. Todos os direitos reservados. CNPJ em registro.</p>
+            <p className="text-zinc-600 text-sm">Feito no Brasil, para o mercado de consórcio brasileiro 🇧🇷</p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex items-center gap-4">

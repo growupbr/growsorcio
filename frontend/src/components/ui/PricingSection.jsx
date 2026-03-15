@@ -10,8 +10,8 @@ const PLANS = [
     price: 147,
     yearlyPrice: 117,
     period: "mês",
-    description: "Para o corretor que quer parar de perder leads",
-    buttonText: "Começar Agora",
+    description: "Organização que uma planilha nunca vai te dar",
+    buttonText: "Começar com o START",
     href: "#",
     isPopular: false,
     features: [
@@ -29,7 +29,7 @@ const PLANS = [
     price: 447,
     yearlyPrice: 357,
     period: "mês",
-    description: "Para corretores que querem autoridade máxima",
+    description: "Para quem já tem ritmo e quer escalar com time",
     buttonText: "Escalar com o PRO",
     href: "#",
     isPopular: true,
@@ -48,8 +48,8 @@ const PLANS = [
     price: 997,
     yearlyPrice: 797,
     period: "mês",
-    description: "Para escritórios que investem pesado em tráfego",
-    buttonText: "Falar com Consultor",
+    description: "Para operações com volume alto e equipe de vendas",
+    buttonText: "Quero o ELITE AI",
     href: "#",
     isPopular: false,
     features: [
@@ -104,11 +104,12 @@ export default function PricingSection() {
       {/* Título */}
       <div className="text-center mb-10">
         <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">
-          Planos
+          Investimento
         </p>
         <h2 className="text-3xl md:text-4xl font-bold text-white font-['Space_Grotesk',sans-serif]">
-          Escolha seu plano
+          Quanto custa uma venda perdida por mês?
         </h2>
+        <p className="text-zinc-500 text-base max-w-2xl mx-auto mt-3">Um corretor médio perde 4 a 6 vendas por mês por falta de organização. O GrowSorcio custa menos que uma comissão.</p>
       </div>
 
       {/* Fix #4: Toggle com feedback visual claro */}
@@ -134,7 +135,7 @@ export default function PricingSection() {
             Anual
           </span>
           <span className={`text-xs transition-opacity duration-150 text-green-400 ${!isMonthly ? "opacity-100" : "opacity-50"}`}>
-            (Economize 20%)
+            Anual — 2 meses grátis
           </span>
         </span>
       </div>
@@ -195,7 +196,7 @@ export default function PricingSection() {
               <div className="flex flex-col gap-1">
                 {isCenter && (
                   <span className="text-xs bg-[#FF4500]/20 text-[#FF4500] px-2 py-0.5 rounded-full font-semibold w-fit">
-                    Mais escolhido por corretores
+                    Escolha de quem fatura acima da média
                   </span>
                 )}
                 <div className="flex items-end gap-1">
@@ -204,6 +205,9 @@ export default function PricingSection() {
                   <span className="text-zinc-500 text-sm mb-1.5">/{plan.period}</span>
                 </div>
               </div>
+              {!isCenter && i === 0 && (
+                <p className="text-zinc-500 text-xs text-center">Sem cartão no cadastro</p>
+              )}
 
               {/* Features */}
               <ul className="flex flex-col gap-2.5 flex-1">
@@ -235,7 +239,7 @@ export default function PricingSection() {
       {/* Garantia */}
       <div className="mt-10 flex items-center justify-center gap-2 text-zinc-500 text-sm">
         <Shield size={14} className="text-[#FF4500]" />
-        <span>30 dias de garantia · Sem fidelidade · Cancele quando quiser</span>
+        <span>30 dias de garantia incondicional · Sem fidelidade · Cancele quando quiser · Seus dados são seus</span>
       </div>
     </section>
   );
