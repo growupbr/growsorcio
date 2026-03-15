@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import NumberFlow from "@number-flow/react";
 import confetti from "canvas-confetti";
 import { Check, Star, Shield } from "lucide-react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
@@ -66,6 +65,21 @@ const PLANS = [
   },
 ];
 
+// Fix #1: AnimatedPrice substitui NumberFlow (sem bugs de dígitos em coluna)
+function AnimatedPrice({ value }) {
+  const [displayed, setDisplayed] = useState(value);
+
+  useEffect(() => {
+    setDisplayed(value);
+  }, [value]);
+
+  return (
+    <span className="text-5xl font-bold text-white tabular-nums transition-all duration-500 font-['Space_Grotesk',sans-serif]">
+      {displayed.toLocaleString("pt-BR")}
+    </span>
+  );
+}
+
 function fireConfetti() {
   confetti({
     particleCount: 80,
@@ -97,16 +111,16 @@ export default function PricingSection() {
         </h2>
       </div>
 
-      {/* Toggle mensal/anual */}
+      {/* Fix #4: Toggle com feedback visual claro */}
       <div className="flex items-center justify-center gap-3 mb-12">
-        <span className={`text-sm font-medium transition-colors duration-150 ${isMonthly ? "text-white" : "text-zinc-500"}`}>
+        <span className={`text-sm font-semibold transition-colors duration-150 ${isMonthly ? "text-white" : "text-zinc-500"}`}>
           Mensal
         </span>
         <button
           onClick={handleToggle}
           aria-label="Alternar cobrança mensal ou anual"
-          className="relative w-12 h-6 rounded-full bg-white/10 border border-white/20 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4500]"
-          style={{ backgroundColor: !isMonthly ? "#FF4500" : undefined }}
+          className="relative w-12 h-6 rounded-full border border-white/20 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4500]"
+          style={{ backgroundColor: !isMonthly ? "#FF4500" : "rgba(255,255,255,0.1)" }}
         >
           <motion.span
             layout
@@ -115,9 +129,13 @@ export default function PricingSection() {
             style={{ left: isMonthly ? 2 : undefined, right: !isMonthly ? 2 : undefined }}
           />
         </button>
-        <span className={`text-sm font-medium transition-colors duration-150 ${!isMonthly ? "text-white" : "text-zinc-500"}`}>
-          Anual{" "}
-          <span className="text-emerald-400 text-xs font-semibold">(Economize 20%)</span>
+        <span className="text-sm flex items-center gap-1">
+          <span className={`font-semibold transition-colors duration-150 ${!isMonthly ? "text-[#FF4500]" : "text-zinc-400"}`}>
+            Anual
+          </span>
+          <span className={`text-xs transition-opacity duration-150 text-green-400 ${!isMonthly ? "opacity-100" : "opacity-50"}`}>
+            (Economize 20%)
+          </span>
         </span>
       </div>
 
@@ -151,8 +169,9 @@ export default function PricingSection() {
               viewport={{ once: true, margin: "-60px" }}
               className={[
                 "relative rounded-xl p-6 flex flex-col gap-5 backdrop-blur",
+                // Fix #3: ring + shadow no card PRO
                 isCenter
-                  ? "bg-white/5 border-2 border-[#FF4500]"
+                  ? "bg-white/5 border-2 border-[#FF4500] ring-2 ring-[#FF4500] ring-offset-2 ring-offset-zinc-950 shadow-[0_0_40px_rgba(255,69,0,0.2)] z-10"
                   : "bg-white/5 border border-white/10",
               ].join(" ")}
             >
@@ -172,15 +191,18 @@ export default function PricingSection() {
                 <p className="text-zinc-500 text-sm mt-0.5">{plan.description}</p>
               </div>
 
-              {/* Preço animado */}
-              <div className="flex items-end gap-1">
-                <span className="text-zinc-400 text-lg font-medium">R$</span>
-                <NumberFlow
-                  value={price}
-                  format={{ notation: "standard" }}
-                  className="text-white text-4xl font-bold font-['Space_Grotesk',sans-serif] tabular-nums"
-                />
-                <span className="text-zinc-500 text-sm mb-1">/{plan.period}</span>
+              {/* Fix #1: Preço com AnimatedPrice */}
+              <div className="flex flex-col gap-1">
+                {isCenter && (
+                  <span className="text-xs bg-[#FF4500]/20 text-[#FF4500] px-2 py-0.5 rounded-full font-semibold w-fit">
+                    Mais escolhido por corretores
+                  </span>
+                )}
+                <div className="flex items-end gap-1">
+                  <span className="text-zinc-400 text-lg font-medium mb-1">R$</span>
+                  <AnimatedPrice value={price} />
+                  <span className="text-zinc-500 text-sm mb-1.5">/{plan.period}</span>
+                </div>
               </div>
 
               {/* Features */}
@@ -200,7 +222,7 @@ export default function PricingSection() {
                   "w-full py-3 rounded-lg text-sm font-semibold text-center transition-colors duration-150 min-h-[44px] flex items-center justify-center",
                   isCenter
                     ? "btn-shimmer text-white"
-                    : "border border-white/20 hover:border-white/40 text-white",
+                    : "border border-white/20 hover:border-white/40 text-white hover:bg-white/5",
                 ].join(" ")}
               >
                 {plan.buttonText}
@@ -211,7 +233,7 @@ export default function PricingSection() {
       </div>
 
       {/* Garantia */}
-      <div className="mt-8 flex items-center justify-center gap-2 text-zinc-500 text-sm">
+      <div className="mt-10 flex items-center justify-center gap-2 text-zinc-500 text-sm">
         <Shield size={14} className="text-[#FF4500]" />
         <span>30 dias de garantia · Sem fidelidade · Cancele quando quiser</span>
       </div>

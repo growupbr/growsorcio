@@ -31,6 +31,7 @@ const TESTIMONIALS = [
     name: 'Rodrigo M.',
     location: 'São Paulo, SP',
     text: 'Fechei 3 vendas no primeiro mês. O kanban me mostrou onde eu estava perdendo tempo.',
+    result: '3 vendas fechadas no 1º mês',
     avatarClass: 'bg-orange-500/20 text-orange-400',
   },
   {
@@ -38,6 +39,7 @@ const TESTIMONIALS = [
     name: 'Patricia S.',
     location: 'Belo Horizonte, MG',
     text: 'Antes eu usava planilha. Agora recebo lead do Meta e já sei o valor da carta na hora.',
+    result: 'Zerou planilha, adotou em 1 dia',
     avatarClass: 'bg-blue-500/20 text-blue-400',
   },
   {
@@ -45,6 +47,7 @@ const TESTIMONIALS = [
     name: 'Diego L.',
     location: 'Goiânia, GO',
     text: 'O follow-up inteligente me poupou 2h por dia. Simples, direto, sem frescura.',
+    result: '2h/dia economizadas no follow-up',
     avatarClass: 'bg-emerald-500/20 text-emerald-400',
   },
 ];
@@ -134,10 +137,26 @@ const FAQ_ITEMS = [
   },
 ];
 
+// Fix #2: Colunas coloridas com borda lateral por status
 const KANBAN_COLS = [
-  { col: 'Lead Novo', cards: ['Ana Lima', 'Carlos R.', 'Priya S.'], color: 'border-zinc-600' },
-  { col: 'Em Qualificação', cards: ['Roberto F.', 'Marina T.'], color: 'border-blue-500/50' },
-  { col: 'Reunião Agendada', cards: ['Juliana M.'], color: 'border-[#FF4500]/50' },
+  {
+    col: 'Lead Novo',
+    titleClass: 'text-blue-400',
+    borderClass: 'border-l-2 border-l-blue-400',
+    cards: ['Ana Lima', 'Carlos R.', 'Priya S.'],
+  },
+  {
+    col: 'Em Qualificação',
+    titleClass: 'text-yellow-400',
+    borderClass: 'border-l-2 border-l-yellow-400',
+    cards: ['Roberto F.', 'Marina T.'],
+  },
+  {
+    col: 'Reunião Agendada',
+    titleClass: 'text-green-400',
+    borderClass: 'border-l-2 border-l-green-400',
+    cards: ['Juliana M.'],
+  },
 ];
 
 const fadeUp = {
@@ -283,9 +302,10 @@ export default function LandingPage() {
           >
             {KANBAN_COLS.map((col) => (
               <div key={col.col} className="flex-1 flex flex-col gap-2 min-w-0">
-                <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider truncate">{col.col}</p>
-                {col.cards.map((name) => (
-                  <div key={name} className={`bg-white/5 border ${col.color} rounded-lg p-2.5`}>
+                <p className={`text-xs font-semibold uppercase tracking-wider truncate ${col.titleClass}`}>{col.col}</p>
+                {col.cards.map((name, ci) => (
+                  <div key={name} className={`bg-white/5 border border-white/10 ${col.borderClass} rounded-lg p-2.5 relative`}>
+                    {ci === 0 && <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
                     <p className="text-zinc-300 text-xs font-medium truncate">{name}</p>
                     <p className="text-zinc-600 text-xs mt-0.5">Consórcio · R$ 85k</p>
                   </div>
@@ -333,17 +353,18 @@ export default function LandingPage() {
           <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Corretores que já escalam</h2>
         </div>
 
+        {/* Fix #5: Depoimentos com resultado destacado */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {TESTIMONIALS.map((t, i) => (
+          {TESTIMONIALS.map((t) => (
             <motion.div
               key={t.name}
               variants={fadeUp}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: '-40px' }}
-              className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur flex flex-col gap-4"
+              className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur flex flex-col"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${t.avatarClass}`}>
                   {t.initials}
                 </div>
@@ -352,12 +373,16 @@ export default function LandingPage() {
                   <p className="text-zinc-500 text-xs">{t.location}</p>
                 </div>
               </div>
-              <div className="flex gap-0.5">
+              <div className="flex gap-0.5 mb-3">
                 {Array.from({ length: 5 }).map((_, j) => (
                   <Star key={j} size={12} className="text-[#FF4500] fill-[#FF4500]" />
                 ))}
               </div>
-              <p className="text-zinc-400 text-sm leading-relaxed">"{t.text}"</p>
+              <p className="text-zinc-300 text-sm leading-relaxed mb-4 flex-1">"{t.text}"</p>
+              <div className="border-t border-white/10 pt-3">
+                <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-wider">Resultado</p>
+                <p className="text-white font-bold text-sm mt-0.5">{t.result}</p>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -400,10 +425,11 @@ export default function LandingPage() {
                   ].join(' ')}
                 />
               </button>
+              {/* Fix #6: opacity + max-h para accordion fluido */}
               <div
                 className={[
-                  'overflow-hidden transition-all duration-200',
-                  aberto === i ? 'max-h-40' : 'max-h-0',
+                  'overflow-hidden transition-all duration-300',
+                  aberto === i ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0',
                 ].join(' ')}
               >
                 <p className="text-zinc-400 text-sm leading-relaxed pb-5">{item.resposta}</p>
