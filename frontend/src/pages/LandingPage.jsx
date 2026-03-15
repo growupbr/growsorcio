@@ -1,5 +1,13 @@
 // /frontend/src/pages/LandingPage.jsx
 import { useState } from 'react';
+import logoAdemicon from '../assets/ademicon.webp';
+import logoEmbracon from '../assets/embracon.webp';
+import logoHonda from '../assets/hondaconsorcio.webp';
+import logoHS from '../assets/hsconsorcio.webp';
+import logoMagalu from '../assets/magaluconsorcio.webp';
+import logoMaggi from '../assets/maggiconsorcio.webp';
+import logoPorto from '../assets/portoseguroconsorcio.webp';
+import logoRodobens from '../assets/rodobens.webp';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, Brain, Calculator, ChevronDown, Menu, X, Star, MessageCircle } from 'lucide-react';
 import PricingSection from '../components/ui/PricingSection';
@@ -100,14 +108,14 @@ const KANBAN_COLS = [
 ];
 
 const PROOF_LOGOS = [
-  { src: '/logos/ademicon.png',     alt: 'Ademicon' },
-  { src: '/logos/embracon.png',     alt: 'Embracon' },
-  { src: '/logos/honda.png',        alt: 'Honda Consórcio' },
-  { src: '/logos/hs-consorcios.png',alt: 'HS Consórcios' },
-  { src: '/logos/magalu.png',       alt: 'Consórcio Magalu' },
-  { src: '/logos/maggi.png',        alt: 'Consórcio Maggi' },
-  { src: '/logos/porto-seguro.png', alt: 'Porto Seguro Consórcio' },
-  { src: '/logos/rodobens.png',     alt: 'Rodobens Consórcio' },
+  { src: logoAdemicon, alt: 'Ademicon' },
+  { src: logoEmbracon, alt: 'Embracon' },
+  { src: logoHonda,    alt: 'Honda Consórcio' },
+  { src: logoHS,       alt: 'HS Consórcios' },
+  { src: logoMagalu,   alt: 'Consórcio Magalu' },
+  { src: logoMaggi,    alt: 'Consórcio Maggi' },
+  { src: logoPorto,    alt: 'Porto Seguro Consórcio' },
+  { src: logoRodobens, alt: 'Rodobens Consórcio' },
 ];
 
 const fadeUp = {
