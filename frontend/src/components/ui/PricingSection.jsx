@@ -3,9 +3,11 @@ import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { Check, Star, Shield } from "lucide-react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import CheckoutModal from "../CheckoutModal";
 
 const PLANS = [
   {
+    id: "start",
     name: "Grow START",
     price: 147,
     yearlyPrice: 117,
@@ -25,6 +27,7 @@ const PLANS = [
     ],
   },
   {
+    id: "pro",
     name: "Grow PRO",
     price: 447,
     yearlyPrice: 357,
@@ -44,6 +47,7 @@ const PLANS = [
     ],
   },
   {
+    id: "elite",
     name: "Grow ELITE AI",
     price: 997,
     yearlyPrice: 797,
@@ -92,6 +96,7 @@ function fireConfetti() {
 export default function PricingSection() {
   const [isMonthly, setIsMonthly] = useState(true);
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const [checkout, setCheckout] = useState(null); // { plan, billingPeriod }
 
   function handleToggle() {
     const next = !isMonthly;
@@ -220,17 +225,17 @@ export default function PricingSection() {
               </ul>
 
               {/* Botão */}
-              <a
-                href={plan.href}
+              <button
+                onClick={() => setCheckout({ plan: plan.id, billingPeriod: isMonthly ? 'monthly' : 'yearly' })}
                 className={[
-                  "w-full py-3 rounded-lg text-sm font-semibold text-center transition-colors duration-150 min-h-[44px] flex items-center justify-center",
+                  "w-full py-3 rounded-lg text-sm font-semibold text-center transition-colors duration-150 min-h-[44px] flex items-center justify-center cursor-pointer",
                   isCenter
                     ? "btn-shimmer text-white"
                     : "border border-white/20 hover:border-white/40 text-white hover:bg-white/5",
                 ].join(" ")}
               >
                 {plan.buttonText}
-              </a>
+              </button>
             </motion.div>
           );
         })}
@@ -241,6 +246,15 @@ export default function PricingSection() {
         <Shield size={14} className="text-[#FF4500]" />
         <span>30 dias de garantia incondicional · Sem fidelidade · Cancele quando quiser · Seus dados são seus</span>
       </div>
+
+      {/* Checkout Modal */}
+      {checkout && (
+        <CheckoutModal
+          plan={checkout.plan}
+          billingPeriod={checkout.billingPeriod}
+          onClose={() => setCheckout(null)}
+        />
+      )}
     </section>
   );
 }
