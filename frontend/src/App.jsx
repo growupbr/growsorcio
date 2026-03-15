@@ -4,7 +4,6 @@ import Dashboard from './pages/Dashboard';
 import Kanban from './pages/Kanban';
 import Leads from './pages/Leads';
 import NovoLead from './pages/NovoLead';
-import LandingPage from './pages/LandingPage';
 import { useNotificacoes } from './hooks/useNotificacoes';
 
 export default function App() {
@@ -19,7 +18,6 @@ export default function App() {
           <Route path="/kanban" element={<Kanban />} />
           <Route path="/leads" element={<Leads />} />
           <Route path="/leads/novo" element={<NovoLead />} />
-          <Route path="/landing" element={<LandingPage />} />
         </Routes>
       </main>
     </div>
