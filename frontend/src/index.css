@@ -41,6 +41,26 @@
   animation: shimmer 2s linear infinite;
 }
 
+@keyframes proof-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-50% - 1.1rem)); }
+}
+.proof-marquee {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  gap: 2.2rem;
+  animation: proof-scroll 34s linear infinite;
+}
+.proof-marquee:hover {
+  animation-play-state: paused;
+}
+.proof-carousel {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

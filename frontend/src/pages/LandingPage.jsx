@@ -366,15 +366,33 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Logos parceiros */}
-        <div className="flex flex-wrap items-center justify-center gap-2 text-zinc-600 font-semibold text-sm">
-          <span>Usado por corretores das principais administradoras:</span>
-          {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa', 'Itaú Consórcios'].map((brand, idx, arr) => (
-            <span key={brand} className="flex items-center gap-2">
-              <span>{brand}</span>
-              {idx < arr.length - 1 && <span className="text-zinc-800">·</span>}
-            </span>
-          ))}
+        {/* Carrossel de administradoras */}
+        <div className="border-t border-white/10 pt-8 flex items-center gap-4 overflow-hidden">
+          <span className="text-zinc-600 text-xs font-bold uppercase tracking-widest whitespace-nowrap flex-shrink-0">
+            Usado por corretores das principais administradoras:
+          </span>
+          <div className="proof-carousel flex-1 min-w-0">
+            <div className="proof-marquee">
+              {/* Set 1 */}
+              {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa Consórcios', 'Itaú Consórcios', 'Bradesco Consórcios', 'Santander Consórcios', 'BB Consórcios', 'Sicoob', 'HSBC Consórcios'].map((brand) => (
+                <span
+                  key={`a-${brand}`}
+                  className="text-zinc-400 text-sm font-semibold whitespace-nowrap px-4 py-1.5 rounded-full border border-white/10 bg-white/5"
+                >
+                  {brand}
+                </span>
+              ))}
+              {/* Set 2 — duplicado para loop contínuo */}
+              {['Porto Seguro', 'Embracon', 'Ademicon', 'Caixa Consórcios', 'Itaú Consórcios', 'Bradesco Consórcios', 'Santander Consórcios', 'BB Consórcios', 'Sicoob', 'HSBC Consórcios'].map((brand) => (
+                <span
+                  key={`b-${brand}`}
+                  className="text-zinc-400 text-sm font-semibold whitespace-nowrap px-4 py-1.5 rounded-full border border-white/10 bg-white/5"
+                >
+                  {brand}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

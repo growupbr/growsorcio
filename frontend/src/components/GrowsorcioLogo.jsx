@@ -1,18 +1,19 @@
 /**
  * Logo oficial GrowSorcio
- * Ícone: seta diagonal em bloco laranja arredondado
+ * Ícone: seta diagonal (⬈) em bloco laranja arredondado
+ * Fonte: Nunito 900 (arredondada, fiel à marca)
  * Props:
  *   height     — altura total (default 36)
  *   textColor  — cor do texto (default #ffffff)
  */
 export default function GrowsorcioLogo({ height = 36, textColor = '#ffffff' }) {
   const iconSize = height;
-  const fontSize = height * 0.52;
-  const gap = height * 0.34;
+  const fontSize = height * 0.56;
+  const gap = height * 0.30;
 
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap }}>
-      {/* Ícone: seta diagonal up-right em bloco laranja */}
+      {/* Ícone: seta ⬈ em quadrado laranja */}
       <svg
         width={iconSize}
         height={iconSize}
@@ -21,43 +22,38 @@ export default function GrowsorcioLogo({ height = 36, textColor = '#ffffff' }) {
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
       >
-        {/* Fundo laranja com bordas arredondadas */}
-        <rect width="100" height="100" rx="20" fill="#FF4500" />
+        {/* Fundo laranja com bordas bem arredondadas */}
+        <rect width="100" height="100" rx="22" fill="#FF4500" />
 
         {/*
-          Seta estilo "growth arrow":
-          - Base quadrada no canto inferior-esquerdo
-          - Haste diagonal subindo para a direita
-          - Ponta de seta no canto superior-direito
+          Seta diagonal ⬈ (nordeste):
+          Dois degraus retangulares + ponta triangular
+          Degrau inferior-esquerdo: col 16–42, linha 56–82
+          Degrau superior-direito: col 42–68, linha 30–56
+          Ponta da seta: triângulo 54–84 / 8–38
+          Preenchimento diagonal entre degrau superior e ponta
         */}
-        <path
-          d="M22 78 L22 54 L46 54 L46 78 Z"
-          fill="white"
-        />
-        <path
-          d="M46 54 L46 30 L70 30 L70 54 Z"
-          fill="white"
-        />
-        {/* Ponta da seta — triângulo */}
-        <polygon
-          points="58,14 86,14 86,42"
-          fill="white"
-        />
-        {/* Linha diagonal preenchendo o "degrau" */}
-        <path
-          d="M46 54 L70 30 L86 14 L86 42 L70 54 Z"
-          fill="white"
-        />
+        {/* Degrau 1 — base inferior-esquerda */}
+        <path d="M16 82 L16 56 L42 56 L42 82 Z" fill="white" />
+
+        {/* Degrau 2 — meio */}
+        <path d="M42 56 L42 30 L68 30 L68 56 Z" fill="white" />
+
+        {/* Ponta da seta — triângulo superior-direito */}
+        <polygon points="54,8 84,8 84,38" fill="white" />
+
+        {/* Preenchimento que une o degrau 2 à ponta */}
+        <path d="M42 56 L68 30 L84 8 L84 38 L68 56 Z" fill="white" />
       </svg>
 
-      {/* Texto */}
+      {/* Texto — Nunito 900 (arredondado, fiel à marca) */}
       <span
         style={{
-          fontFamily: "'Space Grotesk', 'Inter', sans-serif",
-          fontWeight: 700,
+          fontFamily: "'Nunito', 'Space Grotesk', 'Inter', sans-serif",
+          fontWeight: 900,
           fontSize,
           color: textColor,
-          letterSpacing: '-0.01em',
+          letterSpacing: '-0.02em',
           lineHeight: 1,
           whiteSpace: 'nowrap',
         }}
