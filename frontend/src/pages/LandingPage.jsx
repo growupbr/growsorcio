@@ -1,5 +1,5 @@
 // /frontend/src/pages/LandingPage.jsx
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import logoAdemicon from '../assets/ademicon.webp';
 import logoEmbracon from '../assets/embracon.webp';
 import logoHonda from '../assets/hondaconsorcio.webp';
@@ -8,10 +8,16 @@ import logoMagalu from '../assets/magaluconsorcio.webp';
 import logoMaggi from '../assets/maggiconsorcio.webp';
 import logoPorto from '../assets/portoseguroconsorcio.webp';
 import logoRodobens from '../assets/rodobens.webp';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Zap, Brain, Calculator, ChevronDown, Menu, X, Star, MessageCircle } from 'lucide-react';
 import PricingSection from '../components/ui/PricingSection';
 import GrowsorcioLogo from '../components/GrowsorcioLogo';
+import GradientBlobs from '../components/landing/GradientBlobs';
+import TextReveal from '../components/landing/TextReveal';
+import AnimatedCounter from '../components/landing/AnimatedCounter';
+import GlowCard from '../components/landing/GlowCard';
+import ParallaxSection from '../components/landing/ParallaxSection';
+import StaggerContainer, { staggerItemVariants } from '../components/landing/StaggerContainer';
 
 const FEATURES = [
   {
@@ -119,16 +125,21 @@ const PROOF_LOGOS = [
 ];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+  hidden: { opacity: 0, y: 24, filter: 'blur(4px)' },
+  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } },
 };
 
 export default function LandingPage() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [aberto, setAberto] = useState(null);
+  const heroRef = useRef(null);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.8], [1, 0.95]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 100]);
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-300 font-['Inter',sans-serif]">
+    <div className="min-h-screen bg-[#09090b] text-zinc-300 font-['Inter',sans-serif] overflow-x-hidden">
 
       {/* ── NAVBAR ──────────────────────────────────────────────────────── */}
       <header className="fixed top-0 w-full z-50 backdrop-blur-md bg-zinc-950/80 border-b border-white/10">
@@ -198,35 +209,39 @@ export default function LandingPage() {
       </header>
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
-      <section id="hero" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,69,0,0.15),transparent)]" />
+      <section id="hero" ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+        {/* Background layers */}
+        <div className="absolute inset-0 grid-lines" />
+        <GradientBlobs />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,69,0,0.18),transparent)]" />
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center text-center gap-8">
+        <motion.div
+          style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
+          className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center text-center gap-8"
+        >
 
           {/* Badge animado */}
           <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs font-medium text-zinc-400"
+            initial={{ opacity: 0, y: -12, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs font-medium text-zinc-400 backdrop-blur-sm"
           >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             ✦ Feito para o mercado de consórcio brasileiro
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
+          <TextReveal
+            text="Você tá perdendo venda todo dia. E sabe disso."
             className="font-['Space_Grotesk',sans-serif] font-bold text-4xl md:text-6xl text-white tracking-tight leading-tight"
-          >
-            Você tá perdendo venda todo dia. E sabe disso.
-          </motion.h1>
+            highlight={['perdendo', 'venda']}
+            stagger={0.08}
+          />
 
           <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.2 }}
+            initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.6 }}
             className="text-lg text-zinc-400 max-w-2xl font-['Inter',sans-serif]"
           >
             O GrowSorcio organiza seu funil, qualifica seu lead antes do primeiro contato e te mostra exatamente onde o dinheiro está parado.
@@ -235,85 +250,145 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.3 }}
+            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.8 }}
             className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
           >
             <a
               href="#precos"
-              className="cta-pulse bg-[#FF4500] hover:bg-[#e03e00] text-white font-semibold px-8 py-4 rounded-lg text-lg transition-colors duration-150 min-h-[44px] flex items-center justify-center"
+              className="group relative cta-pulse bg-[#FF4500] hover:bg-[#e03e00] text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all duration-200 min-h-[44px] flex items-center justify-center overflow-hidden"
             >
-              Começar Agora →
+              <span className="relative z-10">Começar Agora →</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
             </a>
             <a
               href="#recursos"
-              className="border border-white/20 hover:border-white/40 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-colors duration-150 min-h-[44px] flex items-center justify-center"
+              className="border border-white/20 hover:border-white/40 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all duration-200 min-h-[44px] flex items-center justify-center hover:bg-white/5"
             >
               Ver como funciona
             </a>
           </motion.div>
 
-          {/* Kanban mock */}
+          {/* Kanban mock com parallax e glow */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.4 }}
-            className="w-full mt-8 aspect-video bg-zinc-900 border border-white/10 rounded-xl shadow-[0_0_80px_rgba(255,69,0,0.08)] overflow-hidden p-4 flex gap-3"
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94], delay: 1.0 }}
+            className="w-full mt-8 aspect-video bg-zinc-900/80 border border-white/10 rounded-xl shadow-[0_0_120px_rgba(255,69,0,0.1)] overflow-hidden p-4 flex gap-3 backdrop-blur-sm relative"
           >
-            {KANBAN_COLS.map((col) => (
+            {/* Subtle animated glow on kanban border */}
+            <div className="absolute inset-0 rounded-xl border border-white/5 pointer-events-none" style={{ boxShadow: '0 0 60px rgba(255,69,0,0.06) inset' }} />
+            {KANBAN_COLS.map((col, ci) => (
               <div key={col.col} className="flex-1 flex flex-col gap-2 min-w-0">
                 <p className={`text-xs font-semibold uppercase tracking-wider truncate ${col.titleClass}`}>{col.col}</p>
-                {col.cards.map((name, ci) => (
-                  <div key={name} className={`bg-white/5 border border-white/10 ${col.borderClass} rounded-lg p-2.5 relative`}>
-                    {ci === 0 && <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
+                {col.cards.map((name, cardIdx) => (
+                  <motion.div
+                    key={name}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 1.2 + ci * 0.15 + cardIdx * 0.1 }}
+                    className={`bg-white/5 border border-white/10 ${col.borderClass} rounded-lg p-2.5 relative hover:bg-white/8 transition-colors duration-200`}
+                  >
+                    {cardIdx === 0 && <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
                     <p className="text-zinc-300 text-xs font-medium truncate">{name}</p>
                     <p className="text-zinc-600 text-xs mt-0.5">Consórcio · R$ 85k</p>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             ))}
           </motion.div>
-        </div>
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2, duration: 0.6 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center pt-2"
+          >
+            <div className="w-1 h-2 rounded-full bg-white/40" />
+          </motion.div>
+        </motion.div>
       </section>
 
+      {/* Gradient line divider */}
+      <div className="gradient-line max-w-4xl mx-auto" />
+
       {/* ── FEATURES ────────────────────────────────────────────────────── */}
-      <section id="recursos" className="max-w-6xl mx-auto px-4 py-24">
-        <div className="text-center mb-12">
-          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Por que funciona</p>
-          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Construído para o jeito que corretor de consórcio vende</h2>
-          <p className="text-zinc-500 text-base max-w-2xl mx-auto mt-3">Não é RD Station. Não é HubSpot. É um CRM que fala carta, lance, administradora e contemplação.</p>
+      <section id="recursos" className="relative max-w-6xl mx-auto px-4 py-24">
+        <GradientBlobs className="opacity-50" />
+        <div className="text-center mb-12 relative z-10">
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3"
+          >
+            Por que funciona
+          </motion.p>
+          <TextReveal
+            text="Construído para o jeito que corretor de consórcio vende"
+            className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white"
+            stagger={0.05}
+          />
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-zinc-500 text-base max-w-2xl mx-auto mt-3"
+          >
+            Não é RD Station. Não é HubSpot. É um CRM que fala carta, lance, administradora e contemplação.
+          </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10" stagger={0.15}>
           {FEATURES.map((f) => (
-            <motion.div
-              key={f.titulo}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-60px' }}
-              whileHover={{ y: -4, borderColor: 'rgba(255,255,255,0.2)' }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur"
-            >
-              <p className="text-[#FF4500] font-['Space_Grotesk',sans-serif] font-bold text-3xl mb-1">{f.stat}</p>
-              <div className="p-3 rounded-lg bg-[#FF4500]/10 w-fit mb-4">
-                {f.icon}
-              </div>
-              <h3 className="text-white font-semibold text-lg mb-2">{f.titulo}</h3>
-              <p className="text-zinc-400 text-sm leading-relaxed">{f.descricao}</p>
+            <motion.div key={f.titulo} variants={staggerItemVariants}>
+              <GlowCard className="p-6 h-full">
+                <AnimatedCounter
+                  value={f.stat}
+                  className="text-[#FF4500] font-['Space_Grotesk',sans-serif] font-bold text-3xl mb-1 block stat-glow"
+                />
+                <div className="p-3 rounded-lg bg-[#FF4500]/10 w-fit mb-4">
+                  {f.icon}
+                </div>
+                <h3 className="text-white font-semibold text-lg mb-2">{f.titulo}</h3>
+                <p className="text-zinc-400 text-sm leading-relaxed">{f.descricao}</p>
+              </GlowCard>
             </motion.div>
           ))}
-        </div>
+        </StaggerContainer>
       </section>
 
       {/* ── URGÊNCIA ─────────────────────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-4 py-16">
-        <div className="bg-white/5 border border-[#FF4500]/30 rounded-2xl p-8 md:p-12 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(255,69,0,0.08),transparent)] pointer-events-none" />
-          <div className="relative z-10">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#FF4500]/10 border border-[#FF4500]/30 mb-6">
-              <span className="text-[#FF4500] text-4xl font-black">21x</span>
-            </div>
+      <div className="gradient-line max-w-4xl mx-auto" />
+      <section className="max-w-4xl mx-auto px-4 py-16 relative">
+        <ParallaxSection speed={0.1}>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-80px' }}
+            className="bg-white/5 border border-[#FF4500]/30 rounded-2xl p-8 md:p-12 text-center relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(255,69,0,0.08),transparent)] pointer-events-none" />
+            <div className="absolute inset-0 dot-grid pointer-events-none" />
+            <div className="relative z-10">
+              <motion.div
+                initial={{ scale: 0 }}
+                whileInView={{ scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+                className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#FF4500]/10 border border-[#FF4500]/30 mb-6"
+              >
+                <AnimatedCounter value={21} suffix="x" className="text-[#FF4500] text-4xl font-black stat-glow" />
+              </motion.div>
             <h2 className="text-white text-2xl md:text-3xl font-bold tracking-tight mb-4">
               Quem responde primeiro, fecha primeiro.
             </h2>
@@ -329,61 +404,83 @@ export default function LandingPage() {
               <span className="text-[#FF4500] font-semibold">menos de 2 minutos</span>.
             </p>
             <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mt-8">
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="bg-white/5 rounded-xl p-4 border border-white/10"
+              >
                 <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Sem GrowSorcio</p>
                 <p className="text-white font-bold text-lg">+30 min</p>
                 <p className="text-zinc-500 text-xs mt-1">para o primeiro contato</p>
-              </div>
-              <div className="bg-[#FF4500]/10 rounded-xl p-4 border border-[#FF4500]/30">
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="bg-[#FF4500]/10 rounded-xl p-4 border border-[#FF4500]/30"
+              >
                 <p className="text-[#FF4500] text-xs uppercase tracking-wider mb-1">Com GrowSorcio</p>
                 <p className="text-white font-bold text-lg">-2 min</p>
                 <p className="text-zinc-400 text-xs mt-1">do clique ao WhatsApp</p>
-              </div>
+              </motion.div>
             </div>
           </div>
-        </div>
+          </motion.div>
+        </ParallaxSection>
       </section>
 
       {/* ── PROVA SOCIAL ─────────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="text-center mb-10">
-          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">Quem já trocou a planilha</p>
-          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Resultado de quem parou de improvisar</h2>
+      <div className="gradient-line max-w-4xl mx-auto" />
+      <section className="max-w-6xl mx-auto px-4 py-16 relative">
+        <GradientBlobs className="opacity-30" />
+        <div className="text-center mb-10 relative z-10">
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3"
+          >
+            Quem já trocou a planilha
+          </motion.p>
+          <TextReveal
+            text="Resultado de quem parou de improvisar"
+            className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white"
+            stagger={0.06}
+          />
         </div>
 
         {/* Fix #5: Depoimentos com resultado destacado */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 relative z-10" stagger={0.15}>
           {TESTIMONIALS.map((t) => (
-            <motion.div
-              key={t.name}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-40px' }}
-              className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur flex flex-col"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${t.avatarClass}`}>
-                  {t.initials}
+            <motion.div key={t.name} variants={staggerItemVariants}>
+              <GlowCard className="p-6 h-full flex flex-col">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${t.avatarClass}`}>
+                    {t.initials}
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-semibold">{t.name}</p>
+                    <p className="text-zinc-500 text-xs">{t.location}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white text-sm font-semibold">{t.name}</p>
-                  <p className="text-zinc-500 text-xs">{t.location}</p>
+                <div className="flex gap-0.5 mb-3">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star key={j} size={12} className="text-[#FF4500] fill-[#FF4500]" />
+                  ))}
                 </div>
-              </div>
-              <div className="flex gap-0.5 mb-3">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} size={12} className="text-[#FF4500] fill-[#FF4500]" />
-                ))}
-              </div>
-              <p className="text-zinc-300 text-sm leading-relaxed mb-4 flex-1">"{t.text}"</p>
-              <div className="border-t border-white/10 pt-3">
-                <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-wider">Resultado</p>
-                <p className="text-white font-bold text-sm mt-0.5">{t.result}</p>
-              </div>
+                <p className="text-zinc-300 text-sm leading-relaxed mb-4 flex-1">"{t.text}"</p>
+                <div className="border-t border-white/10 pt-3">
+                  <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-wider">Resultado</p>
+                  <p className="text-white font-bold text-sm mt-0.5">{t.result}</p>
+                </div>
+              </GlowCard>
             </motion.div>
           ))}
-        </div>
+        </StaggerContainer>
 
         {/* Carrossel de logos — administradoras */}
         <div className="border-t border-white/10 pt-8">
@@ -409,40 +506,56 @@ export default function LandingPage() {
       <PricingSection />
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      <section id="faq" className="max-w-2xl mx-auto px-4 py-24">
+      <div className="gradient-line max-w-4xl mx-auto" />
+      <section id="faq" className="max-w-2xl mx-auto px-4 py-24 relative">
         <div className="text-center mb-12">
-          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">FAQ</p>
-          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white">Perguntas de quem tá quase convencido</h2>
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3"
+          >
+            FAQ
+          </motion.p>
+          <TextReveal
+            text="Perguntas de quem tá quase convencido"
+            className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white"
+            stagger={0.06}
+          />
         </div>
 
-        <div className="flex flex-col">
+        <StaggerContainer className="flex flex-col" stagger={0.08}>
           {FAQ_ITEMS.map((item, i) => (
-            <div key={i} className="border-b border-white/10">
+            <motion.div key={i} variants={staggerItemVariants} className="border-b border-white/10">
               <button
                 onClick={() => setAberto(aberto === i ? null : i)}
                 className="w-full flex items-center justify-between gap-4 py-5 text-left min-h-[44px] text-white font-medium hover:text-zinc-200 transition-colors duration-150"
               >
                 <span>{item.pergunta}</span>
-                <ChevronDown
-                  size={18}
-                  className={[
-                    'text-zinc-500 flex-shrink-0 transition-transform duration-200',
-                    aberto === i ? 'rotate-180' : '',
-                  ].join(' ')}
-                />
+                <motion.div
+                  animate={{ rotate: aberto === i ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ChevronDown size={18} className="text-zinc-500 flex-shrink-0" />
+                </motion.div>
               </button>
-              {/* Fix #6: opacity + max-h para accordion fluido */}
-              <div
-                className={[
-                  'overflow-hidden transition-all duration-300',
-                  aberto === i ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0',
-                ].join(' ')}
-              >
-                <p className="text-zinc-400 text-sm leading-relaxed pb-5">{item.resposta}</p>
-              </div>
-            </div>
+              <AnimatePresence>
+                {aberto === i && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    className="overflow-hidden"
+                  >
+                    <p className="text-zinc-400 text-sm leading-relaxed pb-5">{item.resposta}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           ))}
-        </div>
+        </StaggerContainer>
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}

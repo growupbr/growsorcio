@@ -45,6 +45,82 @@
   from { transform: translateX(0); }
   to   { transform: translateX(calc(-50% - 1.1rem)); }
 }
+
+/* ── Dot grid background pattern ─────────────────────────────────────────── */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ── Animated gradient line separator ─────────────────────────────────────── */
+.gradient-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,69,0,0.4), transparent);
+  animation: gradient-line-pulse 3s ease-in-out infinite;
+}
+@keyframes gradient-line-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+/* ── Hero floating grid lines ─────────────────────────────────────────────── */
+.grid-lines {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ── Glow pulse for stat numbers ──────────────────────────────────────────── */
+@keyframes glow-pulse {
+  0%, 100% { text-shadow: 0 0 20px rgba(255,69,0,0.3); }
+  50%      { text-shadow: 0 0 40px rgba(255,69,0,0.6), 0 0 80px rgba(255,69,0,0.2); }
+}
+.stat-glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ── Rotating border effect ── */
+@keyframes border-spin {
+  from { --angle: 0deg; }
+  to   { --angle: 360deg; }
+}
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.spinning-border {
+  animation: border-spin 4s linear infinite;
+  border-image: conic-gradient(from var(--angle), transparent 25%, #FF4500 50%, transparent 75%) 1;
+}
+
+/* ── Smooth entrance for sections ─────────────────────────────────────────── */
+.section-reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.section-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Floating animation ──────────────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+.animate-float-slow {
+  animation: float 8s ease-in-out infinite;
+}
+.animate-float-delay {
+  animation: float 7s ease-in-out 2s infinite;
+}
 .proof-marquee {
   display: flex;
   align-items: center;
