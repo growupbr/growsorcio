@@ -41,11 +41,13 @@ export default function App() {
     );
   }
 
-  // Domínio principal (growsorcio.com.br) → só landing page
+  // Domínio principal (growsorcio.com.br) → landing em URL oculta
+  // Acesse: growsorcio.com.br/v1-preview para ver a landing
+  // Qualquer outra rota redireciona para a URL oculta
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/*" element={<Navigate to="/" replace />} />
+      <Route path="/v1-preview" element={<LandingPage />} />
+      <Route path="/*" element={<Navigate to="/v1-preview" replace />} />
     </Routes>
   );
 }
