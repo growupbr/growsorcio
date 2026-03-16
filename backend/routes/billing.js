@@ -1,8 +1,9 @@
 'use strict';
 
+const crypto  = require('crypto');
 const express = require('express');
 const router  = express.Router();
-const { supabase } = require('../supabase');
+const { supabase, getOrganizationId } = require('../supabase');
 const { createCustomer, createBilling } = require('../services/abacatepay');
 
 const APP_URL    = process.env.APP_URL    || 'https://app.growsorcio.com.br';
@@ -21,6 +22,8 @@ router.post('/checkout', async (req, res) => {
   }
 
   try {
+    const resolvedOrganizationId = organizationId || await getOrganizationId();
+
     // 1. Cria o cliente na AbacatePay
     const customer = await createCustomer({ name, email, cellphone, taxId });
 
@@ -34,16 +37,14 @@ router.post('/checkout', async (req, res) => {
     });
 
     // 3. Salva assinatura como 'pending' no Supabase
-    if (organizationId) {
-      await supabase.from('subscriptions').upsert({
-        organization_id:        organizationId,
-        plan,
-        billing_period:         billingPeriod,
-        status:                 'pending',
-        abacatepay_customer_id: customer.id,
-        abacatepay_billing_id:  billing.id,
-      }, { onConflict: 'abacatepay_billing_id' });
-    }
+    await supabase.from('subscriptions').upsert({
+      organization_id:        resolvedOrganizationId,
+      plan,
+      billing_period:         billingPeriod,
+      status:                 'pending',
+      abacatepay_customer_id: customer.id,
+      abacatepay_billing_id:  billing.id,
+    }, { onConflict: 'abacatepay_billing_id' });
 
     return res.json({ url: billing.url, billingId: billing.id });
   } catch (err) {
@@ -55,9 +56,28 @@ router.post('/checkout', async (req, res) => {
 // ── POST /api/billing/webhook ────────────────────────────────────────────────
 // Recebe eventos da AbacatePay (billing.paid, pix.paid, billing.expired)
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  // Valida o secret do webhook
+  const webhookSecret = process.env.ABACATEPAY_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const receivedSecret = req.headers['x-webhook-secret'] || req.headers['x-abacatepay-secret'] || '';
+    const expected = Buffer.from(webhookSecret);
+    const received = Buffer.from(receivedSecret);
+    const valid = expected.length === received.length &&
+      crypto.timingSafeEqual(expected, received);
+    if (!valid) {
+      console.warn('[webhook] Secret inválido ou ausente');
+      return res.status(401).json({ erro: 'Unauthorized' });
+    }
+  }
   let event;
   try {
-    event = JSON.parse(req.body.toString());
+    if (Buffer.isBuffer(req.body)) {
+      event = JSON.parse(req.body.toString('utf-8'));
+    } else if (typeof req.body === 'string') {
+      event = JSON.parse(req.body);
+    } else {
+      event = req.body;
+    }
   } catch {
     return res.status(400).json({ erro: 'Body inválido' });
   }
