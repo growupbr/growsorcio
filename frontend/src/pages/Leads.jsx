@@ -5,24 +5,8 @@ import TemperaturaBadge from '../components/TemperaturaBadge';
 import EtapaTag from '../components/EtapaTag';
 import Modal from '../components/Modal';
 import LeadPerfil from './LeadPerfil';
-
-const ETAPAS = [
-  'Lead Novo', 'Tentativa de Contato', 'Em Qualificação',
-  'Reunião Agendada', 'Reunião Realizada', 'Simulação Enviada',
-  'Follow-up / Negociação', 'Análise de Crédito / Docs',
-  'Fechado (Ganho)', 'Descartado (Perda)',
-];
-
-const ORIGENS = [
-  { valor: 'prospeccao', label: 'Prospecção', cor: '#FF4500', bg: 'rgba(255,69,0,0.15)',    border: 'rgba(255,69,0,0.40)'    },
-  { valor: 'anuncio',    label: 'Anúncio',    cor: '#a78bfa', bg: 'rgba(124,58,237,0.15)', border: 'rgba(124,58,237,0.40)'  },
-];
-
-const TEMPERATURAS = [
-  { valor: 'quente', label: 'Quente', cor: '#f87171', bg: 'rgba(239,68,68,0.15)',  border: 'rgba(239,68,68,0.40)'  },
-  { valor: 'morno',  label: 'Morno',  cor: '#fbbf24', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.40)' },
-  { valor: 'frio',   label: 'Frio',   cor: '#60a5fa', bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.40)' },
-];
+import { ETAPAS, TEMPERATURAS, ORIGENS } from '../constants/tokens';
+import { formatarData, dataHoje, estaVencido } from '../utils/format';
 
 const PERIODOS = [
   { valor: 'vencido', label: 'Vencido' },
@@ -39,36 +23,10 @@ function filtrosPadrao() {
   return { busca: '', etapa: '', temperatura: '', periodo, origem: '', ordem: 'proxima_acao' };
 }
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
-
-function formatarData(str) {
-  if (!str) return '—';
-  const [, m, d] = str.slice(0, 10).split('-');
-  return `${d}/${m}`;
-}
-
-function dataHoje() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function vencido(data) {
-  if (!data) return false;
-  return data.slice(0, 10) < dataHoje();
-}
-
-// Filtro de período agora é feito server-side
-
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 
 function Avatar({ nome }) {
-  return (
-    <div
-      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 uppercase"
-      style={{ background: 'rgba(255,69,0,0.12)', color: '#FF4500' }}
-    >
-      {nome?.charAt(0) || '?'}
-    </div>
-  );
+  return <div className="avatar">{nome?.charAt(0) || '?'}</div>;
 }
 
 // Pill genérica (para temperatura e período)
@@ -265,13 +223,13 @@ export default function Leads() {
         <div className="flex items-center gap-3 flex-wrap">
           <span className="section-label" style={{ minWidth: 90 }}>Origem</span>
           <div className="flex gap-2 flex-wrap">
-            {ORIGENS.map(({ valor, label, cor, bg, border }) => (
+            {ORIGENS.map(({ valor, label, color, bg, border }) => (
               <Pill
                 key={valor}
                 label={label}
                 ativo={filtros.origem === valor}
                 onClick={() => toggleFiltro('origem', valor)}
-                cor={cor}
+                cor={color}
                 bg={bg}
                 border={border}
               />
@@ -283,13 +241,13 @@ export default function Leads() {
         <div className="flex items-center gap-3 flex-wrap">
           <span className="section-label" style={{ minWidth: 90 }}>Temperatura</span>
           <div className="flex gap-2 flex-wrap">
-            {TEMPERATURAS.map(({ valor, label, cor, bg, border }) => (
+            {TEMPERATURAS.map(({ valor, label, color, bg, border }) => (
               <Pill
                 key={valor}
                 label={label}
                 ativo={filtros.temperatura === valor}
                 onClick={() => toggleFiltro('temperatura', valor)}
-                cor={cor}
+                cor={color}
                 bg={bg}
                 border={border}
               />
@@ -483,9 +441,9 @@ export default function Leads() {
                 <div className="flex items-center">
                   <span
                     className="flex items-center gap-1.5 text-sm font-medium"
-                    style={{ color: vencido(lead.data_proxima_acao) ? '#f87171' : '#8B949E' }}
+                    style={{ color: estaVencido(lead.data_proxima_acao) ? '#f87171' : '#8B949E' }}
                   >
-                    {vencido(lead.data_proxima_acao) && <AlertIcon />}
+                    {estaVencido(lead.data_proxima_acao) && <AlertIcon />}
                     {formatarData(lead.data_proxima_acao)}
                   </span>
                 </div>
