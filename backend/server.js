@@ -15,6 +15,10 @@ app.use('/api/cadencia', require('./routes/cadencia'));
 app.use('/api/webhook', require('./routes/webhook'));
 app.use('/api/billing', require('./routes/billing'));
 
-app.listen(PORT, () => {
-  console.log(`GrowSorcio — Backend rodando em http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`GrowSorcio — Backend rodando em http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

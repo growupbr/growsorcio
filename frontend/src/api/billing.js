@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3334';
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:3334');
 
 export async function criarCheckout({ plan, billingPeriod, name, email, cellphone, taxId, organizationId }) {
   const res = await fetch(`${API_BASE}/api/billing/checkout`, {
