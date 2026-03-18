@@ -367,17 +367,18 @@
   /* ─── Kanban card ────────────────────────────────────────────────────────── */
 
   .kanban-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-surface-3);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    background: #18181b; /* zinc-900 */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     min-height: 72px;
     touch-action: none;
     @apply rounded-xl p-4 select-none cursor-grab;
-    transition: border-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out;
+    transition: background 150ms ease-out, border-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out;
   }
   .kanban-card:hover {
-    border-color: rgba(255, 69, 0, 0.45);
-    box-shadow: 0 0 20px rgba(255, 69, 0, 0.10), 0 4px 16px rgba(0, 0, 0, 0.5);
+    background: #27272a; /* zinc-800 */
+    border-color: rgba(249, 115, 22, 0.25);
+    box-shadow: 0 0 24px rgba(249, 115, 22, 0.06), 0 8px 24px rgba(0, 0, 0, 0.5);
     transform: translateY(-1px);
   }
   .kanban-card:active {

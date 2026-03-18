@@ -26,12 +26,13 @@ const ETAPAS = [
   { nome: 'Perdido',            fase: 'perdido' },
 ];
 
-const FASE_STYLE = {
-  anuncio:   { color: '#a78bfa', bg: 'rgba(124,58,237,0.10)', border: 'rgba(124,58,237,0.30)' },
-  captacao:  { color: '#FF4500', bg: 'rgba(255,69,0,0.08)',   border: 'rgba(255,69,0,0.25)' },
-  comercial: { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)' },
-  fechado:   { color: '#22c55e', bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.25)' },
-  perdido:   { color: '#484F58', bg: 'rgba(72,79,88,0.08)',   border: 'rgba(72,79,88,0.25)' },
+// Dot colors per phase — minimal Huly-style indicators
+const FASE_DOT = {
+  anuncio:   '#a78bfa',
+  captacao:  '#f97316',
+  comercial: '#f59e0b',
+  fechado:   '#22c55e',
+  perdido:   '#52525b',
 };
 
 function formatarData(str) {
@@ -77,7 +78,7 @@ const CalIcon = () => (
   </svg>
 );
 
-// ─── Formulário inline (estilo Trello) ───────────────────────────────────────
+// ─── Formulário inline ───────────────────────────────────────────────────────
 
 function InlineAddForm({ etapaNome, onAdd, onCancel }) {
   const [valor, setValor] = useState('');
@@ -116,29 +117,21 @@ function InlineAddForm({ etapaNome, onAdd, onCancel }) {
         onKeyDown={handleKeyDown}
         placeholder="Nome ou @instagram..."
         rows={2}
-        className="w-full rounded-lg px-3 py-2 text-sm resize-none"
-        style={{
-          background: '#1E293B',
-          border: '1px solid #FF4500',
-          color: '#F8FAFC',
-          outline: 'none',
-          boxShadow: '0 0 0 3px rgba(255,69,0,0.12)',
-        }}
+        className="w-full rounded-xl px-3 py-2 text-sm resize-none bg-zinc-900 text-zinc-100
+                   border border-orange-500/40 outline-none focus:ring-2 focus:ring-orange-500/20"
       />
       <div className="flex items-center gap-2">
         <button
           onClick={handleAdd}
           disabled={!valor.trim() || salvando}
-          className="btn-primary text-xs py-1.5 px-3"
+          className="bg-orange-500 hover:bg-orange-400 disabled:opacity-40 disabled:cursor-not-allowed
+                     text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-colors cursor-pointer"
         >
           {salvando ? '...' : 'Adicionar'}
         </button>
         <button
           onClick={onCancel}
-          className="p-1.5 rounded-md transition-colors cursor-pointer"
-          style={{ color: '#484F58' }}
-          onMouseEnter={e => e.currentTarget.style.color = '#F0F6FC'}
-          onMouseLeave={e => e.currentTarget.style.color = '#484F58'}
+          className="p-1.5 rounded-md text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer"
         >
           <XIcon />
         </button>
@@ -163,10 +156,7 @@ function LeadCard({ lead, onClick }) {
   return (
     <div
       ref={setNodeRef}
-      style={{
-        ...style,
-        ...(lead.origem === 'anuncio' ? { borderLeft: '3px solid #7c3aed' } : {}),
-      }}
+      style={style}
       {...listeners}
       {...attributes}
       onClick={() => {
@@ -174,31 +164,20 @@ function LeadCard({ lead, onClick }) {
           onClick(lead.id);
         }
       }}
-      className="kanban-card"
+      className="kanban-card group"
     >
       {/* Badge anúncio */}
       {lead.origem === 'anuncio' && (
-        <div
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full mb-2"
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            background: 'rgba(124,58,237,0.15)',
-            border: '1px solid rgba(124,58,237,0.35)',
-            color: '#a78bfa',
-          }}
-        >
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full mb-2
+                         text-[10px] font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20">
           📢 Anúncio
-        </div>
+        </span>
       )}
 
       {/* Nome + dot de temperatura */}
       <div className="flex items-start gap-2 mb-2">
         <TemperaturaBadge temperatura={lead.temperatura} small />
-        <p
-          className="leading-snug line-clamp-2 flex-1"
-          style={{ fontSize: 14, fontWeight: 700, color: '#F0F6FC' }}
-        >
+        <p className="leading-snug line-clamp-2 flex-1 text-sm font-bold text-zinc-100">
           {lead.nome}
         </p>
       </div>
@@ -210,12 +189,10 @@ function LeadCard({ lead, onClick }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1 truncate mb-3 cursor-pointer"
-          style={{ fontSize: 12, color: '#8B949E', paddingLeft: 18 }}
-          onMouseEnter={(e) => e.currentTarget.style.color = '#FF4500'}
-          onMouseLeave={(e) => e.currentTarget.style.color = '#8B949E'}
+          className="flex items-center gap-1 truncate mb-3 pl-[18px]
+                     text-xs text-zinc-500 hover:text-orange-400 transition-colors cursor-pointer"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 11, height: 11, flexShrink: 0 }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-[11px] h-[11px] flex-shrink-0">
             <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
             <circle cx="12" cy="12" r="4"/>
             <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
@@ -224,21 +201,30 @@ function LeadCard({ lead, onClick }) {
         </a>
       )}
 
+      {/* Pills — valor da carta, urgência, etc. */}
+      <div className="flex flex-wrap gap-1.5 mb-2 pl-[18px]">
+        {lead.valor_carta && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold
+                           bg-orange-500/10 text-orange-400">
+            R$ {lead.valor_carta}
+          </span>
+        )}
+        {lead.urgencia && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold
+                           bg-amber-500/10 text-amber-400">
+            {lead.urgencia}
+          </span>
+        )}
+      </div>
+
       {/* Rodapé — data próxima ação */}
       {lead.data_proxima_acao && (
-        <div
-          className="flex items-center gap-1.5 mt-auto pt-2"
-          style={{
-            borderTop: '1px solid #1C2333',
-            fontSize: 11,
-            fontWeight: 500,
-            color: vencido(lead.data_proxima_acao) ? '#f87171' : '#484F58',
-          }}
-        >
+        <div className={`flex items-center gap-1.5 mt-auto pt-2 border-t border-white/5
+                         text-[11px] font-medium ${vencido(lead.data_proxima_acao) ? 'text-red-400' : 'text-zinc-600'}`}>
           {vencido(lead.data_proxima_acao) ? <AlertIcon /> : <CalIcon />}
           <span>{formatarData(lead.data_proxima_acao)}</span>
           {lead.tipo_proxima_acao && (
-            <span className="truncate ml-auto" style={{ color: '#30363D' }}>
+            <span className="truncate ml-auto text-zinc-700">
               {lead.tipo_proxima_acao}
             </span>
           )}
@@ -252,21 +238,14 @@ function LeadCard({ lead, onClick }) {
 
 function LeadCardOverlay({ lead }) {
   return (
-    <div
-      className="rounded-xl p-3 w-56 cursor-grabbing select-none"
-      style={{
-        background: '#1E293B',
-        border: '1px solid rgba(255,69,0,0.55)',
-        boxShadow: '0 0 30px rgba(255,69,0,0.18), 0 16px 48px rgba(0,0,0,0.7)',
-        transform: 'rotate(2deg)',
-      }}
-    >
+    <div className="rounded-xl p-3 w-56 cursor-grabbing select-none bg-zinc-900 border border-orange-500/50"
+         style={{ boxShadow: '0 0 40px rgba(249,115,22,0.15), 0 20px 60px rgba(0,0,0,0.7)', transform: 'rotate(2deg)' }}>
       <div className="flex items-start gap-2 mb-2">
         <TemperaturaBadge temperatura={lead.temperatura} small />
-        <p className="text-sm font-semibold leading-tight" style={{ color: '#F0F6FC' }}>{lead.nome}</p>
+        <p className="text-sm font-semibold leading-tight text-zinc-100">{lead.nome}</p>
       </div>
       {lead.instagram && (
-        <p className="text-xs truncate" style={{ color: '#8B949E' }}>{lead.instagram}</p>
+        <p className="text-xs truncate text-zinc-500">{lead.instagram}</p>
       )}
     </div>
   );
@@ -276,36 +255,27 @@ function LeadCardOverlay({ lead }) {
 
 function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd }) {
   const { setNodeRef } = useDroppable({ id: etapa.nome });
-  const fase = FASE_STYLE[etapa.fase];
-  const isAnuncio = etapa.fase === 'anuncio';
+  const dotColor = FASE_DOT[etapa.fase] || '#52525b';
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 flex flex-col" style={{ width: 248 }}>
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-3 py-2.5 mb-2 rounded-lg"
-        style={{ background: fase.bg, border: `1px solid ${fase.border}` }}
-      >
-        <span className="text-xs font-semibold truncate" style={{ color: fase.color }}>
+    <div ref={setNodeRef} className="flex-shrink-0 flex flex-col" style={{ width: 260 }}>
+      {/* Header — minimal Huly-style */}
+      <div className="flex items-center gap-2 px-1 py-2 mb-3">
+        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dotColor }} />
+        <span className="text-xs font-semibold text-zinc-300 truncate">
           {etapa.nome}
         </span>
-        <span
-          className="text-xs font-bold px-1.5 py-0.5 rounded-md ml-2 flex-shrink-0 tabular-nums"
-          style={{ background: 'rgba(0,0,0,0.3)', color: fase.color, minWidth: 20, textAlign: 'center' }}
-        >
+        <span className="text-[10px] font-bold text-zinc-600 tabular-nums ml-auto">
           {leads.length}
         </span>
       </div>
 
-      {/* Área droppável */}
+      {/* Área droppável — sem bordas, sem background preenchido */}
       <div
-        className="flex-1 rounded-xl p-2 space-y-2"
+        className="flex-1 flex flex-col gap-2 px-0.5 transition-colors duration-150"
         style={{
           minHeight: 500,
-          background: isOver ? (isAnuncio ? 'rgba(124,58,237,0.06)' : 'rgba(255,69,0,0.05)') : '#0F172A',
-          border: `1px solid ${isOver ? (isAnuncio ? 'rgba(124,58,237,0.38)' : 'rgba(255,69,0,0.32)') : '#334155'}`,
-          boxShadow: isOver ? (isAnuncio ? '0 0 16px rgba(124,58,237,0.08) inset' : '0 0 16px rgba(255,69,0,0.07) inset') : '0 4px 24px rgba(0,0,0,0.35)',
-          transition: 'border-color 150ms ease-out, background 150ms ease-out',
+          ...(isOver ? { background: 'rgba(249,115,22,0.04)', borderRadius: 12 } : {}),
         }}
       >
         {leads.map((lead) => (
@@ -313,14 +283,9 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
         ))}
 
         {leads.length === 0 && !adicionando && (
-          <div
-            className="flex items-center justify-center rounded-lg"
-            style={{
-              height: 80,
-              border: `1px dashed ${isOver ? 'rgba(255,69,0,0.42)' : '#334155'}`,
-            }}
-          >
-            <span className="text-xs" style={{ color: '#475569' }}>Vazio</span>
+          <div className="flex items-center justify-center rounded-xl h-20
+                          border border-dashed border-zinc-800/60">
+            <span className="text-[11px] text-zinc-700">Vazio</span>
           </div>
         )}
       </div>
@@ -336,16 +301,8 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
         <button
           onClick={onIniciarAdd}
           className="mt-2 w-full flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium
-                     transition-all duration-150 cursor-pointer group"
-          style={{ color: '#484F58' }}
-          onMouseEnter={e => {
-            e.currentTarget.style.color = '#FF4500';
-            e.currentTarget.style.background = 'rgba(255,69,0,0.06)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.color = '#484F58';
-            e.currentTarget.style.background = 'transparent';
-          }}
+                     text-zinc-600 hover:text-orange-400 hover:bg-orange-500/5
+                     transition-all duration-150 cursor-pointer"
         >
           <PlusIcon />
           Adicionar lead
@@ -444,45 +401,35 @@ export default function Kanban() {
 
   if (carregando) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
+      <div className="flex items-center justify-center h-full bg-zinc-950">
         <div className="text-center">
-          <div
-            className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3"
-            style={{ borderColor: '#1C2333', borderTopColor: '#FF4500' }}
-          />
-          <p className="text-sm" style={{ color: '#8B949E' }}>Carregando kanban...</p>
+          <div className="w-8 h-8 rounded-full border-2 border-zinc-800 border-t-orange-500 animate-spin mx-auto mb-3" />
+          <p className="text-sm text-zinc-500">Carregando kanban...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] flex flex-col">
+    <div className="h-full flex flex-col bg-zinc-950">
 
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-        style={{ borderBottom: '1px solid #334155' }}
-      >
+      <div className="flex items-center justify-between px-6 py-4 flex-shrink-0 border-b border-white/5">
         <div className="flex items-center gap-6">
-          <h1 className="text-lg font-extrabold" style={{ color: '#F8FAFC' }}>Kanban</h1>
+          <h1 className="text-lg font-extrabold text-zinc-100">Kanban</h1>
           <div className="flex items-center gap-4">
-            {Object.entries(FASE_STYLE).map(([fase, style]) => (
+            {Object.entries(FASE_DOT).map(([fase, color]) => (
               <span
                 key={fase}
-                className="flex items-center gap-1.5 text-xs font-medium capitalize"
-                style={{ color: style.color }}
+                className="flex items-center gap-1.5 text-[11px] font-medium capitalize text-zinc-400"
               >
-                <span
-                  className="w-2 h-2 rounded-sm inline-block"
-                  style={{ background: style.color, opacity: 0.7 }}
-                />
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: color }} />
                 {fase}
               </span>
             ))}
           </div>
         </div>
-        <span className="text-xs font-medium" style={{ color: '#484F58' }}>
+        <span className="text-xs font-medium text-zinc-600">
           {leads.length} lead{leads.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -497,7 +444,7 @@ export default function Kanban() {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex gap-3 items-start">
+            <div className="flex gap-4 items-start">
               {ETAPAS.map((etapa) => (
                 <Coluna
                   key={etapa.nome}

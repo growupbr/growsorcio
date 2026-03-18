@@ -6,10 +6,10 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 echo "🚀 Iniciando CRM Grow Up..."
 echo ""
 
-# Verifica se porta 3001 está livre
-if lsof -ti:3001 > /dev/null 2>&1; then
-  echo "⚠️  Porta 3001 ocupada. Matando processo..."
-  lsof -ti:3001 | xargs kill -9
+# Verifica se porta 3334 está livre
+if lsof -ti:3334 > /dev/null 2>&1; then
+  echo "⚠️  Porta 3334 ocupada. Matando processo..."
+  lsof -ti:3334 | xargs kill -9
   sleep 1
 fi
 
@@ -21,7 +21,7 @@ if lsof -ti:3000 > /dev/null 2>&1; then
 fi
 
 # Inicia backend em background
-echo "▶ Backend iniciando na porta 3001..."
+echo "▶ Backend iniciando na porta 3334..."
 cd "$ROOT/backend" && node server.js &
 BACKEND_PID=$!
 sleep 2
