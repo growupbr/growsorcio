@@ -33,10 +33,10 @@ function SidebarLink({ to, label, icon: Icon, locked }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
+        `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
           isActive
-            ? 'bg-accent/10 text-accent'
-            : 'text-muted hover:bg-dark-800 hover:text-text'
+            ? 'bg-orange-500/10 text-orange-500'
+            : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
         }`
       }
     >
@@ -45,12 +45,12 @@ function SidebarLink({ to, label, icon: Icon, locked }) {
           <Icon
             size={18}
             className={`flex-shrink-0 transition-colors duration-150 ${
-              isActive ? 'text-accent' : 'text-dark-400 group-hover:text-text'
+              isActive ? 'text-orange-500' : 'text-zinc-500 group-hover:text-zinc-200'
             }`}
           />
           <span className="flex-1 truncate">{label}</span>
           {locked && (
-            <Lock size={12} className="flex-shrink-0 text-dark-600 opacity-50" />
+            <Lock size={12} className="flex-shrink-0 text-zinc-700" />
           )}
         </>
       )}
@@ -60,11 +60,11 @@ function SidebarLink({ to, label, icon: Icon, locked }) {
 
 export default function Sidebar() {
   return (
-    <aside className="flex flex-col w-60 h-screen bg-dark-900 border-r border-dark-800 flex-shrink-0">
+    <aside className="flex flex-col w-60 h-screen bg-zinc-950 border-r border-white/5 flex-shrink-0">
 
       {/* Logo */}
-      <div className="flex items-center h-16 px-5 border-b border-dark-800">
-        <GrowsorcioLogo height={32} />
+      <div className="flex items-center justify-center px-4 h-20 border-b border-white/5 flex-shrink-0">
+        <GrowsorcioLogo height={60} />
       </div>
 
       {/* Main nav */}
@@ -75,7 +75,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom nav */}
-      <div className="p-3 border-t border-dark-800 space-y-0.5">
+      <div className="p-3 border-t border-white/5 space-y-0.5">
         {BOTTOM_ITEMS.map((item) => (
           <SidebarLink key={item.to} {...item} />
         ))}

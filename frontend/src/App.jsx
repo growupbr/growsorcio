@@ -23,9 +23,9 @@ const isAppDomain =
 function AppLayout() {
   useNotificacoes();
   return (
-    <div className="flex h-screen bg-dark-950 overflow-hidden">
+    <div className="flex h-screen bg-zinc-950 overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto bg-zinc-950">
         <Outlet />
       </main>
     </div>

@@ -260,7 +260,7 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
   return (
     <div ref={setNodeRef} className="flex-shrink-0 flex flex-col" style={{ width: 260 }}>
       {/* Header — minimal Huly-style */}
-      <div className="flex items-center gap-2 px-1 py-2 mb-3">
+      <div className="flex items-center gap-2 px-1 py-2">
         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dotColor }} />
         <span className="text-xs font-semibold text-zinc-300 truncate">
           {etapa.nome}
@@ -270,27 +270,7 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
         </span>
       </div>
 
-      {/* Área droppável — sem bordas, sem background preenchido */}
-      <div
-        className="flex-1 flex flex-col gap-2 px-0.5 transition-colors duration-150"
-        style={{
-          minHeight: 500,
-          ...(isOver ? { background: 'rgba(249,115,22,0.04)', borderRadius: 12 } : {}),
-        }}
-      >
-        {leads.map((lead) => (
-          <LeadCard key={lead.id} lead={lead} onClick={onCardClick} />
-        ))}
-
-        {leads.length === 0 && !adicionando && (
-          <div className="flex items-center justify-center rounded-xl h-20
-                          border border-dashed border-zinc-800/60">
-            <span className="text-[11px] text-zinc-700">Vazio</span>
-          </div>
-        )}
-      </div>
-
-      {/* Formulário inline OU botão "+" */}
+      {/* Botão "+" ou formulário inline — logo abaixo do header */}
       {adicionando ? (
         <InlineAddForm
           etapaNome={etapa.nome}
@@ -300,14 +280,27 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
       ) : (
         <button
           onClick={onIniciarAdd}
-          className="mt-2 w-full flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium
-                     text-zinc-600 hover:text-orange-400 hover:bg-orange-500/5
+          className="w-full flex items-center gap-1.5 px-1 py-1.5 rounded-md text-xs font-medium
+                     text-zinc-500 hover:text-zinc-300
                      transition-all duration-150 cursor-pointer"
         >
           <PlusIcon />
           Adicionar lead
         </button>
       )}
+
+      {/* Área droppável — zero bordas, zero backgrounds, espaço negativo puro */}
+      <div
+        className="flex-1 flex flex-col gap-2 mt-2 px-0.5 transition-colors duration-150"
+        style={{
+          minHeight: 460,
+          ...(isOver ? { background: 'rgba(249,115,22,0.04)', borderRadius: 12 } : {}),
+        }}
+      >
+        {leads.map((lead) => (
+          <LeadCard key={lead.id} lead={lead} onClick={onCardClick} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -414,24 +407,24 @@ export default function Kanban() {
     <div className="h-full flex flex-col bg-zinc-950">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 flex-shrink-0 border-b border-white/5">
-        <div className="flex items-center gap-6">
-          <h1 className="text-lg font-extrabold text-zinc-100">Kanban</h1>
-          <div className="flex items-center gap-4">
-            {Object.entries(FASE_DOT).map(([fase, color]) => (
-              <span
-                key={fase}
-                className="flex items-center gap-1.5 text-[11px] font-medium capitalize text-zinc-400"
-              >
-                <span className="w-2 h-2 rounded-full inline-block" style={{ background: color }} />
-                {fase}
-              </span>
-            ))}
-          </div>
+      <div className="flex flex-col gap-3 px-6 pt-5 pb-4 flex-shrink-0 border-b border-white/5">
+        <div className="flex items-center justify-between">
+          <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
+          <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
+            {leads.length} lead{leads.length !== 1 ? 's' : ''}
+          </span>
         </div>
-        <span className="text-xs font-medium text-zinc-600">
-          {leads.length} lead{leads.length !== 1 ? 's' : ''}
-        </span>
+        <div className="flex items-center gap-5">
+          {Object.entries(FASE_DOT).map(([fase, color]) => (
+            <span
+              key={fase}
+              className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500"
+            >
+              <span className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style={{ background: color }} />
+              {fase}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Board */}
