@@ -160,7 +160,7 @@ export default function LandingPage() {
 
           {/* Ações direita */}
           <div className="hidden md:flex items-center gap-3">
-            <a href="#" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors duration-150 px-2 py-2 min-h-[44px] flex items-center">
+            <a href="/login" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors duration-150 px-2 py-2 min-h-[44px] flex items-center">
               Entrar
             </a>
             <a
@@ -195,7 +195,7 @@ export default function LandingPage() {
               <a href="#precos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Preços</a>
               <a href="#faq" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">FAQ</a>
               <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
-                <a href="#" className="text-zinc-400 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Entrar</a>
+                <a href="/login" className="text-zinc-400 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Entrar</a>
                 <a
                   href="#precos"
                   onClick={() => setMenuAberto(false)}
