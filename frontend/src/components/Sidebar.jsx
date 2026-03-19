@@ -10,8 +10,10 @@ import {
   GraduationCap,
   Settings,
   Lock,
+  LogOut,
 } from 'lucide-react';
 import GrowsorcioLogo from './GrowsorcioLogo';
+import { useAuth } from '../hooks/useAuth';
 
 const NAV_ITEMS = [
   { to: '/dashboard',   label: 'Dashboard',           icon: LayoutDashboard },
@@ -59,6 +61,8 @@ function SidebarLink({ to, label, icon: Icon, locked }) {
 }
 
 export default function Sidebar() {
+  const { logout } = useAuth();
+
   return (
     <aside className="flex flex-col w-60 h-screen bg-zinc-950 border-r border-white/5 flex-shrink-0">
 
@@ -79,6 +83,13 @@ export default function Sidebar() {
         {BOTTOM_ITEMS.map((item) => (
           <SidebarLink key={item.to} {...item} />
         ))}
+        <button
+          onClick={logout}
+          className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 w-full cursor-pointer"
+        >
+          <LogOut size={18} className="flex-shrink-0 text-zinc-500 group-hover:text-red-400 transition-colors duration-150" />
+          <span>Sair</span>
+        </button>
       </div>
     </aside>
   );
