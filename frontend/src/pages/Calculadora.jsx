@@ -1,5 +1,9 @@
-import { useState, useMemo } from 'react';
-import { Calculator, TrendingDown, CheckCircle, MessageCircle, DollarSign, ArrowRight } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import html2canvas from 'html2canvas';
+import {
+  Calculator, CheckCircle, MessageCircle, DollarSign,
+  ImageDown, TrendingDown, Trophy,
+} from 'lucide-react';
 
 // ─── Formatação ───────────────────────────────────────────────────────────────
 
@@ -40,7 +44,7 @@ function calcular({ valorCredito, prazoC, taxaAdm, valorEntrada, prazoF, taxaJur
   return { parcelaC, parcelaF, totalC, totalF, economia: totalF - totalC };
 }
 
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
+// ─── Sub-componentes UI ───────────────────────────────────────────────────────
 
 function SectionTitle({ icon: Icon, label, iconBg }) {
   return (
@@ -53,7 +57,6 @@ function SectionTitle({ icon: Icon, label, iconBg }) {
   );
 }
 
-/** Input de valor monetário — grande e em destaque */
 function MoneyField({ label, value, onChange, placeholder }) {
   return (
     <div>
@@ -79,7 +82,6 @@ function MoneyField({ label, value, onChange, placeholder }) {
   );
 }
 
-/** Input compacto para prazo/taxa */
 function CompactField({ label, value, onChange, suffix, placeholder }) {
   return (
     <div>
@@ -108,80 +110,223 @@ function CompactField({ label, value, onChange, suffix, placeholder }) {
   );
 }
 
-function ParcelaCard({ label, value, variant }) {
-  const styles = {
-    orange: {
-      card: 'bg-orange-500/10 border-orange-500/20',
-      label: 'text-orange-400/70',
-      value: 'text-orange-400',
-    },
-    red: {
-      card: 'bg-red-500/10 border-red-500/20',
-      label: 'text-red-400/70',
-      value: 'text-red-500',
-    },
-  };
-  const s = styles[variant];
-  return (
-    <div className={`border rounded-xl p-4 flex flex-col gap-1 ${s.card}`}>
-      <span className={`text-[11px] font-medium uppercase tracking-wider ${s.label}`}>{label}</span>
-      <span className={`text-xl font-bold tabular-nums ${s.value}`}>{value}</span>
-      <span className={`text-[10px] ${s.label}`}>/ mês</span>
-    </div>
-  );
-}
-
-function BarComparativa({ totalC, totalF }) {
-  const max = Math.max(totalC, totalF, 1);
-  const pctC = Math.max(Math.round((totalC / max) * 100), 4);
-  const pctF = Math.max(Math.round((totalF / max) * 100), 4);
-
-  const rows = [
-    { label: 'Consórcio', value: totalC, pct: pctC, bar: 'bg-gradient-to-r from-orange-500 to-orange-400', text: 'text-orange-400' },
-    { label: 'Financiamento', value: totalF, pct: pctF, bar: 'bg-gradient-to-r from-red-600 to-red-500', text: 'text-red-400' },
-  ];
-
-  return (
-    <div className="space-y-4">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Custo Total Comparado</p>
-      {rows.map(({ label, value, pct, bar, text }) => (
-        <div key={label} className="space-y-2">
-          <span className="text-xs text-zinc-400">{label}</span>
-          <div className="relative h-8 bg-zinc-800/80 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full ${bar} transition-all duration-700 ease-out flex items-center justify-end pr-3`}
-              style={{ width: `${pct}%` }}
-            >
-              {pct > 30 && (
-                <span className="text-[11px] font-semibold text-white/90 tabular-nums whitespace-nowrap">
-                  {fmtBRL(value)}
-                </span>
-              )}
-            </div>
-            {pct <= 30 && (
-              <span className={`absolute left-[${pct}%] top-1/2 -translate-y-1/2 translate-x-2 text-[11px] font-semibold tabular-nums whitespace-nowrap ${text}`}>
-                {fmtBRL(value)}
-              </span>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Toast({ show }) {
+function Toast({ show, message }) {
   return (
     <div
       className={[
         'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5',
         'bg-zinc-800 border border-white/10 text-sm text-zinc-100 px-5 py-3 rounded-2xl shadow-xl',
-        'transition-all duration-300 select-none',
+        'transition-all duration-300 select-none whitespace-nowrap',
         show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none',
       ].join(' ')}
     >
       <CheckCircle size={16} className="text-orange-400 shrink-0" />
-      Resumo copiado! Cole no WhatsApp do cliente.
+      {message}
+    </div>
+  );
+}
+
+// ─── Card Exportável ──────────────────────────────────────────────────────────
+
+/** Linha de dado dentro do card de batalha */
+function DataRow({ label, value, valueClass = 'text-zinc-100', large = false }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#71717a', fontWeight: 600 }}>
+        {label}
+      </span>
+      <span style={{
+        fontSize: large ? 28 : 16,
+        fontWeight: 800,
+        lineHeight: 1.1,
+        fontFamily: 'system-ui, sans-serif',
+        color: valueClass.includes('emerald') ? '#34d399'
+             : valueClass.includes('red') ? '#ef4444'
+             : '#f4f4f5',
+      }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ExportCard({ exportRef, res, valorCreditoStr, prazoC, prazoF, taxaAdm, taxaJuros, valorEntradaStr }) {
+  const ready = res.parcelaC > 0 && res.parcelaF > 0;
+
+  return (
+    <div
+      ref={exportRef}
+      id="comparison-export-node"
+      style={{
+        backgroundColor: '#09090b',
+        padding: 32,
+        borderRadius: 20,
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        border: '1px solid rgba(255,255,255,0.06)',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* ── Branding ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Logo texto inline para garantir render no canvas */}
+          <div style={{
+            background: 'linear-gradient(135deg, #f97316, #fb923c)',
+            borderRadius: 8,
+            width: 28,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <span style={{ color: '#fff', fontSize: 14, fontWeight: 900 }}>G</span>
+          </div>
+          <span style={{ color: '#f4f4f5', fontWeight: 800, fontSize: 15, letterSpacing: '-0.02em' }}>
+            Grow<span style={{ color: '#f97316' }}>sorcio</span>
+          </span>
+        </div>
+        <span style={{
+          fontSize: 10,
+          color: '#f97316',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          background: 'rgba(249,115,22,0.1)',
+          border: '1px solid rgba(249,115,22,0.2)',
+          padding: '3px 10px',
+          borderRadius: 999,
+        }}>
+          Simulação
+        </span>
+      </div>
+
+      {/* ── Título central ── */}
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <p style={{ color: '#a1a1aa', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}>
+          Comparativo
+        </p>
+        <h2 style={{ color: '#f4f4f5', fontSize: 20, fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
+          Consórcio vs Financiamento
+        </h2>
+      </div>
+
+      {/* ── Grid de batalha ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+
+        {/* Coluna Consórcio */}
+        <div style={{
+          background: 'rgba(6,78,59,0.25)',
+          border: '1px solid rgba(52,211,153,0.2)',
+          borderRadius: 16,
+          padding: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+        }}>
+          <div>
+            <div style={{
+              display: 'inline-block',
+              background: 'rgba(52,211,153,0.15)',
+              border: '1px solid rgba(52,211,153,0.3)',
+              borderRadius: 6,
+              padding: '3px 10px',
+              marginBottom: 16,
+            }}>
+              <span style={{ color: '#34d399', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                ✓ Consórcio
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <DataRow label="Crédito" value={fmtBRL(toNum(valorCreditoStr))} />
+              <DataRow label="Prazo" value={`${prazoC} meses`} />
+              <DataRow label="Taxa Adm." value={`${taxaAdm}%`} />
+              <DataRow label="Parcela" value={fmtBRL(res.parcelaC)} valueClass="text-emerald-400" />
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(52,211,153,0.15)', paddingTop: 14 }}>
+            <span style={{ color: '#6b7280', fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              CUSTO TOTAL
+            </span>
+            <div style={{ color: '#34d399', fontSize: 24, fontWeight: 900, marginTop: 2, lineHeight: 1 }}>
+              {fmtBRL(res.totalC)}
+            </div>
+          </div>
+        </div>
+
+        {/* Coluna Financiamento */}
+        <div style={{
+          background: 'rgba(69,10,10,0.35)',
+          border: '1px solid rgba(239,68,68,0.2)',
+          borderRadius: 16,
+          padding: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+        }}>
+          <div>
+            <div style={{
+              display: 'inline-block',
+              background: 'rgba(239,68,68,0.15)',
+              border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: 6,
+              padding: '3px 10px',
+              marginBottom: 16,
+            }}>
+              <span style={{ color: '#ef4444', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                ✗ Financiamento
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <DataRow label="Crédito" value={fmtBRL(toNum(valorCreditoStr))} />
+              <DataRow label="Prazo" value={`${prazoF} meses`} />
+              <DataRow label="Juros a.a." value={`${taxaJuros}%`} />
+              <DataRow label="Parcela" value={fmtBRL(res.parcelaF)} valueClass="text-red-400" />
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(239,68,68,0.15)', paddingTop: 14 }}>
+            <span style={{ color: '#6b7280', fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              CUSTO TOTAL
+            </span>
+            <div style={{ color: '#ef4444', fontSize: 24, fontWeight: 900, marginTop: 2, lineHeight: 1 }}>
+              {fmtBRL(res.totalF)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Troféu — Economia Total ── */}
+      <div style={{
+        background: 'linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fb923c 100%)',
+        borderRadius: 14,
+        padding: '16px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 22 }}>🏆</span>
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Economia Total com Consórcio
+            </div>
+            <div style={{ color: '#fff', fontSize: 11, fontWeight: 500, marginTop: 1, opacity: 0.7 }}>
+              valor que fica no seu bolso
+            </div>
+          </div>
+        </div>
+        <div style={{ color: '#fff', fontSize: 26, fontWeight: 900, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+          {ready ? fmtBRL(res.economia) : 'R$ —'}
+        </div>
+      </div>
+
+      {/* ── Rodapé ── */}
+      <div style={{ marginTop: 16, textAlign: 'center' }}>
+        <span style={{ color: '#3f3f46', fontSize: 10 }}>
+          Simulação ilustrativa • growsorcio.com.br
+        </span>
+      </div>
     </div>
   );
 }
@@ -195,7 +340,10 @@ export default function Calculadora() {
   const [valorEntradaStr, setValorEntradaStr] = useState('20000');
   const [prazoF, setPrazoF] = useState('360');
   const [taxaJuros, setTaxaJuros] = useState('12');
-  const [showToast, setShowToast] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '' });
+  const [exporting, setExporting] = useState(false);
+
+  const exportRef = useRef(null);
 
   const handleMoney = (setter) => (e) => setter(maskMoney(e.target.value));
 
@@ -210,7 +358,12 @@ export default function Calculadora() {
 
   const canCopy = res.parcelaC > 0 && res.parcelaF > 0;
 
-  const handleCopiar = async () => {
+  const showToast = useCallback((message) => {
+    setToast({ show: true, message });
+    setTimeout(() => setToast({ show: false, message: '' }), 3000);
+  }, []);
+
+  const handleCopiarTexto = async () => {
     const texto =
       `Olá! Fiz a simulação que combinamos. 🏠\n\n` +
       `Para um crédito de ${fmtBRL(toNum(valorCreditoStr))}, no consórcio sua parcela fica em torno de ${fmtBRL(res.parcelaC)}/mês, sem juros.\n\n` +
@@ -219,14 +372,33 @@ export default function Calculadora() {
       `Vamos dar andamento?`;
     try {
       await navigator.clipboard.writeText(texto);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    } catch { /* fallback silencioso */ }
+      showToast('Resumo copiado! Cole no WhatsApp do cliente.');
+    } catch { /* fallback */ }
   };
 
-  const diffPct = res.parcelaC > 0
-    ? Math.round(((res.parcelaF - res.parcelaC) / res.parcelaC) * 100)
-    : 0;
+  const handleBaixarImagem = async () => {
+    if (!exportRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(exportRef.current, {
+        backgroundColor: '#09090b',
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+      });
+      const url = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'simulacao-growsorcio.png';
+      link.click();
+      showToast('Imagem baixada! Envie no WhatsApp do cliente.');
+    } catch {
+      showToast('Erro ao gerar imagem. Tente novamente.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="p-6 md:p-8 min-h-screen">
@@ -247,7 +419,7 @@ export default function Calculadora() {
       </div>
 
       {/* ── Grid 2 colunas ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
 
         {/* ─── Coluna Esquerda — Formulário ─────────────────────────────────── */}
         <div className="space-y-5">
@@ -323,65 +495,55 @@ export default function Calculadora() {
           </div>
         </div>
 
-        {/* ─── Coluna Direita — Resultados ──────────────────────────────────── */}
-        <div className="space-y-5">
+        {/* ─── Coluna Direita — Card Exportável ─────────────────────────────── */}
+        <div className="space-y-4">
 
-          {/* Hero — Economia Projetada */}
-          <div className="relative overflow-hidden rounded-2xl border border-orange-500/25 p-7 text-center"
-            style={{
-              background: 'radial-gradient(ellipse at 50% 0%, rgba(249,115,22,0.18) 0%, rgba(9,9,11,0.0) 70%), #18181b',
-            }}
-          >
-            {/* glow decoration */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
-            <div className="flex items-center justify-center gap-1.5 mb-3">
-              <TrendingDown size={14} className="text-orange-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-orange-400/80">
-                Economia Projetada
-              </span>
-            </div>
-            <p className="text-5xl md:text-6xl font-black text-zinc-100 tabular-nums leading-none mb-2">
-              {fmtBRL(res.economia)}
-            </p>
-            <p className="text-xs text-zinc-500">
-              diferença entre custo total do financiamento e do consórcio
-            </p>
+          {/* Card de comparação exportável */}
+          <ExportCard
+            exportRef={exportRef}
+            res={res}
+            valorCreditoStr={valorCreditoStr}
+            prazoC={prazoC}
+            prazoF={prazoF}
+            taxaAdm={taxaAdm}
+            taxaJuros={taxaJuros}
+            valorEntradaStr={valorEntradaStr}
+          />
+
+          {/* ── Botões de ação (fora da área exportável) ── */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            {/* Secundário — Copiar texto */}
+            <button
+              onClick={handleCopiarTexto}
+              disabled={!canCopy}
+              className={[
+                'flex items-center justify-center gap-2 rounded-xl py-3.5 px-4',
+                'text-sm font-semibold border transition-all duration-150',
+                canCopy
+                  ? 'bg-zinc-900 border-white/10 text-zinc-200 hover:bg-zinc-800 hover:border-white/20 cursor-pointer'
+                  : 'bg-zinc-900/50 border-white/5 text-zinc-600 cursor-not-allowed',
+              ].join(' ')}
+            >
+              <MessageCircle size={16} />
+              Copiar Texto
+            </button>
+
+            {/* Primário — Baixar imagem */}
+            <button
+              onClick={handleBaixarImagem}
+              disabled={!canCopy || exporting}
+              className={[
+                'flex items-center justify-center gap-2 rounded-xl py-3.5 px-4',
+                'text-sm font-semibold transition-all duration-150',
+                canCopy && !exporting
+                  ? 'bg-orange-500 hover:bg-orange-400 text-white active:scale-[0.98] cursor-pointer shadow-md shadow-orange-500/30'
+                  : 'bg-zinc-800 text-zinc-500 cursor-not-allowed',
+              ].join(' ')}
+            >
+              <ImageDown size={16} className={exporting ? 'animate-bounce' : ''} />
+              {exporting ? 'Gerando…' : 'Baixar Imagem'}
+            </button>
           </div>
-
-          {/* Cards de parcelas */}
-          <div className="grid grid-cols-2 gap-3">
-            <ParcelaCard label="Parcela Consórcio" value={fmtBRL(res.parcelaC)} variant="orange" />
-            <div className="relative">
-              <ParcelaCard label="Parcela Financiamento" value={fmtBRL(res.parcelaF)} variant="red" />
-              {diffPct > 0 && (
-                <span className="absolute -top-2 -right-2 text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded-full">
-                  +{diffPct}%
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Gráfico de barras */}
-          <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6">
-            <BarComparativa totalC={res.totalC} totalF={res.totalF} />
-          </div>
-
-          {/* Botão WhatsApp */}
-          <button
-            onClick={handleCopiar}
-            disabled={!canCopy}
-            className={[
-              'w-full flex items-center justify-center gap-2.5 rounded-2xl py-4 px-6',
-              'text-sm font-semibold text-white transition-all duration-150',
-              canCopy
-                ? 'bg-orange-500 hover:bg-orange-400 active:scale-[0.98] cursor-pointer shadow-md shadow-orange-500/30'
-                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed',
-            ].join(' ')}
-          >
-            <MessageCircle size={18} />
-            Copiar Resumo para WhatsApp
-            <ArrowRight size={16} className="ml-auto opacity-60" />
-          </button>
 
           <p className="text-[11px] text-zinc-600 text-center leading-relaxed px-2">
             Consórcio com taxa administrativa total. Financiamento via Sistema Price.
@@ -390,7 +552,7 @@ export default function Calculadora() {
         </div>
       </div>
 
-      <Toast show={showToast} />
+      <Toast show={toast.show} message={toast.message} />
     </div>
   );
 }
