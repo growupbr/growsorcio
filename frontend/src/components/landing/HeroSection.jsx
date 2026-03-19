@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import heroImg from '../../assets/mktconsorcio.webp';
 import TextReveal from './TextReveal';
 import GradientBlobs from './GradientBlobs';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 // Kanban mock data (local, não repetir import em LandingPage)
 const KANBAN_COLS = [
@@ -35,6 +36,16 @@ const KANBAN_COLS = [
  *   heroY       — MotionValue para parallax Y no scroll
  */
 export default function HeroSection({ heroRef, heroOpacity, heroScale, heroY }) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  // Posição do astronauta: mobile centraliza mais, desktop mantém center
+  const bgPosition = isMobile ? '62% center' : 'center center';
+
+  // Animação mais dramática no mobile (tela menor = movimento parecendo maior)
+  const kenBurns = isMobile
+    ? { scale: [1, 1.18, 1.28], y: [0, -55, -20] }
+    : { scale: [1, 1.14, 1.24], y: [0, -45, -15] };
+
   return (
     <section
       id="hero"
@@ -42,13 +53,20 @@ export default function HeroSection({ heroRef, heroOpacity, heroScale, heroY }) 
       className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden"
     >
       {/* ── Ken Burns background (z-0) ─────────────────────────────────── */}
-      <div
+      <motion.div
         aria-hidden="true"
-        className="absolute inset-0 z-0 animate-space-drift"
+        className="absolute inset-0 z-0"
+        animate={kenBurns}
+        transition={{
+          duration: isMobile ? 18 : 25,
+          ease: 'easeInOut',
+          repeat: Infinity,
+          repeatType: 'alternate',
+        }}
         style={{
           backgroundImage: `url(${heroImg})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: bgPosition,
           willChange: 'transform',
           transformOrigin: 'center center',
         }}
