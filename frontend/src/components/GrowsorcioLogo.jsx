@@ -3,9 +3,9 @@ import logoSrc from '../assets/logogrowsorcio.webp';
 /**
  * Logo oficial GrowSorcio
  * Props:
- *   height — altura da imagem (default 36)
+ *   height — altura da imagem (default 32)
  */
-export default function GrowsorcioLogo({ height = 36 }) {
+export default function GrowsorcioLogo({ height = 32 }) {
   return (
     <img
       src={logoSrc}

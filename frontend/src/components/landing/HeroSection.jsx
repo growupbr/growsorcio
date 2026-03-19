@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import heroImg from '../../assets/mktconsorcio.webp';
+const heroImg = '/mktconsorcio.webp';
 import TextReveal from './TextReveal';
 import GradientBlobs from './GradientBlobs';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -8,8 +8,8 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 const KANBAN_COLS = [
   {
     col: 'Lead Novo',
-    titleClass: 'text-blue-400',
-    borderClass: 'border-l-2 border-l-blue-400',
+    titleClass: 'text-orange-400',
+    borderClass: 'border-l-2 border-l-orange-400',
     cards: ['Ana Lima', 'Carlos R.', 'Priya S.'],
   },
   {
@@ -20,8 +20,8 @@ const KANBAN_COLS = [
   },
   {
     col: 'Reunião Agendada',
-    titleClass: 'text-green-400',
-    borderClass: 'border-l-2 border-l-green-400',
+    titleClass: 'text-emerald-400',
+    borderClass: 'border-l-2 border-l-emerald-400',
     cards: ['Juliana M.'],
   },
 ];

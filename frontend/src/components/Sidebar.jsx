@@ -64,7 +64,7 @@ export default function Sidebar() {
 
       {/* Logo */}
       <div className="flex items-center justify-center px-4 h-20 border-b border-white/5 flex-shrink-0">
-        <GrowsorcioLogo height={60} />
+        <GrowsorcioLogo height={44} />
       </div>
 
       {/* Main nav */}

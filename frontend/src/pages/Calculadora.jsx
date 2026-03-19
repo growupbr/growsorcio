@@ -1,8 +1,9 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
 import html2canvas from 'html2canvas';
+import logoSrc from '../assets/logogrowsorcio.webp';
 import {
   Calculator, CheckCircle, MessageCircle, DollarSign,
-  ImageDown, TrendingDown, Trophy,
+  ImageDown, TrendingDown, Trophy, User,
 } from 'lucide-react';
 
 // ─── Formatação ───────────────────────────────────────────────────────────────
@@ -128,21 +129,32 @@ function Toast({ show, message }) {
 
 // ─── Card Exportável ──────────────────────────────────────────────────────────
 
-/** Linha de dado dentro do card de batalha */
-function DataRow({ label, value, valueClass = 'text-zinc-100', large = false }) {
+/** Linha horizontal estilo recibo — label esquerda, valor direita */
+function DataRow({ label, value, valueColor = '#f4f4f5', isLast = false }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#71717a', fontWeight: 600 }}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '9px 0',
+      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
+    }}>
+      <span style={{
+        fontSize: 10,
+        letterSpacing: '0.09em',
+        textTransform: 'uppercase',
+        color: '#71717a',
+        fontWeight: 600,
+        fontFamily: 'system-ui, sans-serif',
+      }}>
         {label}
       </span>
       <span style={{
-        fontSize: large ? 28 : 16,
-        fontWeight: 800,
-        lineHeight: 1.1,
+        fontSize: 15,
+        fontWeight: 700,
+        color: valueColor,
         fontFamily: 'system-ui, sans-serif',
-        color: valueClass.includes('emerald') ? '#34d399'
-             : valueClass.includes('red') ? '#ef4444'
-             : '#f4f4f5',
+        letterSpacing: '-0.01em',
       }}>
         {value}
       </span>
@@ -159,54 +171,38 @@ function ExportCard({ exportRef, res, valorCreditoStr, prazoC, prazoF, taxaAdm, 
       id="comparison-export-node"
       style={{
         backgroundColor: '#09090b',
-        padding: 32,
+        padding: 40,
         borderRadius: 20,
         fontFamily: 'system-ui, -apple-system, sans-serif',
         border: '1px solid rgba(255,255,255,0.06)',
         width: '100%',
+        aspectRatio: '1 / 1',
         boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
       }}
     >
       {/* ── Branding ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Logo texto inline para garantir render no canvas */}
-          <div style={{
-            background: 'linear-gradient(135deg, #f97316, #fb923c)',
-            borderRadius: 8,
-            width: 28,
-            height: 28,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <span style={{ color: '#fff', fontSize: 14, fontWeight: 900 }}>G</span>
-          </div>
-          <span style={{ color: '#f4f4f5', fontWeight: 800, fontSize: 15, letterSpacing: '-0.02em' }}>
-            Grow<span style={{ color: '#f97316' }}>sorcio</span>
-          </span>
-        </div>
-        <span style={{
-          fontSize: 10,
-          color: '#f97316',
-          fontWeight: 700,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          background: 'rgba(249,115,22,0.1)',
-          border: '1px solid rgba(249,115,22,0.2)',
-          padding: '3px 10px',
-          borderRadius: 999,
-        }}>
-          Simulação
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+        <img
+          src={logoSrc}
+          alt="Growsorcio"
+          style={{ height: 36, width: 'auto', display: 'block' }}
+        />
       </div>
 
       {/* ── Título central ── */}
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <p style={{ color: '#a1a1aa', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}>
-          Comparativo
-        </p>
-        <h2 style={{ color: '#f4f4f5', fontSize: 20, fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
+        <h2 style={{
+          color: '#f4f4f5',
+          fontSize: 26,
+          fontWeight: 900,
+          margin: 0,
+          letterSpacing: '-0.01em',
+          textTransform: 'uppercase',
+          fontFamily: 'system-ui, sans-serif',
+        }}>
           Consórcio vs Financiamento
         </h2>
       </div>
@@ -216,39 +212,41 @@ function ExportCard({ exportRef, res, valorCreditoStr, prazoC, prazoF, taxaAdm, 
 
         {/* Coluna Consórcio */}
         <div style={{
-          background: 'rgba(6,78,59,0.25)',
+          background: 'linear-gradient(to bottom, rgba(16,185,129,0.1), transparent)',
           border: '1px solid rgba(52,211,153,0.2)',
           borderRadius: 16,
           padding: 20,
           display: 'flex',
           flexDirection: 'column',
-          gap: 16,
+          justifyContent: 'space-between',
         }}>
+          {/* Badge + Linhas de dado */}
           <div>
             <div style={{
-              display: 'inline-block',
-              background: 'rgba(52,211,153,0.15)',
-              border: '1px solid rgba(52,211,153,0.3)',
-              borderRadius: 6,
-              padding: '3px 10px',
-              marginBottom: 16,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              background: 'rgba(52,211,153,0.18)',
+              border: '1px solid rgba(52,211,153,0.35)',
+              borderRadius: 999,
+              padding: '4px 12px',
+              marginBottom: 14,
             }}>
-              <span style={{ color: '#34d399', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              <span style={{ color: '#34d399', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 ✓ Consórcio
               </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <DataRow label="Crédito" value={fmtBRL(toNum(valorCreditoStr))} />
-              <DataRow label="Prazo" value={`${prazoC} meses`} />
-              <DataRow label="Taxa Adm." value={`${taxaAdm}%`} />
-              <DataRow label="Parcela" value={fmtBRL(res.parcelaC)} valueClass="text-emerald-400" />
-            </div>
+            <DataRow label="Crédito"  value={fmtBRL(toNum(valorCreditoStr))} />
+            <DataRow label="Prazo"    value={`${prazoC} meses`} />
+            <DataRow label="Taxa Adm." value={`${taxaAdm}%`} />
+            <DataRow label="Parcela"  value={fmtBRL(res.parcelaC)} valueColor="#34d399" isLast />
           </div>
-          <div style={{ borderTop: '1px solid rgba(52,211,153,0.15)', paddingTop: 14 }}>
-            <span style={{ color: '#6b7280', fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              CUSTO TOTAL
-            </span>
-            <div style={{ color: '#34d399', fontSize: 24, fontWeight: 900, marginTop: 2, lineHeight: 1 }}>
+          {/* Custo Total — isolado no fundo */}
+          <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(52,211,153,0.15)' }}>
+            <div style={{ color: '#6b7280', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Custo Total
+            </div>
+            <div style={{ color: '#34d399', fontSize: 32, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em', fontFamily: 'system-ui, sans-serif' }}>
               {fmtBRL(res.totalC)}
             </div>
           </div>
@@ -256,39 +254,41 @@ function ExportCard({ exportRef, res, valorCreditoStr, prazoC, prazoF, taxaAdm, 
 
         {/* Coluna Financiamento */}
         <div style={{
-          background: 'rgba(69,10,10,0.35)',
+          background: 'linear-gradient(to bottom, rgba(239,68,68,0.1), transparent)',
           border: '1px solid rgba(239,68,68,0.2)',
           borderRadius: 16,
           padding: 20,
           display: 'flex',
           flexDirection: 'column',
-          gap: 16,
+          justifyContent: 'space-between',
         }}>
+          {/* Badge + Linhas de dado */}
           <div>
             <div style={{
-              display: 'inline-block',
-              background: 'rgba(239,68,68,0.15)',
-              border: '1px solid rgba(239,68,68,0.3)',
-              borderRadius: 6,
-              padding: '3px 10px',
-              marginBottom: 16,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              background: 'rgba(239,68,68,0.18)',
+              border: '1px solid rgba(239,68,68,0.35)',
+              borderRadius: 999,
+              padding: '4px 12px',
+              marginBottom: 14,
             }}>
-              <span style={{ color: '#ef4444', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              <span style={{ color: '#ef4444', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 ✗ Financiamento
               </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <DataRow label="Crédito" value={fmtBRL(toNum(valorCreditoStr))} />
-              <DataRow label="Prazo" value={`${prazoF} meses`} />
-              <DataRow label="Juros a.a." value={`${taxaJuros}%`} />
-              <DataRow label="Parcela" value={fmtBRL(res.parcelaF)} valueClass="text-red-400" />
-            </div>
+            <DataRow label="Crédito"   value={fmtBRL(toNum(valorCreditoStr))} />
+            <DataRow label="Prazo"     value={`${prazoF} meses`} />
+            <DataRow label="Juros a.a." value={`${taxaJuros}%`} />
+            <DataRow label="Parcela"   value={fmtBRL(res.parcelaF)} valueColor="#ef4444" isLast />
           </div>
-          <div style={{ borderTop: '1px solid rgba(239,68,68,0.15)', paddingTop: 14 }}>
-            <span style={{ color: '#6b7280', fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              CUSTO TOTAL
-            </span>
-            <div style={{ color: '#ef4444', fontSize: 24, fontWeight: 900, marginTop: 2, lineHeight: 1 }}>
+          {/* Custo Total — isolado no fundo */}
+          <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(239,68,68,0.15)' }}>
+            <div style={{ color: '#6b7280', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Custo Total
+            </div>
+            <div style={{ color: '#ef4444', fontSize: 32, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em', fontFamily: 'system-ui, sans-serif' }}>
               {fmtBRL(res.totalF)}
             </div>
           </div>
@@ -297,27 +297,34 @@ function ExportCard({ exportRef, res, valorCreditoStr, prazoC, prazoF, taxaAdm, 
 
       {/* ── Troféu — Economia Total ── */}
       <div style={{
-        background: 'linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fb923c 100%)',
-        borderRadius: 14,
-        padding: '16px 24px',
+        background: 'linear-gradient(to right, #ea580c, #fb923c)',
+        borderRadius: 16,
+        padding: '20px 28px',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
+        gap: 6,
+        boxShadow: '0 12px 32px rgba(249,115,22,0.25)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>🏆</span>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              Economia Total com Consórcio
-            </div>
-            <div style={{ color: '#fff', fontSize: 11, fontWeight: 500, marginTop: 1, opacity: 0.7 }}>
-              valor que fica no seu bolso
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>🏆</span>
+          <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Economia Total com Consórcio
+          </span>
         </div>
-        <div style={{ color: '#fff', fontSize: 26, fontWeight: 900, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+        <div style={{
+          color: '#fff',
+          fontSize: 48,
+          fontWeight: 900,
+          letterSpacing: '-0.03em',
+          lineHeight: 1,
+          fontFamily: 'system-ui, sans-serif',
+          textShadow: '0 2px 12px rgba(0,0,0,0.25)',
+        }}>
           {ready ? fmtBRL(res.economia) : 'R$ —'}
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: 500 }}>
+          valor que fica no seu bolso
         </div>
       </div>
 
@@ -340,12 +347,30 @@ export default function Calculadora() {
   const [valorEntradaStr, setValorEntradaStr] = useState('20000');
   const [prazoF, setPrazoF] = useState('360');
   const [taxaJuros, setTaxaJuros] = useState('12');
+  const [nomeCliente, setNomeCliente] = useState('');
   const [toast, setToast] = useState({ show: false, message: '' });
   const [exporting, setExporting] = useState(false);
 
   const exportRef = useRef(null);
 
   const handleMoney = (setter) => (e) => setter(maskMoney(e.target.value));
+
+  // Gera nome do arquivo: "josecomparativo80k.png"
+  const gerarNomeArquivo = useCallback(() => {
+    const nome = nomeCliente
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+    const v = toNum(valorCreditoStr);
+    const valorStr = v >= 1_000_000
+      ? `${Math.round(v / 1_000_000)}m`
+      : v >= 1_000
+      ? `${Math.round(v / 1_000)}k`
+      : `${Math.round(v)}`;
+    return nome ? `${nome}comparativo${valorStr}` : `comparativo${valorStr}`;
+  }, [nomeCliente, valorCreditoStr]);
 
   const res = useMemo(() => calcular({
     valorCredito: toNum(valorCreditoStr),
@@ -380,19 +405,35 @@ export default function Calculadora() {
     if (!exportRef.current || exporting) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(exportRef.current, {
+      // Captura o elemento em alta resolução
+      const captured = await html2canvas(exportRef.current, {
         backgroundColor: '#09090b',
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: false,
         logging: false,
       });
-      const url = canvas.toDataURL('image/png');
+
+      // Centraliza em canvas 1080x1080
+      const out = document.createElement('canvas');
+      out.width = 1080;
+      out.height = 1080;
+      const ctx = out.getContext('2d');
+      ctx.fillStyle = '#09090b';
+      ctx.fillRect(0, 0, 1080, 1080);
+      const scale = Math.min(1080 / captured.width, 1080 / captured.height);
+      const dw = captured.width * scale;
+      const dh = captured.height * scale;
+      const dx = (1080 - dw) / 2;
+      const dy = (1080 - dh) / 2;
+      ctx.drawImage(captured, 0, 0, captured.width, captured.height, dx, dy, dw, dh);
+
+      const url = out.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'simulacao-growsorcio.png';
+      link.download = `${gerarNomeArquivo()}.png`;
       link.click();
-      showToast('Imagem baixada! Envie no WhatsApp do cliente.');
+      showToast('Imagem 1080×1080 baixada! Envie no WhatsApp do cliente.');
     } catch {
       showToast('Erro ao gerar imagem. Tente novamente.');
     } finally {
@@ -403,7 +444,7 @@ export default function Calculadora() {
   return (
     <div className="p-6 md:p-8 min-h-screen">
       {/* ── Header ── */}
-      <div className="mb-8 border-b border-white/5 pb-6 flex items-start justify-between">
+      <div className="mb-6 border-b border-white/5 pb-6 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-500/10">
@@ -418,122 +459,109 @@ export default function Calculadora() {
         </span>
       </div>
 
-      {/* ── Grid 2 colunas ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+      {/* ── Formulário — 3 colunas em cima ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
-        {/* ─── Coluna Esquerda — Formulário ─────────────────────────────────── */}
-        <div className="space-y-5">
-
-          {/* Card Consórcio */}
-          <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6">
-            <SectionTitle icon={Calculator} label="Consórcio" iconBg="bg-orange-500/20" />
-            <div className="space-y-4">
-              <MoneyField
-                label="Valor do Crédito"
-                value={valorCreditoStr}
-                onChange={handleMoney(setValorCreditoStr)}
-                placeholder="80.000"
+        {/* Card Consórcio */}
+        <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-5">
+          <SectionTitle icon={Calculator} label="Consórcio" iconBg="bg-orange-500/20" />
+          <div className="space-y-3">
+            <MoneyField
+              label="Valor do Crédito"
+              value={valorCreditoStr}
+              onChange={handleMoney(setValorCreditoStr)}
+              placeholder="80.000"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <CompactField
+                label="Prazo"
+                value={prazoC}
+                onChange={(e) => setPrazoC(e.target.value)}
+                suffix="meses"
+                placeholder="180"
               />
-              <div className="grid grid-cols-2 gap-4">
-                <CompactField
-                  label="Prazo"
-                  value={prazoC}
-                  onChange={(e) => setPrazoC(e.target.value)}
-                  suffix="meses"
-                  placeholder="180"
-                />
-                <CompactField
-                  label="Taxa de Adm. Total"
-                  value={taxaAdm}
-                  onChange={(e) => setTaxaAdm(e.target.value)}
-                  suffix="%"
-                  placeholder="16"
-                />
-              </div>
-            </div>
-            <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
-              <span className="text-xs text-zinc-500">Parcela estimada</span>
-              <span className="text-sm font-semibold text-orange-400 tabular-nums">
-                {fmtBRL(res.parcelaC)}<span className="text-zinc-600 font-normal"> /mês</span>
-              </span>
+              <CompactField
+                label="Taxa Adm."
+                value={taxaAdm}
+                onChange={(e) => setTaxaAdm(e.target.value)}
+                suffix="%"
+                placeholder="16"
+              />
             </div>
           </div>
-
-          {/* Card Financiamento */}
-          <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6">
-            <SectionTitle icon={DollarSign} label="Financiamento" iconBg="bg-red-500/20" />
-            <div className="space-y-4">
-              <MoneyField
-                label="Valor de Entrada"
-                value={valorEntradaStr}
-                onChange={handleMoney(setValorEntradaStr)}
-                placeholder="20.000"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <CompactField
-                  label="Prazo"
-                  value={prazoF}
-                  onChange={(e) => setPrazoF(e.target.value)}
-                  suffix="meses"
-                  placeholder="360"
-                />
-                <CompactField
-                  label="Taxa de Juros a.a."
-                  value={taxaJuros}
-                  onChange={(e) => setTaxaJuros(e.target.value)}
-                  suffix="%"
-                  placeholder="12"
-                />
-              </div>
-            </div>
-            <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
-              <span className="text-xs text-zinc-500">Parcela estimada (Price)</span>
-              <span className="text-sm font-semibold text-red-400 tabular-nums">
-                {fmtBRL(res.parcelaF)}<span className="text-zinc-600 font-normal"> /mês</span>
-              </span>
-            </div>
+          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+            <span className="text-xs text-zinc-500">Parcela estimada</span>
+            <span className="text-sm font-semibold text-orange-400 tabular-nums">
+              {fmtBRL(res.parcelaC)}<span className="text-zinc-600 font-normal"> /mês</span>
+            </span>
           </div>
         </div>
 
-        {/* ─── Coluna Direita — Card Exportável ─────────────────────────────── */}
-        <div className="space-y-4">
+        {/* Card Financiamento */}
+        <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-5">
+          <SectionTitle icon={DollarSign} label="Financiamento" iconBg="bg-red-500/20" />
+          <div className="space-y-3">
+            <MoneyField
+              label="Valor de Entrada"
+              value={valorEntradaStr}
+              onChange={handleMoney(setValorEntradaStr)}
+              placeholder="20.000"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <CompactField
+                label="Prazo"
+                value={prazoF}
+                onChange={(e) => setPrazoF(e.target.value)}
+                suffix="meses"
+                placeholder="360"
+              />
+              <CompactField
+                label="Juros a.a."
+                value={taxaJuros}
+                onChange={(e) => setTaxaJuros(e.target.value)}
+                suffix="%"
+                placeholder="12"
+              />
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+            <span className="text-xs text-zinc-500">Parcela estimada (Price)</span>
+            <span className="text-sm font-semibold text-red-400 tabular-nums">
+              {fmtBRL(res.parcelaF)}<span className="text-zinc-600 font-normal"> /mês</span>
+            </span>
+          </div>
+        </div>
 
-          {/* Card de comparação exportável */}
-          <ExportCard
-            exportRef={exportRef}
-            res={res}
-            valorCreditoStr={valorCreditoStr}
-            prazoC={prazoC}
-            prazoF={prazoF}
-            taxaAdm={taxaAdm}
-            taxaJuros={taxaJuros}
-            valorEntradaStr={valorEntradaStr}
-          />
+        {/* Card Cliente + Ações */}
+        <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-5 flex flex-col justify-between gap-4">
+          <div>
+            <SectionTitle icon={User} label="Cliente" iconBg="bg-zinc-700/60" />
+            <div>
+              <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wider">
+                Nome do cliente
+              </label>
+              <input
+                type="text"
+                value={nomeCliente}
+                onChange={(e) => setNomeCliente(e.target.value)}
+                placeholder="Ex: José Silva"
+                className="w-full bg-zinc-950 border border-white/10 rounded-xl text-sm text-zinc-100 placeholder-zinc-700 py-3 px-4 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/30"
+              />
+              {nomeCliente && (
+                <p className="mt-2 text-[11px] text-zinc-500">
+                  Arquivo: <span className="text-orange-400 font-medium">{gerarNomeArquivo()}.png</span>
+                </p>
+              )}
+            </div>
+          </div>
 
-          {/* ── Botões de ação (fora da área exportável) ── */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            {/* Secundário — Copiar texto */}
-            <button
-              onClick={handleCopiarTexto}
-              disabled={!canCopy}
-              className={[
-                'flex items-center justify-center gap-2 rounded-xl py-3.5 px-4',
-                'text-sm font-semibold border transition-all duration-150',
-                canCopy
-                  ? 'bg-zinc-900 border-white/10 text-zinc-200 hover:bg-zinc-800 hover:border-white/20 cursor-pointer'
-                  : 'bg-zinc-900/50 border-white/5 text-zinc-600 cursor-not-allowed',
-              ].join(' ')}
-            >
-              <MessageCircle size={16} />
-              Copiar Texto
-            </button>
-
-            {/* Primário — Baixar imagem */}
+          {/* Botões */}
+          <div className="flex flex-col gap-2">
             <button
               onClick={handleBaixarImagem}
               disabled={!canCopy || exporting}
               className={[
-                'flex items-center justify-center gap-2 rounded-xl py-3.5 px-4',
+                'flex items-center justify-center gap-2 rounded-xl py-3 px-4',
                 'text-sm font-semibold transition-all duration-150',
                 canCopy && !exporting
                   ? 'bg-orange-500 hover:bg-orange-400 text-white active:scale-[0.98] cursor-pointer shadow-md shadow-orange-500/30'
@@ -541,15 +569,44 @@ export default function Calculadora() {
               ].join(' ')}
             >
               <ImageDown size={16} className={exporting ? 'animate-bounce' : ''} />
-              {exporting ? 'Gerando…' : 'Baixar Imagem'}
+              {exporting ? 'Gerando…' : 'Baixar Imagem 1080×1080'}
+            </button>
+            <button
+              onClick={handleCopiarTexto}
+              disabled={!canCopy}
+              className={[
+                'flex items-center justify-center gap-2 rounded-xl py-2.5 px-4',
+                'text-sm font-semibold border transition-all duration-150',
+                canCopy
+                  ? 'bg-zinc-900 border-white/10 text-zinc-200 hover:bg-zinc-800 hover:border-white/20 cursor-pointer'
+                  : 'bg-zinc-900/50 border-white/5 text-zinc-600 cursor-not-allowed',
+              ].join(' ')}
+            >
+              <MessageCircle size={15} />
+              Copiar Texto para WhatsApp
             </button>
           </div>
-
-          <p className="text-[11px] text-zinc-600 text-center leading-relaxed px-2">
-            Consórcio com taxa administrativa total. Financiamento via Sistema Price.
-            Uso exclusivo para fins ilustrativos.
-          </p>
         </div>
+      </div>
+
+      {/* ── Preview do card exportável — 1:1 embaixo ── */}
+      <div className="max-w-xl mx-auto space-y-3">
+        <p className="text-[11px] text-zinc-500 text-center uppercase tracking-widest font-medium">
+          Preview da imagem gerada
+        </p>
+        <ExportCard
+          exportRef={exportRef}
+          res={res}
+          valorCreditoStr={valorCreditoStr}
+          prazoC={prazoC}
+          prazoF={prazoF}
+          taxaAdm={taxaAdm}
+          taxaJuros={taxaJuros}
+          valorEntradaStr={valorEntradaStr}
+        />
+        <p className="text-[11px] text-zinc-600 text-center leading-relaxed">
+          Consórcio com taxa administrativa total. Financiamento via Sistema Price. Uso exclusivo para fins ilustrativos.
+        </p>
       </div>
 
       <Toast show={toast.show} message={toast.message} />

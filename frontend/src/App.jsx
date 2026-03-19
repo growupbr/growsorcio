@@ -1,17 +1,28 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Kanban from './pages/Kanban';
 import Leads from './pages/Leads';
 import NovoLead from './pages/NovoLead';
-import LandingPage from './pages/LandingPage';
-import Calculadora from './pages/Calculadora';
-import Propostas from './pages/Propostas';
-import Conversas from './pages/Conversas';
-import GrowIA from './pages/GrowIA';
-import Treinamento from './pages/Treinamento';
-import Config from './pages/Config';
 import { useNotificacoes } from './hooks/useNotificacoes';
+
+// Lazy-loaded para reduzir bundle inicial (páginas pesadas)
+const LandingPage  = lazy(() => import('./pages/LandingPage'));
+const Calculadora  = lazy(() => import('./pages/Calculadora'));
+const Propostas    = lazy(() => import('./pages/Propostas'));
+const Conversas    = lazy(() => import('./pages/Conversas'));
+const GrowIA       = lazy(() => import('./pages/GrowIA'));
+const Treinamento  = lazy(() => import('./pages/Treinamento'));
+const Config       = lazy(() => import('./pages/Config'));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[300px]">
+      <div className="w-6 h-6 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
+    </div>
+  );
+}
 
 // Em produção: app.growsorcio.com.br → app, growsorcio.com.br → landing
 // Em dev: localhost → app (acesse /landing para ver a landing)
@@ -35,33 +46,35 @@ function AppLayout() {
 export default function App() {
   if (isAppDomain) {
     return (
-      <Routes>
-        <Route path="/landing" element={<LandingPage />} />
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="kanban" element={<Kanban />} />
-          <Route path="leads" element={<Leads />} />
-          <Route path="leads/novo" element={<NovoLead />} />
-          <Route path="calculadora" element={<Calculadora />} />
-          <Route path="propostas" element={<Propostas />} />
-          <Route path="conversas" element={<Conversas />} />
-          <Route path="grow-ia" element={<GrowIA />} />
-          <Route path="treinamento" element={<Treinamento />} />
-          <Route path="config" element={<Config />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Route>
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/landing" element={<LandingPage />} />
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="kanban" element={<Kanban />} />
+            <Route path="leads" element={<Leads />} />
+            <Route path="leads/novo" element={<NovoLead />} />
+            <Route path="calculadora" element={<Calculadora />} />
+            <Route path="propostas" element={<Propostas />} />
+            <Route path="conversas" element={<Conversas />} />
+            <Route path="grow-ia" element={<GrowIA />} />
+            <Route path="treinamento" element={<Treinamento />} />
+            <Route path="config" element={<Config />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Route>
+        </Routes>
+      </Suspense>
     );
   }
 
   // Domínio principal (growsorcio.com.br) → landing em URL oculta
-  // Acesse: growsorcio.com.br/v1-preview para ver a landing
-  // Qualquer outra rota redireciona para a URL oculta
   return (
-    <Routes>
-      <Route path="/v1-preview" element={<LandingPage />} />
-      <Route path="/*" element={<Navigate to="/v1-preview" replace />} />
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/v1-preview" element={<LandingPage />} />
+        <Route path="/*" element={<Navigate to="/v1-preview" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
