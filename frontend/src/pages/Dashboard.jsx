@@ -437,8 +437,10 @@ export default function Dashboard() {
           className="text-xs text-left rounded-xl p-4"
           style={{ background: '#0D1117', border: '1px solid #1C2333', color: '#8B949E' }}
         >
-{`cd ~/crm-growup/backend
-node server.js`}
+{`cd backend
+cp .env.example .env  # se ainda não existir
+# preencher SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY
+npm run dev`}
         </pre>
       </div>
     );
