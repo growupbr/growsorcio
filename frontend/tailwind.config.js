@@ -40,6 +40,16 @@ export default {
         'card':     '0 4px 24px rgba(0,0,0,0.4)',
         'card-lg':  '0 8px 40px rgba(0,0,0,0.6)',
       },
+      keyframes: {
+        'space-drift': {
+          '0%':   { transform: 'scale(1.0) translateY(0px)' },
+          '50%':  { transform: 'scale(1.06) translateY(-18px)' },
+          '100%': { transform: 'scale(1.1)  translateY(-8px)' },
+        },
+      },
+      animation: {
+        'space-drift': 'space-drift 25s ease-in-out infinite alternate',
+      },
     },
   },
   plugins: [],
