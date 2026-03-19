@@ -6,6 +6,7 @@ import Kanban from './pages/Kanban';
 import Leads from './pages/Leads';
 import NovoLead from './pages/NovoLead';
 import { useNotificacoes } from './hooks/useNotificacoes';
+import { useAuth } from './hooks/useAuth';
 
 // Lazy-loaded para reduzir bundle inicial (páginas pesadas)
 const LandingPage  = lazy(() => import('./pages/LandingPage'));
@@ -15,6 +16,8 @@ const Conversas    = lazy(() => import('./pages/Conversas'));
 const GrowIA       = lazy(() => import('./pages/GrowIA'));
 const Treinamento  = lazy(() => import('./pages/Treinamento'));
 const Config       = lazy(() => import('./pages/Config'));
+const Login        = lazy(() => import('./pages/Login'));
+const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'));
 
 function PageLoader() {
   return (
@@ -30,6 +33,14 @@ const isAppDomain =
   window.location.hostname.startsWith('app.') ||
   window.location.hostname === 'localhost' ||
   window.location.hostname === '127.0.0.1';
+
+function PrivateRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) return <PageLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
 
 function AppLayout() {
   useNotificacoes();
@@ -48,8 +59,10 @@ export default function App() {
     return (
       <Suspense fallback={<PageLoader />}>
         <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           <Route path="/landing" element={<LandingPage />} />
-          <Route path="/" element={<AppLayout />}>
+          <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="kanban" element={<Kanban />} />
