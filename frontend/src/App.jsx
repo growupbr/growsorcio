@@ -86,6 +86,8 @@ export default function App() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/v1-preview" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenha />} />
         <Route path="/*" element={<Navigate to="/v1-preview" replace />} />
       </Routes>
     </Suspense>
