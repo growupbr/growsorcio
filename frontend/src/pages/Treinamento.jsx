@@ -1,4 +1,5 @@
-import { Play, CheckCircle, Lock } from 'lucide-react';
+import { useRef, useCallback } from 'react';
+import { Play, CheckCircle, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ─── Asset Imports ────────────────────────────────────────────────────────────
 import capaTec    from '../assets/capa-tec.webp';
@@ -85,6 +86,16 @@ function ModuloCard({ modulo }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Treinamento() {
+  const scrollRef = useRef(null);
+
+  const scroll = useCallback((dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const card = el.querySelector('[data-card]');
+    const cardW = card ? card.offsetWidth + 16 : 220;
+    el.scrollBy({ left: dir * cardW, behavior: 'smooth' });
+  }, []);
+
   return (
     <div className="min-h-full bg-zinc-950 px-4 py-6 sm:px-6 sm:py-8 md:px-10">
 
@@ -137,21 +148,42 @@ export default function Treinamento() {
         </div>
       </div>
 
-      {/* ── Grid de Módulos ───────────────────────────────────────────────── */}
+      {/* ── Carrossel de Módulos ──────────────────────────────────────────── */}
       <section aria-label="Módulos de Treinamento">
-        <h2 className="text-xl sm:text-2xl font-black text-white mb-4 sm:mb-6 tracking-tight">
-          Módulos de Treinamento
-        </h2>
 
-        {/*
-          Mobile  (< sm): 2 colunas — cards grandes, fáceis de tocar
-          sm (≥640):       3 colunas
-          md (≥768):       4 colunas
-          lg (≥1024):      5 colunas
-        */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+        {/* Header: título + setas */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Módulos de Treinamento
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scroll(-1)}
+              aria-label="Módulo anterior"
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-300 hover:text-white transition-colors border border-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={() => scroll(1)}
+              aria-label="Próximo módulo"
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-300 hover:text-white transition-colors border border-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Faixa de scroll — swipe nativo no mobile, setas no desktop */}
+        <div
+          ref={scrollRef}
+          className="flex gap-4 overflow-x-auto pb-4"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {modulos.map((modulo) => (
-            <ModuloCard key={modulo.id} modulo={modulo} />
+            <div key={modulo.id} data-card className="w-40 sm:w-48 md:w-56 flex-shrink-0">
+              <ModuloCard modulo={modulo} />
+            </div>
           ))}
         </div>
       </section>
