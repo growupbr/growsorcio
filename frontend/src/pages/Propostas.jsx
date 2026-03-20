@@ -7,26 +7,41 @@ import {
   ChevronUp,
   Sparkles,
   Upload,
+  TrendingDown,
+  TrendingUp,
+  CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(value) {
-  const num = parseFloat(value) || 0;
-  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+function fmt(v) {
+  const n = parseFloat(v) || 0;
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-/** Parcela PMT de financiamento bancário (taxa fixa 1,5% a.m.) */
-function calcParcelaFinanciamento(valorCredito, prazoMeses) {
-  const pv   = parseFloat(valorCredito) || 0;
-  const n    = parseInt(prazoMeses)     || 1;
-  const taxa = 0.015;
-  if (!pv) return 0;
-  const fator = Math.pow(1 + taxa, n);
-  return (pv * taxa * fator) / (fator - 1);
+function fmtN(v) {
+  const n = parseFloat(v) || 0;
+  return n.toLocaleString('pt-BR');
 }
 
-// ─── Accordion ────────────────────────────────────────────────────────────────
+function pmt(pv, taxa, n) {
+  if (!pv || !n) return 0;
+  const f = Math.pow(1 + taxa, n);
+  return (pv * taxa * f) / (f - 1);
+}
+
+function gerarId() {
+  const siglas = ['OLIMPO', 'TITAN', 'ATLAS', 'APEX'];
+  const x = siglas[Math.floor(Math.random() * siglas.length)];
+  const n = Math.floor(1000 + Math.random() * 9000);
+  return `${x}-${n}`;
+}
+
+const PROPOSTA_ID = gerarId();
+const HOJE = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+
+// ─── Accordion (Painel) ───────────────────────────────────────────────────────
 
 function Accordion({ title, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -34,33 +49,31 @@ function Accordion({ title, children, defaultOpen = false }) {
     <div className="border border-white/5 rounded-xl overflow-hidden">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
         className="w-full flex items-center justify-between px-4 py-3.5 bg-zinc-800/50 hover:bg-zinc-800/80 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500"
       >
-        <span className="text-sm font-bold text-white">{title}</span>
+        <span className="text-xs font-bold text-white tracking-wide">{title}</span>
         {open
-          ? <ChevronUp  size={14} className="text-zinc-500 flex-shrink-0" />
-          : <ChevronDown size={14} className="text-zinc-500 flex-shrink-0" />
+          ? <ChevronUp  size={13} className="text-zinc-600 flex-shrink-0" />
+          : <ChevronDown size={13} className="text-zinc-600 flex-shrink-0" />
         }
       </button>
-      {open && (
-        <div className="px-4 py-4 space-y-4 bg-zinc-900/40">
-          {children}
-        </div>
-      )}
+      {open && <div className="px-4 py-4 space-y-4 bg-zinc-900/40">{children}</div>}
     </div>
   );
 }
 
 // ─── Form Primitives ──────────────────────────────────────────────────────────
 
-function Field({ label, id, hint, children }) {
+const inputCls =
+  'w-full bg-zinc-900 border border-white/8 text-white text-sm rounded-lg px-3 py-2.5 ' +
+  'placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 focus:ring-1 ' +
+  'focus:ring-orange-500/20 transition-all';
+
+function Field({ label, id, children, hint }) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5"
-      >
+      <label htmlFor={id} className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">
         {label}
       </label>
       {children}
@@ -69,57 +82,275 @@ function Field({ label, id, hint, children }) {
   );
 }
 
-const inputCls =
-  'w-full bg-zinc-900 border border-white/8 text-white text-sm rounded-lg px-3 py-2.5 ' +
-  'placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 focus:ring-1 ' +
-  'focus:ring-orange-500/20 transition-all';
-
 function Input({ id, value, onChange, type = 'text', placeholder, className = '' }) {
   return (
     <input
-      id={id}
-      type={type}
-      value={value}
-      onChange={onChange}
+      id={id} type={type} value={value} onChange={onChange}
       placeholder={placeholder}
       className={`${inputCls} ${className}`}
     />
   );
 }
 
-// ─── A4 Sub-components ────────────────────────────────────────────────────────
+// ─── Documento — Sub-componentes ──────────────────────────────────────────────
 
-function DataCard({ label, value, accent }) {
+function Divisor() {
+  return <div className="border-t border-zinc-100 my-6" />;
+}
+
+function MetaRow({ label, value, accent = false, large = false }) {
   return (
-    <div
-      className="rounded-xl p-3 text-center border"
-      style={{ borderColor: `${accent}30`, backgroundColor: `${accent}08` }}
-    >
-      <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 mb-1">{label}</p>
-      <p className="text-sm font-black text-zinc-800 leading-tight">{value}</p>
+    <div className="flex items-baseline justify-between py-2 border-b border-zinc-100 last:border-0">
+      <span className="text-xs font-medium text-zinc-400 leading-tight">{label}</span>
+      <span className={`font-bold tabular-nums leading-tight text-right ${
+        large ? 'text-base' : 'text-sm'
+      } ${accent === 'red' ? 'text-red-500' : accent === 'orange' ? 'text-orange-600' : 'text-zinc-800'}`}>
+        {value}
+      </span>
     </div>
   );
 }
 
-function ComparisomBlock({ label, monthly, total, color, badge }) {
+function ParamCard({ label, value, sub }) {
+  return (
+    <div className="bg-zinc-50 rounded-xl p-3.5 border border-zinc-100">
+      <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 mb-1">{label}</p>
+      <p className="text-sm font-extrabold text-zinc-800 leading-tight">{value}</p>
+      {sub && <p className="text-[9px] text-zinc-400 mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
+// ─── Documento Principal (A4 Premium) ────────────────────────────────────────
+
+function DocumentoA4({ dados }) {
+  // Cálculos
+  const credito       = parseFloat(dados.valorCredito) || 80000;
+  const prazoConsorc  = parseInt(dados.prazo)          || 180;
+  const parcelaConsorc = parseFloat(dados.parcela)     || 516;
+  const taxaAdm       = parseFloat(dados.taxaAdm)      || 16;
+  const totalConsorc  = parcelaConsorc * prazoConsorc;
+
+  const PRAZO_FIN     = 360;
+  const parcelaFin    = pmt(credito, 0.015, PRAZO_FIN);
+  const totalFin      = parcelaFin * PRAZO_FIN;
+  const economia      = totalFin - totalConsorc;
+
+  const accent = dados.corPrimaria || '#f97316';
+
   return (
     <div
-      className="flex-1 rounded-xl p-4 border-2 relative overflow-visible"
-      style={{ borderColor: color, backgroundColor: `${color}0C` }}
+      className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl shadow-black/20 overflow-hidden"
+      style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif" }}
     >
-      {badge && (
-        <div
-          className="absolute -top-3 left-1/2 -translate-x-1/2 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap"
-          style={{ backgroundColor: color }}
-        >
-          {badge}
+      {/* ── Topo colorido (accent bar) ─ */}
+      <div className="h-1" style={{ background: `linear-gradient(90deg, ${accent}, #f59e0b)` }} />
+
+      <div className="p-10">
+
+        {/* ════════════════════════════════════════════════════════════════
+            1. HEADER
+            ════════════════════════════════════════════════════════════════ */}
+        <div className="flex items-start justify-between mb-10">
+          {/* Logo placeholder */}
+          <div className="flex items-center justify-center w-28 h-10 rounded-lg bg-zinc-100 border border-zinc-200">
+            <span className="text-[9px] font-black tracking-widest text-zinc-400 uppercase">Sua Logo</span>
+          </div>
+
+          {/* ID + data */}
+          <div className="text-right">
+            <p className="text-[9px] font-black tracking-[0.18em] uppercase text-zinc-400 mb-0.5">
+              Relatório Estratégico de Adesão
+            </p>
+            <p className="text-xs font-bold text-zinc-700">Proposta ID: <span style={{ color: accent }}>{PROPOSTA_ID}</span></p>
+            <p className="text-[10px] text-zinc-400 mt-0.5">{HOJE}</p>
+          </div>
         </div>
-      )}
-      <p className="text-xs font-black text-zinc-700 mb-3">{label}</p>
-      <p className="text-[9px] text-zinc-500 mb-0.5">Parcela mensal</p>
-      <p className="text-base font-black mb-2" style={{ color }}>{monthly}</p>
-      <p className="text-[9px] text-zinc-500 mb-0.5">Total pago</p>
-      <p className="text-xs font-bold text-zinc-700">{total}</p>
+
+        {/* ════════════════════════════════════════════════════════════════
+            2. HEADLINE DO INVESTIDOR
+            ════════════════════════════════════════════════════════════════ */}
+        <div className="mb-8">
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: accent }}>
+            Análise exclusiva preparada para
+          </p>
+          <h1 className="text-2xl font-extrabold text-zinc-950 leading-tight mb-2">
+            {dados.nomeCliente || 'Cliente Investidor'}
+          </h1>
+          <p className="text-sm text-zinc-400 font-light leading-relaxed max-w-sm">
+            Detalhamento da alavancagem patrimonial através da metodologia TEC 2.0 — consórcio estratégico de alta performance.
+          </p>
+          {dados.validade && (
+            <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full bg-zinc-50 border border-zinc-200">
+              <ShieldCheck size={11} className="text-zinc-400" />
+              <span className="text-[10px] font-semibold text-zinc-500">Válida até {dados.validade}</span>
+            </div>
+          )}
+        </div>
+
+        <Divisor />
+
+        {/* ════════════════════════════════════════════════════════════════
+            3. ANÁLISE COMPARATIVA — XEQUE-MATE
+            ════════════════════════════════════════════════════════════════ */}
+        <div className="mb-8">
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-5">
+            Comparativo de Aquisição Patrimonial
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Card Financiamento */}
+            <div className="bg-red-50/60 border border-red-100 rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute top-4 right-4">
+                <TrendingDown size={18} className="text-red-300" />
+              </div>
+              <p className="text-[8px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Alternativa A</p>
+              <p className="text-xs font-bold text-zinc-700 mb-4">Financiamento Bancário Tradicional</p>
+              <div className="space-y-0">
+                <MetaRow label="Crédito"        value={fmt(credito)} />
+                <MetaRow label="Prazo"          value={`${PRAZO_FIN} meses`} />
+                <MetaRow label="1ª Parcela"     value={fmt(parcelaFin)} accent="red" />
+                <MetaRow label="Taxa a.m."      value="1,50%" accent="red" />
+                <MetaRow label="Custo Total"    value={fmt(totalFin)} accent="red" large />
+              </div>
+            </div>
+
+            {/* Card Consórcio TEC 2.0 */}
+            <div
+              className="bg-white rounded-2xl p-5 relative overflow-hidden"
+              style={{
+                border: `2px solid ${accent}`,
+                boxShadow: `0 12px 40px -8px ${accent}22`,
+              }}
+            >
+              {/* Badge destaque */}
+              <div
+                className="absolute top-4 right-4 flex items-center gap-1 px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: `${accent}15` }}
+              >
+                <CheckCircle2 size={10} style={{ color: accent }} />
+                <span className="text-[8px] font-black uppercase tracking-wide" style={{ color: accent }}>
+                  Recomendado
+                </span>
+              </div>
+
+              <p className="text-[8px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Alternativa B</p>
+              <p className="text-xs font-bold text-zinc-700 mb-4">
+                Consórcio Estratégico <span style={{ color: accent }}>Série OlimpoBlessed</span>
+              </p>
+              <div className="space-y-0">
+                <MetaRow label="Crédito"        value={fmt(credito)} />
+                <MetaRow label="Prazo"          value={`${prazoConsorc} meses`} />
+                <MetaRow label="1ª Parcela"     value={fmt(parcelaConsorc)} accent="orange" />
+                <MetaRow label="Taxa de Adm."   value={`${taxaAdm}% (Fixa)`} />
+                <MetaRow label="Custo Total"    value={fmt(totalConsorc)} accent="orange" large />
+              </div>
+            </div>
+          </div>
+
+          {/* Economia Real */}
+          {economia > 0 && (
+            <div
+              className="mt-4 rounded-2xl p-5 flex items-center justify-between"
+              style={{ backgroundColor: `${accent}0A`, border: `1px solid ${accent}30` }}
+            >
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-zinc-500 mb-0.5">
+                  Economia Real com TEC 2.0
+                </p>
+                <p className="text-[10px] text-zinc-400 font-light">
+                  Diferença paga ao banco vs. consórcio, ao longo de todo o prazo
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0 ml-4">
+                <div className="flex items-center gap-1.5 justify-end mb-0.5">
+                  <TrendingDown size={16} className="text-emerald-500" />
+                  <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wide">Você poupa</span>
+                </div>
+                <p
+                  className="text-2xl font-extrabold leading-tight"
+                  style={{ color: accent }}
+                >
+                  {fmt(economia)}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Divisor />
+
+        {/* ════════════════════════════════════════════════════════════════
+            4. FUNDAMENTOS DO PLANO
+            ════════════════════════════════════════════════════════════════ */}
+        <div className="mb-8">
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-4">
+            Parâmetros do Plano Estruturado
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <ParamCard label="Crédito"         value={fmt(credito)}           />
+            <ParamCard label="Prazo"           value={`${prazoConsorc} m`}    />
+            <ParamCard label="1ª Parcela"      value={fmt(parcelaConsorc)}    />
+            <ParamCard label="Taxa Adm."       value={`${taxaAdm}% Fixa`}     sub="Sobre o crédito total" />
+            <ParamCard label="Indexador"       value="INCC"                    sub="Reajuste anual" />
+            <ParamCard label="Seguro"          value="Incluso"                 sub="SFH padrão" />
+          </div>
+        </div>
+
+        <Divisor />
+
+        {/* ════════════════════════════════════════════════════════════════
+            5. MENSAGEM PERSONALIZADA + CONDIÇÕES
+            ════════════════════════════════════════════════════════════════ */}
+        {dados.mensagemPersonalizada && (
+          <div className="mb-8">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-3">
+              Nota do Consultor
+            </p>
+            <p className="text-xs text-zinc-500 leading-relaxed font-light border-l-2 pl-4"
+              style={{ borderColor: accent }}>
+              {dados.mensagemPersonalizada}
+            </p>
+          </div>
+        )}
+
+        {/* Condições gerais */}
+        <div className="mb-10">
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-2">
+            Condições Gerais
+          </p>
+          <p className="text-[10px] text-zinc-400 font-light leading-relaxed">
+            Esta proposta é exclusiva, personalizada e válida pelo período indicado. Os valores apresentados são
+            estimados com base nas condições vigentes na data de emissão. O início da contemplação está sujeito
+            às condições do fundo comum do grupo. Consulte o Regulamento Completo para informações detalhadas.
+          </p>
+        </div>
+
+        {/* ── Assinaturas ─ */}
+        <div className="grid grid-cols-2 gap-10">
+          {['Cliente Investidor', 'Consultor GrowSorcio'].map((label) => (
+            <div key={label}>
+              <div className="border-b-2 border-zinc-800 mb-2 pb-6" />
+              <p className="text-[10px] font-semibold text-zinc-500">{label}</p>
+              <p className="text-[9px] text-zinc-400 mt-0.5">
+                {label === 'Cliente Investidor' ? dados.nomeCliente || '_______' : 'GrowSorcio — TEC 2.0'}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer interno */}
+        <div className="mt-8 pt-5 border-t border-zinc-100 flex items-center justify-between">
+          <p className="text-[8px] text-zinc-300 font-light">
+            Gerado de forma segura via{' '}
+            <span className="font-black text-zinc-400">GrowSorcio</span>
+            {' '}— Tecnologia para Consórcio
+          </p>
+          <p className="text-[8px] text-zinc-400 font-mono">{PROPOSTA_ID}</p>
+        </div>
+
+      </div>{/* /p-10 */}
     </div>
   );
 }
@@ -127,18 +358,18 @@ function ComparisomBlock({ label, monthly, total, color, badge }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const DEFAULT_DADOS = {
-  nomeCliente:                    'Maria Silva',
-  telefone:                       '(11) 9 8765-4321',
-  validade:                       '27/03/2026',
-  valorCredito:                   '120000',
-  prazo:                          '60',
-  parcela:                        '2100',
-  taxaAdm:                        '18',
-  mostrarComparativoFinanciamento: true,
-  corPrimaria:                    '#f97316',
+  nomeCliente: 'Maria Silva',
+  telefone: '(11) 9 8765-4321',
+  validade: '27/03/2026',
+  valorCredito: '80000',
+  prazo: '180',
+  parcela: '516',
+  taxaAdm: '16',
+  corPrimaria: '#f97316',
   mensagemPersonalizada:
-    'Preparei esta proposta exclusiva para você conquistar o seu bem com segurança e economia. ' +
-    'No consórcio, o seu dinheiro trabalha por você — sem juros abusivos, sem surpresas.',
+    'Preparei esta análise especialmente para você. No consórcio TEC 2.0, o seu ' +
+    'patrimônio cresce sem os juros abusivos do sistema bancário tradicional. Estou à ' +
+    'disposição para esclarecer cada detalhe desta proposta.',
 };
 
 export default function Propostas() {
@@ -146,22 +377,12 @@ export default function Propostas() {
 
   const set = useCallback(
     (field) => (e) =>
-      setDados((prev) => ({
+      setDados(prev => ({
         ...prev,
         [field]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
       })),
     []
   );
-
-  // Cálculos comparativos
-  const parcConsorcio     = parseFloat(dados.parcela)      || 0;
-  const prazoN            = parseInt(dados.prazo)           || 60;
-  const totalConsorcio    = parcConsorcio * prazoN;
-  const parcFinanciamento = calcParcelaFinanciamento(dados.valorCredito, dados.prazo);
-  const totalFinanciamento = parcFinanciamento * prazoN;
-  const economia           = totalFinanciamento - totalConsorcio;
-
-  const accent = dados.corPrimaria || '#f97316';
 
   return (
     <div className="flex flex-col h-full bg-zinc-950">
@@ -170,32 +391,25 @@ export default function Propostas() {
       <header className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-white/5 bg-zinc-950/90 backdrop-blur-md z-10">
         <div>
           <h1 className="text-sm font-bold text-white leading-tight">Gerador de Propostas</h1>
-          <p className="text-zinc-600 text-xs">Para: <span className="text-zinc-400">{dados.nomeCliente || '—'}</span></p>
+          <p className="text-zinc-600 text-xs">
+            Para: <span className="text-zinc-400">{dados.nomeCliente || '—'}</span>
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <button type="button" aria-label="Criar Link Mágico"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/6 hover:border-white/12 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-            aria-label="Criar Link Mágico"
           >
-            <Link2 size={13} />
-            <span className="hidden sm:inline">Link Mágico</span>
+            <Link2 size={13} /><span className="hidden sm:inline">Link Mágico</span>
           </button>
-          <button
-            type="button"
+          <button type="button" aria-label="Enviar no WhatsApp"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/6 hover:border-white/12 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-            aria-label="Enviar no WhatsApp"
           >
-            <MessageCircle size={13} />
-            <span className="hidden sm:inline">WhatsApp</span>
+            <MessageCircle size={13} /><span className="hidden sm:inline">WhatsApp</span>
           </button>
-          <button
-            type="button"
+          <button type="button" aria-label="Descarregar PDF"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-orange-500 hover:bg-orange-400 active:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
-            aria-label="Descarregar PDF"
           >
-            <Download size={13} />
-            <span className="hidden sm:inline">Descarregar PDF</span>
+            <Download size={13} /><span className="hidden sm:inline">Descarregar PDF</span>
           </button>
         </div>
       </header>
@@ -203,146 +417,66 @@ export default function Propostas() {
       {/* ── Split Layout ────────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
 
-        {/* ════════════════════════════════════════════════════════════════════
-            PAINEL ESQUERDO — Formulário de Controlo
-            ══════════════════════════════════════════════════════════════════ */}
+        {/* PAINEL ESQUERDO */}
         <aside className="lg:col-span-4 overflow-y-auto border-r border-white/5 bg-zinc-900/20">
           <div className="p-4 space-y-3">
 
-            {/* A: Dados do Cliente */}
             <Accordion title="A. Dados do Cliente" defaultOpen>
-              <Field label="Nome do Cliente" id="nomeCliente">
-                <Input
-                  id="nomeCliente"
-                  value={dados.nomeCliente}
-                  onChange={set('nomeCliente')}
-                  placeholder="Ex: Maria Silva"
-                />
+              <Field label="Nome do Cliente" id="nome">
+                <Input id="nome" value={dados.nomeCliente} onChange={set('nomeCliente')} placeholder="Ex: Maria Silva" />
               </Field>
-              <Field label="WhatsApp" id="telefone">
-                <Input
-                  id="telefone"
-                  value={dados.telefone}
-                  onChange={set('telefone')}
-                  placeholder="(11) 9 8765-4321"
-                />
+              <Field label="WhatsApp" id="tel">
+                <Input id="tel" value={dados.telefone} onChange={set('telefone')} placeholder="(11) 9 8765-4321" />
               </Field>
-              <Field label="Validade da Proposta" id="validade">
-                <Input
-                  id="validade"
-                  value={dados.validade}
-                  onChange={set('validade')}
-                  placeholder="27/03/2026"
-                />
+              <Field label="Validade da Proposta" id="val">
+                <Input id="val" value={dados.validade} onChange={set('validade')} placeholder="27/03/2026" />
               </Field>
             </Accordion>
 
-            {/* B: Estrutura do Crédito */}
             <Accordion title="B. Estrutura do Crédito" defaultOpen>
-              <Field label="Valor do Bem (R$)" id="valorCredito">
-                <Input
-                  id="valorCredito"
-                  type="number"
-                  value={dados.valorCredito}
-                  onChange={set('valorCredito')}
-                  placeholder="120000"
-                />
+              <Field label="Valor do Crédito (R$)" id="cred">
+                <Input id="cred" type="number" value={dados.valorCredito} onChange={set('valorCredito')} placeholder="80000" />
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Prazo (meses)" id="prazo">
-                  <Input
-                    id="prazo"
-                    type="number"
-                    value={dados.prazo}
-                    onChange={set('prazo')}
-                    placeholder="60"
-                  />
+                  <Input id="prazo" type="number" value={dados.prazo} onChange={set('prazo')} placeholder="180" />
                 </Field>
-                <Field label="Parcela (R$)" id="parcela">
-                  <Input
-                    id="parcela"
-                    type="number"
-                    value={dados.parcela}
-                    onChange={set('parcela')}
-                    placeholder="2100"
-                  />
+                <Field label="1ª Parcela (R$)" id="parcela">
+                  <Input id="parcela" type="number" value={dados.parcela} onChange={set('parcela')} placeholder="516" />
                 </Field>
               </div>
-              <Field label="Taxa de Administração (%)" id="taxaAdm" hint="Percentagem total sobre o crédito">
-                <Input
-                  id="taxaAdm"
-                  type="number"
-                  value={dados.taxaAdm}
-                  onChange={set('taxaAdm')}
-                  placeholder="18"
-                />
+              <Field label="Taxa de Adm. (%)" id="taxa" hint="Percentagem total fixa sobre o crédito">
+                <Input id="taxa" type="number" value={dados.taxaAdm} onChange={set('taxaAdm')} placeholder="16" />
               </Field>
-              {/* Checkbox comparativo */}
-              <label className="flex items-start gap-3 cursor-pointer group select-none">
-                <div className="relative mt-0.5 flex-shrink-0 w-4 h-4">
-                  <input
-                    type="checkbox"
-                    checked={dados.mostrarComparativoFinanciamento}
-                    onChange={set('mostrarComparativoFinanciamento')}
-                    className="sr-only peer"
-                  />
-                  <div className="w-4 h-4 border border-white/20 rounded peer-checked:bg-orange-500 peer-checked:border-orange-500 transition-all" />
-                  <svg
-                    className="absolute inset-0 m-auto w-2.5 h-2 opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
-                    viewBox="0 0 10 8" fill="none"
-                  >
-                    <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <span className="text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors leading-relaxed">
-                  Incluir comparativo com Financiamento Bancário (1,5% a.m.)
-                </span>
-              </label>
             </Accordion>
 
-            {/* C: Branding e Mensagem */}
             <Accordion title="C. Branding e Mensagem">
-              <Field label="Cor Principal" id="corPrimaria" hint="Define a cor dos destaques no documento">
+              <Field label="Cor de Acento" id="cor">
                 <div className="flex items-center gap-3">
                   <input
-                    id="corPrimaria"
-                    type="color"
-                    value={dados.corPrimaria}
-                    onChange={set('corPrimaria')}
+                    id="cor" type="color" value={dados.corPrimaria} onChange={set('corPrimaria')}
                     className="w-11 h-10 rounded-lg border border-white/10 bg-transparent cursor-pointer p-0.5 flex-shrink-0"
                   />
-                  <Input
-                    value={dados.corPrimaria}
-                    onChange={set('corPrimaria')}
-                    placeholder="#f97316"
-                    className="font-mono text-xs"
-                  />
+                  <Input value={dados.corPrimaria} onChange={set('corPrimaria')} className="font-mono text-xs" />
                 </div>
               </Field>
-              <Field label="Logótipo da Empresa" id="logo">
-                <button
-                  type="button"
+              <Field label="Logótipo" id="logo">
+                <button type="button"
                   className="w-full flex items-center justify-center gap-2 border border-dashed border-white/12 rounded-xl px-4 py-5 text-zinc-600 hover:text-zinc-300 hover:border-white/25 transition-all text-xs cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
                 >
-                  <Upload size={15} />
-                  Clique para enviar o logótipo
+                  <Upload size={14} /> Enviar logótipo
                 </button>
               </Field>
-              <Field label="Mensagem ao Cliente" id="mensagem">
+              <Field label="Nota do Consultor" id="msg">
                 <textarea
-                  id="mensagem"
-                  value={dados.mensagemPersonalizada}
-                  onChange={set('mensagemPersonalizada')}
-                  rows={5}
-                  placeholder="Escreva uma mensagem personalizada para o cliente..."
+                  id="msg" value={dados.mensagemPersonalizada} onChange={set('mensagemPersonalizada')}
+                  rows={5} placeholder="Mensagem personalizada..."
                   className={`${inputCls} resize-none leading-relaxed`}
                 />
-                <button
-                  type="button"
+                <button type="button"
                   className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 border border-white/5 hover:border-white/10 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
                 >
-                  <Sparkles size={12} />
-                  Melhorar texto com IA
+                  <Sparkles size={12} /> Melhorar texto com IA
                 </button>
               </Field>
             </Accordion>
@@ -350,146 +484,21 @@ export default function Propostas() {
           </div>
         </aside>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            PAINEL DIREITO — Live Preview do Documento A4
-            ══════════════════════════════════════════════════════════════════ */}
-        <div className="lg:col-span-8 overflow-y-auto bg-[#111113] flex flex-col items-center py-10 px-4 gap-4">
-
-          {/* Hint */}
-          <p className="text-zinc-700 text-[10px] font-medium tracking-wide uppercase flex items-center gap-2">
+        {/* PAINEL DIREITO — Live Preview */}
+        <div className="lg:col-span-8 overflow-y-auto bg-[#0f0f11] flex flex-col items-center py-10 px-4 sm:px-8 gap-4">
+          <div className="flex items-center gap-2">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Pré-visualização em tempo real
-          </p>
-
-          {/* ── Documento A4 ────────────────────────────────────────────────── */}
-          <div
-            className="w-full max-w-2xl bg-white text-zinc-900 shadow-2xl rounded-sm mx-auto"
-            style={{ aspectRatio: '1 / 1.414' }}
-          >
-            <div className="h-full flex flex-col p-8 sm:p-12 relative overflow-hidden">
-
-              {/* Header */}
-              <div
-                className="flex items-start justify-between pb-5 mb-6 border-b-2"
-                style={{ borderColor: `${accent}35` }}
-              >
-                {/* Logo */}
-                <div
-                  className="flex items-center justify-center w-20 h-8 rounded-md border-2 border-dashed"
-                  style={{ borderColor: `${accent}50`, backgroundColor: `${accent}08` }}
-                >
-                  <span className="text-[9px] font-black tracking-widest" style={{ color: accent }}>
-                    LOGO
-                  </span>
-                </div>
-
-                {/* Title block */}
-                <div className="text-right">
-                  <p
-                    className="text-sm font-black tracking-tight leading-tight"
-                    style={{ color: accent }}
-                  >
-                    PROPOSTA DE INVESTIMENTO
-                  </p>
-                  <p className="text-[10px] text-zinc-400 mt-0.5">
-                    Exclusiva para {dados.nomeCliente || '—'}
-                  </p>
-                  {dados.validade && (
-                    <span
-                      className="inline-block mt-1.5 px-2 py-0.5 rounded text-[9px] font-bold"
-                      style={{ backgroundColor: `${accent}15`, color: accent }}
-                    >
-                      Válida até {dados.validade}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Greeting */}
-              <div className="mb-6">
-                <h2 className="text-lg font-black text-zinc-800 leading-tight mb-2">
-                  Olá,{' '}
-                  <span style={{ color: accent }}>
-                    {dados.nomeCliente || 'Cliente'}
-                  </span>!
-                </h2>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">
-                  {dados.mensagemPersonalizada || '—'}
-                </p>
-              </div>
-
-              {/* Divider label */}
-              <p
-                className="text-[8px] font-black uppercase tracking-[0.15em] mb-3"
-                style={{ color: accent }}
-              >
-                Estrutura do Crédito
-              </p>
-
-              {/* Credit Cards Grid */}
-              <div className="grid grid-cols-4 gap-2 mb-6">
-                <DataCard label="Crédito"   value={fmt(dados.valorCredito)}    accent={accent} />
-                <DataCard label="Prazo"     value={`${dados.prazo || '—'} m`}  accent={accent} />
-                <DataCard label="Parcela"   value={fmt(dados.parcela)}          accent={accent} />
-                <DataCard label="Taxa Adm." value={`${dados.taxaAdm || '—'}%`} accent={accent} />
-              </div>
-
-              {/* Comparativo Financiamento */}
-              {dados.mostrarComparativoFinanciamento && (
-                <div className="mb-6">
-                  <p
-                    className="text-[8px] font-black uppercase tracking-[0.15em] mb-4"
-                    style={{ color: accent }}
-                  >
-                    Consórcio vs. Financiamento Bancário
-                  </p>
-                  <div className="flex gap-4 mt-3">
-                    <ComparisomBlock
-                      label="Consórcio"
-                      monthly={fmt(parcConsorcio)}
-                      total={fmt(totalConsorcio)}
-                      color="#10b981"
-                      badge="✓ Melhor escolha"
-                    />
-                    <ComparisomBlock
-                      label="Financiamento Bancário"
-                      monthly={fmt(parcFinanciamento)}
-                      total={fmt(totalFinanciamento)}
-                      color="#ef4444"
-                      badge={null}
-                    />
-                  </div>
-                  {economia > 0 && (
-                    <div className="mt-3 py-2 px-3 rounded-xl text-[10px] font-black text-center text-emerald-700 bg-emerald-50 border border-emerald-100">
-                      Você economiza <span className="text-emerald-600">{fmt(economia)}</span> ao escolher o Consórcio
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Spacer */}
-              <div className="flex-1" />
-
-              {/* Footer — fixed to bottom inside the A4 */}
-              <div className="border-t border-zinc-100 pt-3 flex items-center justify-between">
-                <p className="text-[8px] text-zinc-400 leading-relaxed">
-                  Gerado de forma segura via{' '}
-                  <span className="font-black text-zinc-500">GrowSorcio</span>
-                  {' '}— Tecnologia para Consórcio
-                </p>
-                <p className="text-[8px] text-zinc-400 tabular-nums">{dados.validade}</p>
-              </div>
-
-            </div>
+            <p className="text-zinc-700 text-[10px] font-medium tracking-wide uppercase">
+              Pré-visualização em tempo real
+            </p>
           </div>
-
-          {/* Bottom note */}
-          <p className="text-zinc-800 text-[10px] pb-4 text-center">
-            Edite os campos à esquerda para ver as alterações em tempo real
+          <DocumentoA4 dados={dados} />
+          <p className="text-zinc-800 text-[10px] pb-6 text-center">
+            Edite os campos à esquerda para actualizar instantaneamente
           </p>
+        </div>
 
-        </div>{/* /right panel */}
-      </div>{/* /grid */}
+      </div>
     </div>
   );
 }
