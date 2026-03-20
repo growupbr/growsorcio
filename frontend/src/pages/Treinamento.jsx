@@ -1,6 +1,6 @@
 import { useRef, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, CheckCircle, Lock, ChevronLeft, ChevronRight, X, Clock, ArrowUpCircle, Trophy } from 'lucide-react';
+import { Play, CheckCircle, Lock, ChevronLeft, ChevronRight, X, Clock, ArrowUpCircle, Trophy, Headset } from 'lucide-react';
 
 // ─── Asset Imports ────────────────────────────────────────────────────────────
 import capaTec    from '../assets/capa-tec.webp';
@@ -17,16 +17,16 @@ const modulos = [
     imagem: modulo1,
     status: 'concluido',
     titulo: 'Briefing de Pré-Voo',
-    // primeira aula já concluída; player abre a última
     aulaInicial: '1-2',
+    progresso: 100,
   },
   {
     id: 2,
     imagem: modulo2,
     status: 'disponivel',
     titulo: 'Engenharia de Imagem',
-    // em andamento — abre na aula 2-1
     aulaInicial: '2-1',
+    progresso: 50,
   },
   {
     id: 3,
@@ -35,6 +35,7 @@ const modulos = [
     titulo: 'Base de Lançamento',
     bloqueioTipo: 'progressao',
     bloqueioInfo: { modulosNecessarios: 2, modulosConcluidos: 1 },
+    progresso: 0,
   },
   {
     id: 4,
@@ -43,6 +44,7 @@ const modulos = [
     titulo: 'Sistemas de Navegação',
     bloqueioTipo: 'tempo',
     bloqueioInfo: { dataLiberacao: '27 de março de 2026' },
+    progresso: 0,
   },
   {
     id: 5,
@@ -51,6 +53,7 @@ const modulos = [
     titulo: 'Escala Global',
     bloqueioTipo: 'upgrade',
     bloqueioInfo: { plano: 'Elite' },
+    progresso: 0,
   },
 ];
 
@@ -229,7 +232,7 @@ function ModuloCard({ modulo, onClick }) {
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
         isBloqueado
           ? 'border-white/5 cursor-not-allowed opacity-50'
-          : 'border-white/5 cursor-pointer hover:border-orange-500/50',
+          : 'border-white/5 cursor-pointer hover:border-orange-500/50 hover:scale-[1.02]',
       ].join(' ')}
     >
       {/* Thumbnail */}
@@ -263,6 +266,16 @@ function ModuloCard({ modulo, onClick }) {
       {modulo.status === 'disponivel' && (
         <div className="absolute inset-0 rounded-xl ring-1 ring-orange-500/60 pointer-events-none" />
       )}
+
+      {/* Micro-progresso — barra colada na borda inferior do card */}
+      <div className="absolute bottom-0 left-0 w-full h-[3px] bg-zinc-800/80 pointer-events-none">
+        {(modulo.progresso ?? 0) > 0 && (
+          <div
+            className="h-full bg-orange-500 transition-all duration-700"
+            style={{ width: `${modulo.progresso}%` }}
+          />
+        )}
+      </div>
     </button>
   );
 }
@@ -295,7 +308,14 @@ export default function Treinamento() {
 
   return (
     <>
-    <div className="min-h-full bg-zinc-950 px-4 py-6 sm:px-6 sm:py-8 md:px-10">
+    <div className="relative min-h-full bg-zinc-950 px-4 py-6 sm:px-6 sm:py-8 md:px-10 overflow-hidden">
+
+      {/* ── Glow Espacial — nebulosa de fundo ─────────────────────────────── */}
+      <div className="pointer-events-none absolute -top-40 -right-40 w-[700px] h-[700px] bg-orange-500/5 rounded-full blur-[120px] z-0" aria-hidden="true" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-purple-900/5 rounded-full blur-[120px] z-0" aria-hidden="true" />
+
+      {/* ── Conteúdo (acima dos glows) ────────────────────────────────────── */}
+      <div className="relative z-10">
 
       {/* ── Hero Section ──────────────────────────────────────────────────── */}
       {/* Mobile: altura menor (45vw min 220px); Desktop: 40vh min 350px */}
@@ -333,6 +353,11 @@ export default function Treinamento() {
               {PROGRESSO}%
             </span>
           </div>
+
+          {/* Contexto da próxima aula — reduz carga cognitiva */}
+          <span className="text-zinc-400 text-[10px] sm:text-xs uppercase tracking-widest font-semibold mb-2 block">
+            Próxima parada: Módulo 02 — Aula 03
+          </span>
 
           {/* CTA — toque mínimo 44px (py-3) */}
           <button
@@ -386,10 +411,22 @@ export default function Treinamento() {
           ))}
         </div>
       </section>
+      </div>{/* /z-10 content wrapper */}
     </div>
 
     {/* ── Modal de Conteúdo Bloqueado ──────────────────────────────────── */}
     <ModalBloqueado modulo={modalModulo} onClose={() => setModalModulo(null)} />
+
+    {/* ── Widget de Suporte Flutuante ──────────────────────────────────── */}
+    <button
+      type="button"
+      onClick={() => window.open('https://wa.me/5500000000000', '_blank', 'noopener,noreferrer')}
+      aria-label="Abrir suporte da missão"
+      className="fixed bottom-6 right-6 z-50 bg-zinc-900/80 backdrop-blur-md border border-white/10 text-zinc-300 hover:text-white hover:border-orange-500/50 hover:shadow-orange-500/10 transition-all duration-300 rounded-full px-4 py-3 flex items-center gap-3 shadow-lg shadow-black/40 group"
+    >
+      <Headset size={18} className="flex-shrink-0 group-hover:text-orange-400 transition-colors" />
+      <span className="text-sm font-semibold whitespace-nowrap">Suporte da Missão</span>
+    </button>
     </>
   );
 }
