@@ -11,7 +11,31 @@ import {
   TrendingUp,
   CheckCircle2,
   ShieldCheck,
+  X,
 } from 'lucide-react';
+
+// Logos das administradoras de consórcio
+import logoAdemicon   from '../assets/ademicon.webp';
+import logoEmbracOn  from '../assets/embracon.webp';
+import logoHonda     from '../assets/hondaconsorcio.webp';
+import logoHs        from '../assets/hsconsorcio.webp';
+import logoMagalu    from '../assets/magaluconsorcio.webp';
+import logoMaggi     from '../assets/maggiconsorcio.webp';
+import logoPorto     from '../assets/portoseguroconsorcio.webp';
+import logoRodobens  from '../assets/rodobens.webp';
+import logoGrow      from '../assets/logogrowsorcio.webp';
+
+const ADMIN_LOGOS = [
+  { id: 'grow',     label: 'GrowSorcio',      src: logoGrow },
+  { id: 'ademi',    label: 'Ademicon',         src: logoAdemicon },
+  { id: 'embrac',   label: 'Embracon',         src: logoEmbracOn },
+  { id: 'honda',    label: 'Honda Consórcio',  src: logoHonda },
+  { id: 'hs',       label: 'HS Consórcio',     src: logoHs },
+  { id: 'magalu',   label: 'Magalu Consórcio', src: logoMagalu },
+  { id: 'maggi',    label: 'Maggi Consórcio',  src: logoMaggi },
+  { id: 'porto',    label: 'Porto Seguro',     src: logoPorto },
+  { id: 'rodobens', label: 'Rodobens',         src: logoRodobens },
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -153,10 +177,18 @@ function DocumentoA4({ dados, innerRef }) {
             1. HEADER
             ════════════════════════════════════════════════════════════════ */}
         <div className="flex items-start justify-between mb-10">
-          {/* Logo placeholder */}
-          <div className="flex items-center justify-center w-28 h-10 rounded-lg bg-zinc-100 border border-zinc-200">
-            <span className="text-[9px] font-black tracking-widest text-zinc-400 uppercase">Sua Logo</span>
-          </div>
+          {/* Logo */}
+          {dados.logoSrc ? (
+            <img
+              src={dados.logoSrc}
+              alt={dados.logoLabel || 'Logo'}
+              className="h-10 w-auto max-w-[7rem] object-contain"
+            />
+          ) : (
+            <div className="flex items-center justify-center w-28 h-10 rounded-lg bg-zinc-100 border border-zinc-200">
+              <span className="text-[9px] font-black tracking-widest text-zinc-400 uppercase">Sua Logo</span>
+            </div>
+          )}
 
           {/* ID + data */}
           <div className="text-right">
@@ -367,6 +399,8 @@ const DEFAULT_DADOS = {
   parcela: '516',
   taxaAdm: '16',
   corPrimaria: '#f97316',
+  logoSrc: null,       // null = placeholder | string = URL ou dataURL
+  logoLabel: '',
   mensagemPersonalizada:
     'Preparei esta análise especialmente para você. No consórcio TEC 2.0, o seu ' +
     'patrimônio cresce sem os juros abusivos do sistema bancário tradicional. Estou à ' +
@@ -385,28 +419,65 @@ export default function Propostas() {
     try {
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
-      const canvas = await html2canvas(el, {
+
+      // Renderiza o documento em container off-screen de largura fixa (794px ≈ A4 a 96dpi)
+      // para capturar o conteúdo COMPLETO, ignorando o overflow do painel
+      const RENDER_W = 794;
+      const clone = el.cloneNode(true);
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = [
+        'position:fixed',
+        'top:0',
+        'left:-9999px',
+        `width:${RENDER_W}px`,
+        'background:#ffffff',
+        'z-index:-9999',
+        'overflow:visible',
+        'border-radius:0',
+      ].join(';');
+      // Remove rounded corners e sombra do clone para não deixar espaço em branco nas bordas do PDF
+      clone.style.borderRadius = '0';
+      clone.style.boxShadow = 'none';
+      clone.style.maxWidth = 'none';
+      clone.style.width = '100%';
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      const canvas = await html2canvas(wrapper, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#ffffff',
+        width: RENDER_W,
+        height: wrapper.scrollHeight,
+        windowWidth: RENDER_W,
+        scrollX: 0,
+        scrollY: 0,
       });
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      document.body.removeChild(wrapper);
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.97);
+      const MARGIN_MM = 8;
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
+      const contentW = pageW - MARGIN_MM * 2;
       const ratio = canvas.width / canvas.height;
-      const imgH = pageW / ratio;
-      // If taller than A4, split into pages
-      if (imgH <= pageH) {
-        pdf.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
+      const contentH = contentW / ratio;
+
+      if (contentH <= pageH - MARGIN_MM * 2) {
+        // Cabe numa página
+        pdf.addImage(imgData, 'JPEG', MARGIN_MM, MARGIN_MM, contentW, contentH);
       } else {
-        let yOffset = 0;
-        while (yOffset < imgH) {
-          pdf.addImage(imgData, 'JPEG', 0, -yOffset, pageW, imgH);
-          yOffset += pageH;
-          if (yOffset < imgH) pdf.addPage();
+        // Divide em páginas com margem
+        const pageContentH = pageH - MARGIN_MM * 2;
+        const totalPages = Math.ceil(contentH / pageContentH);
+        for (let p = 0; p < totalPages; p++) {
+          if (p > 0) pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', MARGIN_MM, MARGIN_MM - p * pageContentH, contentW, contentH);
         }
       }
+
       const nome = dados.nomeCliente?.replace(/\s+/g, '_') || 'Cliente';
       pdf.save(`Proposta_GrowSorcio_${nome}.pdf`);
     } finally {
@@ -504,12 +575,68 @@ export default function Propostas() {
                   <Input value={dados.corPrimaria} onChange={set('corPrimaria')} className="font-mono text-xs" />
                 </div>
               </Field>
-              <Field label="Logótipo" id="logo">
-                <button type="button"
-                  className="w-full flex items-center justify-center gap-2 border border-dashed border-white/12 rounded-xl px-4 py-5 text-zinc-600 hover:text-zinc-300 hover:border-white/25 transition-all text-xs cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              <Field label="Logótipo da Proposta" id="logo">
+                {/* Grid de logos das administradoras */}
+                <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-2">Administradoras</p>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {ADMIN_LOGOS.map((logo) => (
+                    <button
+                      key={logo.id}
+                      type="button"
+                      onClick={() => setDados(prev => ({
+                        ...prev,
+                        logoSrc: logo.src,
+                        logoLabel: logo.label,
+                      }))}
+                      className={`flex items-center justify-center p-2 h-12 rounded-lg border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${
+                        dados.logoSrc === logo.src
+                          ? 'border-orange-500/60 bg-orange-500/10'
+                          : 'border-white/8 bg-zinc-900 hover:border-white/20 hover:bg-zinc-800'
+                      }`}
+                      title={logo.label}
+                    >
+                      <img src={logo.src} alt={logo.label} className="h-7 w-full object-contain" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Upload de logo personalizada */}
+                <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-2">Ou carregue a sua</p>
+                <label
+                  htmlFor="logo-upload"
+                  className="w-full flex items-center justify-center gap-2 border border-dashed border-white/12 rounded-xl px-4 py-3.5 text-zinc-500 hover:text-zinc-300 hover:border-white/25 transition-all text-xs cursor-pointer focus-within:ring-2 focus-within:ring-orange-500"
                 >
-                  <Upload size={14} /> Enviar logótipo
-                </button>
+                  <Upload size={13} />
+                  <span>{dados.logoSrc && !ADMIN_LOGOS.some(l => l.src === dados.logoSrc) ? 'Logo carregada ✓' : 'Carregar logo própria'}</span>
+                  <input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setDados(prev => ({
+                        ...prev,
+                        logoSrc: ev.target.result,
+                        logoLabel: file.name.replace(/\.[^.]+$/, ''),
+                      }));
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+
+                {/* Botão de limpar logo */}
+                {dados.logoSrc && (
+                  <button
+                    type="button"
+                    onClick={() => setDados(prev => ({ ...prev, logoSrc: null, logoLabel: '' }))}
+                    className="mt-2 w-full flex items-center justify-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                  >
+                    <X size={11} /> Remover logo
+                  </button>
+                )}
               </Field>
               <Field label="Nota do Consultor" id="msg">
                 <textarea
