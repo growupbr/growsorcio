@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   ChevronDown,
@@ -112,11 +112,29 @@ function ProgressBar({ value, className = '' }) {
 // ─── Página Principal ─────────────────────────────────────────────────────────
 
 export default function TreinamentoAula() {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+
+  // ── Determina a aula inicial a partir do state de navegação ─────────────────
+  // Quando o usuário clica em um módulo na página /treinamento, recebemos:
+  //   location.state = { moduloId: number, aulaId: string | null }
+  const initialLessonId = useMemo(() => {
+    const { moduloId, aulaId } = location.state ?? {};
+    if (aulaId && ALL_AULAS.some((a) => a.id === aulaId)) return aulaId;
+    if (moduloId) {
+      const firstAula = ALL_AULAS.find((a) => a.moduloId === moduloId);
+      if (firstAula) return firstAula.id;
+    }
+    return '1-2'; // fallback: última aula assistida (mock)
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Estado ──────────────────────────────────────────────────────────────────
-  const [activeLessonId, setActiveLessonId]   = useState('1-2');
-  const [expandedModules, setExpandedModules] = useState(new Set([1, 2]));
+  const [activeLessonId, setActiveLessonId]   = useState(initialLessonId);
+  const [expandedModules, setExpandedModules] = useState(() => {
+    // Expande automaticamente o módulo da aula inicial
+    const aula = ALL_AULAS.find((a) => a.id === initialLessonId);
+    return new Set(aula ? [aula.moduloId] : [1, 2]);
+  });
   const [completedLessons, setCompletedLessons] = useState(INITIAL_CONCLUIDAS);
   const [activeTab, setActiveTab]             = useState('overview');
 

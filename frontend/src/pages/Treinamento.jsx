@@ -1,6 +1,6 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, CheckCircle, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, CheckCircle, Lock, ChevronLeft, ChevronRight, X, Clock, ArrowUpCircle, Trophy } from 'lucide-react';
 
 // ─── Asset Imports ────────────────────────────────────────────────────────────
 import capaTec    from '../assets/capa-tec.webp';
@@ -12,16 +12,183 @@ import modulo5    from '../assets/modulo-5-tec.webp';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const modulos = [
-  { id: 1, imagem: modulo1, status: 'concluido'    },
-  { id: 2, imagem: modulo2, status: 'em_andamento' },
-  { id: 3, imagem: modulo3, status: 'bloqueado'    },
-  { id: 4, imagem: modulo4, status: 'bloqueado'    },
-  { id: 5, imagem: modulo5, status: 'bloqueado'    },
+  {
+    id: 1,
+    imagem: modulo1,
+    status: 'concluido',
+    titulo: 'Briefing de Pré-Voo',
+    // primeira aula já concluída; player abre a última
+    aulaInicial: '1-2',
+  },
+  {
+    id: 2,
+    imagem: modulo2,
+    status: 'disponivel',
+    titulo: 'Engenharia de Imagem',
+    // em andamento — abre na aula 2-1
+    aulaInicial: '2-1',
+  },
+  {
+    id: 3,
+    imagem: modulo3,
+    status: 'bloqueado',
+    titulo: 'Base de Lançamento',
+    bloqueioTipo: 'progressao',
+    bloqueioInfo: { modulosNecessarios: 2, modulosConcluidos: 1 },
+  },
+  {
+    id: 4,
+    imagem: modulo4,
+    status: 'bloqueado',
+    titulo: 'Sistemas de Navegação',
+    bloqueioTipo: 'tempo',
+    bloqueioInfo: { dataLiberacao: '27 de março de 2026' },
+  },
+  {
+    id: 5,
+    imagem: modulo5,
+    status: 'bloqueado',
+    titulo: 'Escala Global',
+    bloqueioTipo: 'upgrade',
+    bloqueioInfo: { plano: 'Elite' },
+  },
 ];
 
 const PROGRESSO = 15; // %
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Modal de Conteúdo Bloqueado ─────────────────────────────────────────────
+
+function ModalBloqueado({ modulo, onClose }) {
+  if (!modulo) return null;
+
+  const { bloqueioTipo, bloqueioInfo, titulo } = modulo;
+
+  const variants = {
+    tempo: {
+      icon: <Clock size={28} className="text-amber-400" />,
+      iconBg: 'bg-amber-400/10 border border-amber-400/20',
+      titulo: 'Aguarde a Liberação',
+      descricao: (
+        <>
+          O <span className="text-white font-semibold">Módulo {modulo.id}: {titulo}</span> será
+          liberado em <span className="text-amber-400 font-semibold">{bloqueioInfo?.dataLiberacao}</span>.
+          Continue praticando as missões anteriores enquanto isso.
+        </>
+      ),
+      cta: null,
+      ctaLabel: null,
+    },
+    progressao: {
+      icon: <Trophy size={28} className="text-orange-400" />,
+      iconBg: 'bg-orange-400/10 border border-orange-400/20',
+      titulo: 'Missão Bloqueada',
+      descricao: (
+        <>
+          Complete os módulos anteriores para desbloquear o{' '}
+          <span className="text-white font-semibold">Módulo {modulo.id}: {titulo}</span>.
+          Você concluiu <span className="text-orange-400 font-semibold">{bloqueioInfo?.modulosConcluidos}</span> de{' '}
+          <span className="text-white font-semibold">{bloqueioInfo?.modulosNecessarios}</span> módulos necessários.
+        </>
+      ),
+      progressoAtual: bloqueioInfo?.modulosConcluidos ?? 0,
+      progressoTotal: bloqueioInfo?.modulosNecessarios ?? 2,
+      cta: null,
+      ctaLabel: null,
+    },
+    upgrade: {
+      icon: <ArrowUpCircle size={28} className="text-violet-400" />,
+      iconBg: 'bg-violet-400/10 border border-violet-400/20',
+      titulo: 'Conteúdo Exclusivo',
+      descricao: (
+        <>
+          O <span className="text-white font-semibold">Módulo {modulo.id}: {titulo}</span> é
+          exclusivo para membros do plano{' '}
+          <span className="text-violet-400 font-semibold">{bloqueioInfo?.plano}</span>. Faça upgrade
+          e desbloqueie todo o arsenal.
+        </>
+      ),
+      ctaLabel: `Fazer Upgrade para ${bloqueioInfo?.plano}`,
+      cta: () => window.open('/planos', '_self'),
+    },
+  };
+
+  const v = variants[bloqueioTipo] ?? variants.progressao;
+
+  return (
+    /* Backdrop */
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6"
+      onClick={onClose}
+    >
+      {/* Blur backdrop */}
+      <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" />
+
+      {/* Panel */}
+      <div
+        className="relative z-10 w-full max-w-sm bg-[#141417] border border-white/8 rounded-2xl p-6 shadow-2xl shadow-black/60 animate-in fade-in slide-in-from-bottom-4 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          aria-label="Fechar modal"
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+        >
+          <X size={18} />
+        </button>
+
+        {/* Icon */}
+        <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 ${v.iconBg}`}>
+          {v.icon}
+        </div>
+
+        {/* Título */}
+        <h3 className="text-lg font-bold text-white mb-2">{v.titulo}</h3>
+
+        {/* Descrição */}
+        <p className="text-sm text-zinc-400 leading-relaxed mb-5">{v.descricao}</p>
+
+        {/* Barra de progresso (somente tipo progressao) */}
+        {bloqueioTipo === 'progressao' && (
+          <div className="mb-5">
+            <div className="flex justify-between text-xs text-zinc-500 mb-1.5">
+              <span>Missões concluídas</span>
+              <span className="text-orange-400 font-semibold">
+                {v.progressoAtual}/{v.progressoTotal}
+              </span>
+            </div>
+            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-orange-500 rounded-full transition-all duration-700"
+                style={{ width: `${(v.progressoAtual / v.progressoTotal) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Botões */}
+        <div className="flex flex-col gap-2.5">
+          {v.cta && v.ctaLabel && (
+            <button
+              onClick={v.cta}
+              className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-violet-500 hover:bg-violet-400 active:bg-violet-600 text-white transition-colors shadow-lg shadow-violet-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+            >
+              {v.ctaLabel}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-white/5 hover:bg-white/10 active:bg-white/20 text-zinc-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+          >
+            {bloqueioTipo === 'upgrade' ? 'Agora não' : 'Entendido'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }) {
   if (status === 'concluido') {
@@ -38,36 +205,52 @@ function StatusBadge({ status }) {
       </div>
     );
   }
-  return null; // em_andamento → sem badge (card ativo)
+  return null;
 }
 
-function ModuloCard({ modulo }) {
-  const isBloqueado = modulo.status === 'bloqueado';
+// ─── Card de Módulo ───────────────────────────────────────────────────────────
+
+function ModuloCard({ modulo, onClick }) {
+  const isBloqueado  = modulo.status === 'bloqueado';
+  const isDisponivel = !isBloqueado;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={
+        isBloqueado
+          ? `Módulo ${modulo.id} bloqueado: ${modulo.titulo}`
+          : `Abrir Módulo ${modulo.id}: ${modulo.titulo}`
+      }
       className={[
-        // aspect-[768/1376] = proporção exata das imagens dos módulos
-        'aspect-[768/1376] relative rounded-xl overflow-hidden',
-        'border border-white/5 cursor-pointer group',
-        'transition-all duration-300',
-        'hover:border-orange-500/50',
-        isBloqueado ? 'opacity-50' : '',
+        'aspect-[768/1376] relative rounded-xl overflow-hidden w-full',
+        'border transition-all duration-300 group',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
+        isBloqueado
+          ? 'border-white/5 cursor-not-allowed opacity-50'
+          : 'border-white/5 cursor-pointer hover:border-orange-500/50',
       ].join(' ')}
     >
-      {/* Thumbnail — object-cover garante que a imagem preenche sem distorção */}
+      {/* Thumbnail */}
       <img
         src={modulo.imagem}
-        alt={`Módulo ${modulo.id}`}
+        alt={`Módulo ${modulo.id}: ${modulo.titulo}`}
         loading="lazy"
         decoding="async"
-        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+        className={[
+          'object-cover w-full h-full transition-transform duration-500',
+          isDisponivel ? 'group-hover:scale-105' : '',
+        ].join(' ')}
       />
 
-      {/* Overlay de tap/hover com Play — visível em hover (desktop) ou sempre em mobile via active */}
-      {!isBloqueado && (
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-          <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-orange-500/90 shadow-lg shadow-orange-500/30">
+      {/* Overlay interativo — disponíveis e concluídos */}
+      {isDisponivel && (
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-black/60 via-black/20 to-black/10 backdrop-blur-[1px] flex items-center justify-center">
+          {/* Anel de brilho sutil */}
+          <div className="absolute inset-0 ring-1 ring-inset ring-orange-400/20 rounded-xl pointer-events-none" />
+          {/* Botão Play */}
+          <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-orange-500/90 shadow-lg shadow-orange-500/40 scale-90 group-hover:scale-100 transition-transform duration-300">
             <Play size={20} fill="white" className="text-white ml-1" />
           </div>
         </div>
@@ -76,11 +259,11 @@ function ModuloCard({ modulo }) {
       {/* Status badge */}
       <StatusBadge status={modulo.status} />
 
-      {/* Ring laranja no módulo em andamento */}
-      {modulo.status === 'em_andamento' && (
+      {/* Ring laranja no módulo disponível (em andamento) */}
+      {modulo.status === 'disponivel' && (
         <div className="absolute inset-0 rounded-xl ring-1 ring-orange-500/60 pointer-events-none" />
       )}
-    </div>
+    </button>
   );
 }
 
@@ -89,6 +272,7 @@ function ModuloCard({ modulo }) {
 export default function Treinamento() {
   const navigate  = useNavigate();
   const scrollRef = useRef(null);
+  const [modalModulo, setModalModulo] = useState(null);
 
   const scroll = useCallback((dir) => {
     const el = scrollRef.current;
@@ -98,7 +282,19 @@ export default function Treinamento() {
     el.scrollBy({ left: dir * cardW, behavior: 'smooth' });
   }, []);
 
+  const handleModuloClick = useCallback((modulo) => {
+    if (modulo.status === 'bloqueado') {
+      setModalModulo(modulo);
+      return;
+    }
+    // disponivel ou concluido → navega para o player passando o módulo selecionado
+    navigate('/treinamento/aula', {
+      state: { moduloId: modulo.id, aulaId: modulo.aulaInicial ?? null },
+    });
+  }, [navigate]);
+
   return (
+    <>
     <div className="min-h-full bg-zinc-950 px-4 py-6 sm:px-6 sm:py-8 md:px-10">
 
       {/* ── Hero Section ──────────────────────────────────────────────────── */}
@@ -185,11 +381,15 @@ export default function Treinamento() {
         >
           {modulos.map((modulo) => (
             <div key={modulo.id} data-card className="w-40 sm:w-48 md:w-56 flex-shrink-0">
-              <ModuloCard modulo={modulo} />
+              <ModuloCard modulo={modulo} onClick={() => handleModuloClick(modulo)} />
             </div>
           ))}
         </div>
       </section>
     </div>
+
+    {/* ── Modal de Conteúdo Bloqueado ──────────────────────────────────── */}
+    <ModalBloqueado modulo={modalModulo} onClose={() => setModalModulo(null)} />
+    </>
   );
 }
