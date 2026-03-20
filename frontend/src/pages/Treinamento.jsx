@@ -1,4 +1,5 @@
 import { useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Play, CheckCircle, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ─── Asset Imports ────────────────────────────────────────────────────────────
@@ -86,6 +87,7 @@ function ModuloCard({ modulo }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Treinamento() {
+  const navigate  = useNavigate();
   const scrollRef = useRef(null);
 
   const scroll = useCallback((dir) => {
@@ -138,6 +140,7 @@ export default function Treinamento() {
 
           {/* CTA — toque mínimo 44px (py-3) */}
           <button
+            onClick={() => navigate('/treinamento/aula')}
             className="w-full sm:w-auto bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 shadow-lg shadow-orange-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 text-sm sm:text-base"
             aria-label="Continuar Missão TEC 2.0"
           >

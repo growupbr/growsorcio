@@ -14,8 +14,9 @@ const Calculadora  = lazy(() => import('./pages/Calculadora'));
 const Propostas    = lazy(() => import('./pages/Propostas'));
 const Conversas    = lazy(() => import('./pages/Conversas'));
 const GrowIA       = lazy(() => import('./pages/GrowIA'));
-const Treinamento  = lazy(() => import('./pages/Treinamento'));
-const Config       = lazy(() => import('./pages/Config'));
+const Treinamento      = lazy(() => import('./pages/Treinamento'));
+const TreinamentoAula  = lazy(() => import('./pages/TreinamentoAula'));
+const Config           = lazy(() => import('./pages/Config'));
 const Login        = lazy(() => import('./pages/Login'));
 const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'));
 
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="conversas" element={<Conversas />} />
             <Route path="grow-ia" element={<GrowIA />} />
             <Route path="treinamento" element={<Treinamento />} />
+            <Route path="treinamento/aula" element={<TreinamentoAula />} />
             <Route path="config" element={<Config />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
