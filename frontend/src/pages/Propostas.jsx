@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   Link2,
   MessageCircle,
@@ -123,7 +123,7 @@ function ParamCard({ label, value, sub }) {
 
 // ─── Documento Principal (A4 Premium) ────────────────────────────────────────
 
-function DocumentoA4({ dados }) {
+function DocumentoA4({ dados, innerRef }) {
   // Cálculos
   const credito       = parseFloat(dados.valorCredito) || 80000;
   const prazoConsorc  = parseInt(dados.prazo)          || 180;
@@ -140,6 +140,7 @@ function DocumentoA4({ dados }) {
 
   return (
     <div
+      ref={innerRef}
       className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl shadow-black/20 overflow-hidden"
       style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif" }}
     >
@@ -374,6 +375,44 @@ const DEFAULT_DADOS = {
 
 export default function Propostas() {
   const [dados, setDados] = useState(DEFAULT_DADOS);
+  const docRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadPDF = useCallback(async () => {
+    const el = docRef.current;
+    if (!el) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const ratio = canvas.width / canvas.height;
+      const imgH = pageW / ratio;
+      // If taller than A4, split into pages
+      if (imgH <= pageH) {
+        pdf.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
+      } else {
+        let yOffset = 0;
+        while (yOffset < imgH) {
+          pdf.addImage(imgData, 'JPEG', 0, -yOffset, pageW, imgH);
+          yOffset += pageH;
+          if (yOffset < imgH) pdf.addPage();
+        }
+      }
+      const nome = dados.nomeCliente?.replace(/\s+/g, '_') || 'Cliente';
+      pdf.save(`Proposta_GrowSorcio_${nome}.pdf`);
+    } finally {
+      setDownloading(false);
+    }
+  }, [dados.nomeCliente]);
 
   const set = useCallback(
     (field) => (e) =>
@@ -406,10 +445,15 @@ export default function Propostas() {
           >
             <MessageCircle size={13} /><span className="hidden sm:inline">WhatsApp</span>
           </button>
-          <button type="button" aria-label="Descarregar PDF"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-orange-500 hover:bg-orange-400 active:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+          <button
+            type="button"
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            aria-label="Descarregar PDF"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-orange-500 hover:bg-orange-400 active:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
           >
-            <Download size={13} /><span className="hidden sm:inline">Descarregar PDF</span>
+            <Download size={13} className={downloading ? 'animate-bounce' : ''} />
+            <span className="hidden sm:inline">{downloading ? 'A gerar…' : 'Descarregar PDF'}</span>
           </button>
         </div>
       </header>
@@ -492,7 +536,7 @@ export default function Propostas() {
               Pré-visualização em tempo real
             </p>
           </div>
-          <DocumentoA4 dados={dados} />
+          <DocumentoA4 dados={dados} innerRef={docRef} />
           <p className="text-zinc-800 text-[10px] pb-6 text-center">
             Edite os campos à esquerda para actualizar instantaneamente
           </p>
