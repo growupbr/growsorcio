@@ -5,7 +5,14 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3334;
 
-app.use(cors());
+const ORIGENS_PERMITIDAS = process.env.NODE_ENV === 'production'
+  ? ['https://app.growsorcio.com.br']
+  : ['http://localhost:3000', 'http://localhost:5173'];
+
+app.use(cors({
+  origin: ORIGENS_PERMITIDAS,
+  credentials: true,
+}));
 app.use(express.json());
 
 // Rotas

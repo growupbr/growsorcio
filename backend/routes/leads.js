@@ -1,19 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase, getOrganizationId, handleSupabaseError } = require('../supabase');
-
-const ETAPAS_VALIDAS = [
-  'Lead Novo',
-  'Tentativa de Contato',
-  'Em Qualificação',
-  'Reunião Agendada',
-  'Reunião Realizada',
-  'Simulação Enviada',
-  'Follow-up / Negociação',
-  'Análise de Crédito / Docs',
-  'Fechado (Ganho)',
-  'Descartado (Perda)',
-];
+const { ETAPAS_VALIDAS } = require('../constants/etapas');
 
 const MOTIVOS_DESCARTE = [
   'Sem margem', 'Restrição CPF', 'Apenas curioso',
@@ -23,16 +11,20 @@ const MOTIVOS_DESCARTE = [
 
 // Temperatura automática por etapa
 const TEMP_AUTO = {
-  'Lead Novo':                 'frio',
-  'Tentativa de Contato':      'frio',
-  'Em Qualificação':           'morno',
-  'Reunião Agendada':          'morno',
-  'Reunião Realizada':         'quente',
-  'Simulação Enviada':         'quente',
-  'Follow-up / Negociação':    'quente',
-  'Análise de Crédito / Docs': 'quente',
-  'Fechado (Ganho)':           'quente',
-  'Descartado (Perda)':        'frio',
+  'Lead Anúncio':       'frio',
+  'Analisar Perfil':    'frio',
+  'Seguiu Perfil':      'frio',
+  'Abordagem Enviada':  'frio',
+  'Respondeu':          'morno',
+  'Em Desenvolvimento': 'morno',
+  'Follow-up Ativo':    'morno',
+  'Lead Capturado':     'morno',
+  'Reunião Agendada':   'quente',
+  'Reunião Realizada':  'quente',
+  'Proposta Enviada':   'quente',
+  'Follow-up Proposta': 'quente',
+  'Fechado':            'quente',
+  'Perdido':            'frio',
 };
 
 function resolverTemperatura(etapa, temperaturaAtual) {
@@ -149,7 +141,7 @@ router.get('/stats/resumo', async (req, res) => {
       (l) =>
         l.data_proxima_acao &&
         l.data_proxima_acao <= hoje &&
-        !['Fechado (Ganho)', 'Descartado (Perda)'].includes(l.etapa_funil)
+        !['Fechado', 'Perdido'].includes(l.etapa_funil)
     );
 
     const reunioesHoje = leadList.filter(
@@ -160,16 +152,15 @@ router.get('/stats/resumo', async (req, res) => {
     const anuncioResponderam = leadList.filter(
       (l) =>
         l.origem === 'anuncio' &&
-        !['Lead Novo', 'Tentativa de Contato', 'Descartado (Perda)'].includes(l.etapa_funil)
+        !['Lead Anúncio', 'Analisar Perfil', 'Perdido'].includes(l.etapa_funil)
     ).length;
 
     const etapasReuniao = new Set([
       'Reunião Agendada',
       'Reunião Realizada',
-      'Simulação Enviada',
-      'Follow-up / Negociação',
-      'Análise de Crédito / Docs',
-      'Fechado (Ganho)',
+      'Proposta Enviada',
+      'Follow-up Proposta',
+      'Fechado',
     ]);
 
     const reunioesPorOrigem = groupCount(
@@ -177,7 +168,7 @@ router.get('/stats/resumo', async (req, res) => {
       'origem'
     );
     const fechadosPorOrigem = groupCount(
-      leadList.filter((l) => l.etapa_funil === 'Fechado (Ganho)'),
+      leadList.filter((l) => l.etapa_funil === 'Fechado'),
       'origem'
     );
 
@@ -188,7 +179,7 @@ router.get('/stats/resumo', async (req, res) => {
 
     const comRestricaoCPF = leadList.filter((l) => Boolean(l.restricao_cpf)).length;
     const snoozados = leadList.filter(
-      (l) => l.snooze_ate && l.snooze_ate > hoje && l.etapa_funil === 'Follow-up / Negociação'
+      (l) => l.snooze_ate && l.snooze_ate > hoje && ['Follow-up Ativo', 'Follow-up Proposta'].includes(l.etapa_funil)
     ).length;
 
     const { data: cadenciaRows, error: cadenciaError } = await supabase
@@ -402,7 +393,7 @@ router.post('/', async (req, res) => {
   if (etapa_funil && !ETAPAS_VALIDAS.includes(etapa_funil)) {
     return res.status(400).json({ erro: 'Etapa inválida' });
   }
-  if (etapa_funil === 'Descartado (Perda)' && !motivo_descarte) {
+  if (etapa_funil === 'Perdido' && !motivo_descarte) {
     return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
   }
 
@@ -430,7 +421,7 @@ router.post('/', async (req, res) => {
       }
     }
 
-    const etapaFinal = etapa_funil || 'Lead Novo';
+    const etapaFinal = etapa_funil || 'Analisar Perfil';
     const tempFinal = resolverTemperatura(etapaFinal, temperatura || 'frio');
 
     const payload = {
@@ -499,7 +490,7 @@ router.put('/:id', async (req, res) => {
     if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
 
     const etapaFinal = etapa_funil ?? atual.etapa_funil;
-    if (etapaFinal === 'Descartado (Perda)' && !(motivo_descarte || atual.motivo_descarte)) {
+    if (etapaFinal === 'Perdido' && !(motivo_descarte || atual.motivo_descarte)) {
       return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
     }
 
@@ -552,7 +543,7 @@ router.patch('/:id/etapa', async (req, res) => {
   if (!etapa_funil || !ETAPAS_VALIDAS.includes(etapa_funil)) {
     return res.status(400).json({ erro: 'Etapa inválida' });
   }
-  if (etapa_funil === 'Descartado (Perda)' && !motivo_descarte) {
+  if (etapa_funil === 'Perdido' && !motivo_descarte) {
     return res.status(400).json({ erro: 'Motivo do descarte é obrigatório ao descartar um lead' });
   }
 
@@ -615,8 +606,8 @@ router.patch('/:id/snooze', async (req, res) => {
 
     const payload = {
       snooze_ate: snooze_ate || null,
-      etapa_funil: snooze_ate && atual.etapa_funil !== 'Follow-up / Negociação'
-        ? 'Follow-up / Negociação'
+      etapa_funil: snooze_ate && atual.etapa_funil !== 'Follow-up Ativo'
+        ? 'Follow-up Ativo'
         : atual.etapa_funil,
     };
 

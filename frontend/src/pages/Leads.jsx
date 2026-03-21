@@ -5,13 +5,7 @@ import TemperaturaBadge from '../components/TemperaturaBadge';
 import EtapaTag from '../components/EtapaTag';
 import Modal from '../components/Modal';
 import LeadPerfil from './LeadPerfil';
-
-const ETAPAS = [
-  'Lead Novo', 'Tentativa de Contato', 'Em Qualificação',
-  'Reunião Agendada', 'Reunião Realizada', 'Simulação Enviada',
-  'Follow-up / Negociação', 'Análise de Crédito / Docs',
-  'Fechado (Ganho)', 'Descartado (Perda)',
-];
+import { ETAPAS } from '../constants/etapas';
 
 const ORIGENS = [
   { valor: 'prospeccao', label: 'Prospecção', cor: '#FF4500', bg: 'rgba(255,69,0,0.15)',    border: 'rgba(255,69,0,0.40)'    },
@@ -80,9 +74,9 @@ function Pill({ label, ativo, onClick, cor, bg, border }) {
     fontWeight: 600,
   };
   const estiloInativo = {
-    background: '#161B22',
-    border:     '1px solid #1C2333',
-    color:      '#8B949E',
+    background: '#0F172A',
+    border:     '1px solid #334155',
+    color:      '#94A3B8',
   };
 
   return (
@@ -95,14 +89,14 @@ function Pill({ label, ativo, onClick, cor, bg, border }) {
       }}
       onMouseEnter={e => {
         if (!ativo) {
-          e.currentTarget.style.borderColor = '#30363D';
-          e.currentTarget.style.color = '#F0F6FC';
+          e.currentTarget.style.borderColor = '#475569';
+          e.currentTarget.style.color = '#F8FAFC';
         }
       }}
       onMouseLeave={e => {
         if (!ativo) {
-          e.currentTarget.style.borderColor = '#1C2333';
-          e.currentTarget.style.color = '#8B949E';
+          e.currentTarget.style.borderColor = '#334155';
+          e.currentTarget.style.color = '#94A3B8';
         }
       }}
     >
@@ -202,10 +196,10 @@ export default function Leads() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="font-extrabold leading-tight" style={{ fontSize: 28, color: '#F0F6FC' }}>
+          <h1 className="font-extrabold leading-tight" style={{ fontSize: 28, color: '#F8FAFC' }}>
             Leads
           </h1>
-          <p className="mt-1.5 text-sm" style={{ color: '#8B949E' }}>
+          <p className="mt-1.5 text-sm" style={{ color: '#94A3B8' }}>
             {labelContador}
           </p>
         </div>
@@ -370,7 +364,7 @@ export default function Leads() {
         >
           {temFiltroAtivo ? (
             <>
-              <p className="text-sm mb-2" style={{ color: '#8B949E' }}>
+              <p className="text-sm mb-2" style={{ color: '#94A3B8' }}>
                 Nenhum lead encontrado com os filtros atuais
               </p>
               <button
@@ -383,7 +377,7 @@ export default function Leads() {
             </>
           ) : (
             <>
-              <p className="text-sm mb-4" style={{ color: '#8B949E' }}>Nenhum lead cadastrado</p>
+              <p className="text-sm mb-4" style={{ color: '#94A3B8' }}>Nenhum lead cadastrado</p>
               <button className="btn-primary" onClick={() => navigate('/leads/novo')}>
                 <PlusIcon /> Adicionar primeiro lead
               </button>
@@ -436,7 +430,7 @@ export default function Leads() {
                   <Avatar nome={lead.nome} />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold truncate" style={{ color: '#F0F6FC' }}>
+                      <p className="text-sm font-semibold truncate" style={{ color: '#F8FAFC' }}>
                         {lead.nome}
                       </p>
                       {lead.origem === 'anuncio' && (
@@ -455,7 +449,7 @@ export default function Leads() {
                       )}
                     </div>
                     {lead.whatsapp && (
-                      <p className="text-xs mt-0.5 truncate" style={{ color: '#8B949E' }}>
+                      <p className="text-xs mt-0.5 truncate" style={{ color: '#94A3B8' }}>
                         {lead.whatsapp}
                       </p>
                     )}
@@ -464,7 +458,7 @@ export default function Leads() {
 
                 {/* Tipo de bem */}
                 <div className="flex items-center">
-                  <span className="text-sm truncate" style={{ color: '#8B949E' }}>
+                  <span className="text-sm truncate" style={{ color: '#94A3B8' }}>
                     {lead.tipo_de_bem || '—'}
                   </span>
                 </div>
@@ -483,7 +477,7 @@ export default function Leads() {
                 <div className="flex items-center">
                   <span
                     className="flex items-center gap-1.5 text-sm font-medium"
-                    style={{ color: vencido(lead.data_proxima_acao) ? '#f87171' : '#8B949E' }}
+                    style={{ color: vencido(lead.data_proxima_acao) ? '#f87171' : '#94A3B8' }}
                   >
                     {vencido(lead.data_proxima_acao) && <AlertIcon />}
                     {formatarData(lead.data_proxima_acao)}

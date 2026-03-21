@@ -5,13 +5,7 @@ import TemperaturaBadge from '../components/TemperaturaBadge';
 import EtapaTag from '../components/EtapaTag';
 import Modal from '../components/Modal';
 import LeadForm from './LeadForm';
-
-const ETAPAS = [
-  'Lead Novo', 'Tentativa de Contato', 'Em Qualificação',
-  'Reunião Agendada', 'Reunião Realizada', 'Simulação Enviada',
-  'Follow-up / Negociação', 'Análise de Crédito / Docs',
-  'Fechado (Ganho)', 'Descartado (Perda)',
-];
+import { ETAPAS } from '../constants/etapas';
 
 const MOTIVOS_DESCARTE = [
   'Sem margem', 'Restrição CPF', 'Apenas curioso',
@@ -256,7 +250,7 @@ function MoverEtapaModal({ lead, onMover, onFechar }) {
   const [motivo, setMotivo] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const descartando = etapaSelecionada === 'Descartado (Perda)';
+  const descartando = etapaSelecionada === 'Perdido';
 
   async function confirmar() {
     if (descartando && !motivo) return;
@@ -349,7 +343,7 @@ function SnoozeModal({ lead, onSalvo, onFechar }) {
     <Modal title="Congelar lead — Régua 21 dias" onClose={onFechar}>
       <div className="space-y-4">
         <p className="text-sm" style={{ color: '#8B949E' }}>
-          Congela o lead em <strong style={{ color: '#F0F6FC' }}>Follow-up / Negociação</strong> e aciona
+          Congela o lead em <strong style={{ color: '#F0F6FC' }}>Follow-up Ativo</strong> e aciona
           a régua de reengajamento de 21 dias via webhook no n8n.
         </p>
         <div>
@@ -519,7 +513,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
                 Abrir WhatsApp
               </button>
             )}
-            {lead.etapa_funil === 'Follow-up / Negociação' && (
+            {lead.etapa_funil === 'Follow-up Ativo' && (
               <button
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md cursor-pointer transition-all duration-200"
                 style={{

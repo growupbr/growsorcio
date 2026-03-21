@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api/client';
-
-const ETAPAS = [
-  'Lead Novo', 'Tentativa de Contato', 'Em Qualificação',
-  'Reunião Agendada', 'Reunião Realizada', 'Simulação Enviada',
-  'Follow-up / Negociação', 'Análise de Crédito / Docs',
-  'Fechado (Ganho)', 'Descartado (Perda)',
-];
+import { ETAPAS } from '../constants/etapas';
 
 const TIPOS_BEM = ['Imóvel', 'Veículo', 'Pesados', 'Serviços'];
 const URGENCIAS = ['Imediata', '3 a 6 meses', 'Planejamento longo'];
@@ -46,7 +40,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
     restricao_cpf:      lead?.restricao_cpf ? true : false,
     urgencia:           lead?.urgencia || '',
     temperatura:        lead?.temperatura || 'frio',
-    etapa_funil:        lead?.etapa_funil || 'Lead Novo',
+    etapa_funil:        lead?.etapa_funil || 'Analisar Perfil',
     motivo_descarte:    lead?.motivo_descarte || '',
     data_proxima_acao:  lead?.data_proxima_acao || '',
     tipo_proxima_acao:  lead?.tipo_proxima_acao || '',
@@ -61,7 +55,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.nome.trim()) { setErro('Nome é obrigatório'); return; }
-    if (form.etapa_funil === 'Descartado (Perda)' && !form.motivo_descarte) {
+    if (form.etapa_funil === 'Perdido' && !form.motivo_descarte) {
       setErro('Selecione o motivo do descarte');
       return;
     }
@@ -85,7 +79,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
     }
   }
 
-  const descartando = form.etapa_funil === 'Descartado (Perda)';
+  const descartando = form.etapa_funil === 'Perdido';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

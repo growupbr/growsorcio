@@ -1,13 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Modal from './Modal';
 import { api } from '../api/client';
-
-const ETAPAS = [
-  'Analisar Perfil', 'Seguiu Perfil', 'Abordagem Enviada', 'Respondeu',
-  'Em Desenvolvimento', 'Follow-up Ativo', 'Lead Capturado',
-  'Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada',
-  'Follow-up Proposta', 'Fechado', 'Perdido',
-];
+import { ETAPAS_SEM_ANUNCIO as ETAPAS } from '../constants/etapas';
 
 export default function QuickAddModal({ onClose, onCriado }) {
   const [form, setForm] = useState({

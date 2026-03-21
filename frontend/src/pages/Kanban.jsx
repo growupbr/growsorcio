@@ -8,23 +8,7 @@ import { api } from '../api/client';
 import TemperaturaBadge from '../components/TemperaturaBadge';
 import Modal from '../components/Modal';
 import LeadPerfil from './LeadPerfil';
-
-const ETAPAS = [
-  { nome: 'Lead Anúncio',       fase: 'anuncio'  },
-  { nome: 'Analisar Perfil',    fase: 'captacao' },
-  { nome: 'Seguiu Perfil',      fase: 'captacao' },
-  { nome: 'Abordagem Enviada',  fase: 'captacao' },
-  { nome: 'Respondeu',          fase: 'captacao' },
-  { nome: 'Em Desenvolvimento', fase: 'captacao' },
-  { nome: 'Follow-up Ativo',    fase: 'captacao' },
-  { nome: 'Lead Capturado',     fase: 'captacao' },
-  { nome: 'Reunião Agendada',   fase: 'captacao' },
-  { nome: 'Reunião Realizada',  fase: 'captacao' },
-  { nome: 'Proposta Enviada',   fase: 'comercial' },
-  { nome: 'Follow-up Proposta', fase: 'comercial' },
-  { nome: 'Fechado',            fase: 'fechado' },
-  { nome: 'Perdido',            fase: 'perdido' },
-];
+import { ETAPAS_KANBAN as ETAPAS } from '../constants/etapas';
 
 // Dot colors per phase — minimal Huly-style indicators
 const FASE_DOT = {
@@ -75,6 +59,13 @@ const CalIcon = () => (
     <line x1="16" y1="2" x2="16" y2="6"/>
     <line x1="8" y1="2" x2="8" y2="6"/>
     <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+
+const InboxIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+    <path strokeLinecap="round" strokeLinejoin="round"
+      d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z"/>
   </svg>
 );
 
@@ -150,7 +141,8 @@ function LeadCard({ lead, onClick }) {
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.3 : 1,
+    opacity: isDragging ? 0 : 1,
+    transition: isDragging ? 'none' : 'opacity 0.2s ease',
   };
 
   return (
@@ -164,7 +156,7 @@ function LeadCard({ lead, onClick }) {
           onClick(lead.id);
         }
       }}
-      className="kanban-card group"
+      className="kanban-card group hover:border-zinc-700/60 transition-colors duration-200"
     >
       {/* Badge anúncio */}
       {lead.origem === 'anuncio' && (
@@ -239,7 +231,11 @@ function LeadCard({ lead, onClick }) {
 function LeadCardOverlay({ lead }) {
   return (
     <div className="rounded-xl p-3 w-56 cursor-grabbing select-none bg-zinc-900 border border-orange-500/50"
-         style={{ boxShadow: '0 0 40px rgba(249,115,22,0.15), 0 20px 60px rgba(0,0,0,0.7)', transform: 'rotate(2deg)' }}>
+         style={{
+           boxShadow: '0 0 20px rgba(249,115,22,0.4), 0 0 60px rgba(249,115,22,0.15), 0 24px 64px rgba(0,0,0,0.8)',
+           transform: 'rotate(3deg) scale(1.03)',
+           zIndex: 9999,
+         }}>
       <div className="flex items-start gap-2 mb-2">
         <TemperaturaBadge temperatura={lead.temperatura} small />
         <p className="text-sm font-semibold leading-tight text-zinc-100">{lead.nome}</p>
@@ -297,9 +293,54 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
           ...(isOver ? { background: 'rgba(249,115,22,0.04)', borderRadius: 12 } : {}),
         }}
       >
-        {leads.map((lead) => (
+        {leads.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 py-10 mt-1 text-center text-zinc-700">
+            <InboxIcon />
+            <p className="text-[11px] leading-relaxed">
+              Sem leads aqui.<br />Arraste para mover.
+            </p>
+          </div>
+        ) : leads.map((lead) => (
           <LeadCard key={lead.id} lead={lead} onClick={onCardClick} />
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Skeleton de carregamento ────────────────────────────────────────────────
+
+function KanbanSkeleton() {
+  return (
+    <div className="h-full flex flex-col bg-zinc-950">
+      <div className="flex-shrink-0 border-b border-white/5 px-6 pt-5 pb-4">
+        <div className="h-4 w-20 bg-zinc-800 rounded-full animate-pulse mb-3" />
+        <div className="flex gap-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-2.5 w-14 bg-zinc-800 rounded-full animate-pulse" />
+          ))}
+        </div>
+      </div>
+      <div className="flex-1 overflow-x-auto px-6 py-5">
+        <div className="flex gap-4 items-start">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex-shrink-0 space-y-3" style={{ width: 260 }}>
+              <div className="h-3 w-28 bg-zinc-800 rounded-full animate-pulse" />
+              {Array.from({ length: 3 }).map((_, j) => (
+                <div
+                  key={j}
+                  className="rounded-xl bg-zinc-900 border border-white/5 animate-pulse p-3 space-y-2.5"
+                  style={{ animationDelay: `${(i * 3 + j) * 60}ms` }}
+                >
+                  <div className="h-2 w-2 rounded-full bg-zinc-800" />
+                  <div className="h-3 w-3/4 bg-zinc-800 rounded-full" />
+                  <div className="h-2.5 w-1/2 bg-zinc-800/70 rounded-full" />
+                  <div className="h-2 w-1/3 bg-zinc-800/50 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -392,16 +433,7 @@ export default function Kanban() {
     }
   }
 
-  if (carregando) {
-    return (
-      <div className="flex items-center justify-center h-full bg-zinc-950">
-        <div className="text-center">
-          <div className="w-8 h-8 rounded-full border-2 border-zinc-800 border-t-orange-500 animate-spin mx-auto mb-3" />
-          <p className="text-sm text-zinc-500">Carregando kanban...</p>
-        </div>
-      </div>
-    );
-  }
+  if (carregando) return <KanbanSkeleton />;
 
   return (
     <div className="h-full flex flex-col bg-zinc-950">

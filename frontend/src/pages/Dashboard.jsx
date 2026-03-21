@@ -1,26 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import QuickAddModal from '../components/QuickAddModal';
+import WelcomeModal, { shouldShowWelcome } from '../components/WelcomeModal';
 import { api } from '../api/client';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LabelList, Area, AreaChart,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { ETAPAS_SEM_ANUNCIO as ETAPAS_ORDEM, ETAPAS_FUNIL } from '../constants/etapas';
 
-// ─── Constantes ──────────────────────────────────────────────────────────────
-
-const ETAPAS_ORDEM = [
-  'Analisar Perfil', 'Seguiu Perfil', 'Abordagem Enviada', 'Respondeu',
-  'Em Desenvolvimento', 'Follow-up Ativo', 'Lead Capturado',
-  'Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada',
-  'Follow-up Proposta', 'Fechado', 'Perdido',
-];
-
-const ETAPAS_FUNIL = [
-  'Seguiu Perfil', 'Abordagem Enviada', 'Respondeu',
-  'Lead Capturado', 'Reunião Agendada', 'Reunião Realizada',
-  'Proposta Enviada', 'Fechado',
-];
+// ─── Constantes ───────────────────────────────────────────────────────────────
 
 const PERIODOS = [
   { id: 'hoje',   label: 'Hoje' },
@@ -400,6 +389,7 @@ function FunilConversao({ totalPorEtapa }) {
 
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(shouldShowWelcome);
   const [stats, setStats] = useState(null);
   const [evolucao, setEvolucao] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -665,6 +655,10 @@ npm run dev`}
 
       {showModal && (
         <QuickAddModal onClose={() => setShowModal(false)} onCriado={() => carregar()} />
+      )}
+
+      {showWelcome && (
+        <WelcomeModal onClose={() => setShowWelcome(false)} />
       )}
 
       {/* ── Funil + Evolução ── */}
