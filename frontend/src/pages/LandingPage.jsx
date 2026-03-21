@@ -1,5 +1,5 @@
 // /frontend/src/pages/LandingPage.jsx
-import { useState, useRef } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import logoAdemicon from '../assets/ademicon.webp';
 import logoEmbracon from '../assets/embracon.webp';
 import logoHonda from '../assets/hondaconsorcio.webp';
@@ -8,9 +8,10 @@ import logoMagalu from '../assets/magaluconsorcio.webp';
 import logoMaggi from '../assets/maggiconsorcio.webp';
 import logoPorto from '../assets/portoseguroconsorcio.webp';
 import logoRodobens from '../assets/rodobens.webp';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Zap, Brain, Calculator, ChevronDown, Menu, X, Star, MessageCircle } from 'lucide-react';
-import PricingSection from '../components/ui/PricingSection';
+// PricingSection carregada de forma lazy — fica abaixo da dobra, não bloqueia LCP
+const PricingSection = lazy(() => import('../components/ui/PricingSection'));
 import GrowsorcioLogo from '../components/GrowsorcioLogo';
 import GradientBlobs from '../components/landing/GradientBlobs';
 import HeroSection from '../components/landing/HeroSection';
@@ -95,19 +96,19 @@ const FAQ_ITEMS = [
 // Fix #2: Colunas coloridas com borda lateral por status
 const KANBAN_COLS = [
   {
-    col: 'Lead Novo',
+    col: 'Seguiu Perfil',
     titleClass: 'text-blue-400',
     borderClass: 'border-l-2 border-l-blue-400',
     cards: ['Ana Lima', 'Carlos R.', 'Priya S.'],
   },
   {
-    col: 'Em Qualificação',
+    col: 'Reunião Agendada',
     titleClass: 'text-yellow-400',
     borderClass: 'border-l-2 border-l-yellow-400',
     cards: ['Roberto F.', 'Marina T.'],
   },
   {
-    col: 'Reunião Agendada',
+    col: 'Proposta Enviada',
     titleClass: 'text-green-400',
     borderClass: 'border-l-2 border-l-green-400',
     cards: ['Juliana M.'],
@@ -125,19 +126,22 @@ const PROOF_LOGOS = [
   { src: logoRodobens, alt: 'Rodobens Consórcio' },
 ];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24, filter: 'blur(4px)' },
-  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } },
-};
-
 export default function LandingPage() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [aberto, setAberto] = useState(null);
-  const heroRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.8], [1, 0.95]);
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 100]);
+
+  // IntersectionObserver para animações CSS de entrada (substitui Framer Motion whileInView)
+  useEffect(() => {
+    const els = document.querySelectorAll('.section-reveal');
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+      }),
+      { rootMargin: '-60px', threshold: 0.1 }
+    );
+    els.forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-300 font-['Inter',sans-serif] overflow-x-hidden">
@@ -181,36 +185,31 @@ export default function LandingPage() {
           </button>
         </div>
 
-        {/* Menu mobile dropdown */}
-        <AnimatePresence>
-          {menuAberto && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="md:hidden border-t border-white/10 bg-zinc-950/95 px-4 py-4 flex flex-col gap-4"
-            >
-              <a href="#recursos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Recursos</a>
-              <a href="#precos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Preços</a>
-              <a href="#faq" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">FAQ</a>
-              <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
-                <a href="/login" className="text-zinc-400 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Entrar</a>
-                <a
-                  href="#precos"
-                  onClick={() => setMenuAberto(false)}
-                  className="bg-[#FF4500] hover:bg-[#e03e00] text-white text-sm font-semibold px-4 py-3 rounded-md transition-colors duration-150 text-center min-h-[44px] flex items-center justify-center"
-                >
-                  Testar Grátis 14 Dias
-                </a>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Menu mobile dropdown — CSS transition (sem Framer Motion) */}
+        <div
+          className="md:hidden overflow-hidden transition-[max-height,opacity] duration-200 ease-out"
+          style={{ maxHeight: menuAberto ? '400px' : '0', opacity: menuAberto ? 1 : 0 }}
+        >
+          <div className="border-t border-white/10 bg-zinc-950/95 px-4 py-4 flex flex-col gap-4">
+            <a href="#recursos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Recursos</a>
+            <a href="#precos" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Preços</a>
+            <a href="#faq" onClick={() => setMenuAberto(false)} className="text-zinc-300 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">FAQ</a>
+            <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
+              <a href="/login" className="text-zinc-400 hover:text-white text-sm font-medium py-2 min-h-[44px] flex items-center transition-colors duration-150">Entrar</a>
+              <a
+                href="#precos"
+                onClick={() => setMenuAberto(false)}
+                className="bg-[#FF4500] hover:bg-[#e03e00] text-white text-sm font-semibold px-4 py-3 rounded-md transition-colors duration-150 text-center min-h-[44px] flex items-center justify-center"
+              >
+                Testar Grátis 14 Dias
+              </a>
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
-      <HeroSection heroRef={heroRef} heroOpacity={heroOpacity} heroScale={heroScale} heroY={heroY} />
+      <HeroSection />
 
       {/* Gradient line divider */}
       <div className="gradient-line max-w-4xl mx-auto" />
@@ -219,29 +218,17 @@ export default function LandingPage() {
       <section id="recursos" className="relative max-w-6xl mx-auto px-4 py-24">
         <GradientBlobs className="opacity-50" />
         <div className="text-center mb-12 relative z-10">
-          <motion.p
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3"
-          >
+          <p className="section-reveal text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">
             Por que funciona
-          </motion.p>
+          </p>
           <TextReveal
             text="Construído para o jeito que corretor de consórcio vende"
             className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white"
             stagger={0.05}
           />
-          <motion.p
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-zinc-500 text-base max-w-2xl mx-auto mt-3"
-          >
+          <p className="section-reveal text-zinc-500 text-base max-w-2xl mx-auto mt-3">
             Não é RD Station. Não é HubSpot. É um CRM que fala carta, lance, administradora e contemplação.
-          </motion.p>
+          </p>
         </div>
 
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10" stagger={0.15}>
@@ -267,25 +254,17 @@ export default function LandingPage() {
       <div className="gradient-line max-w-4xl mx-auto" />
       <section className="max-w-4xl mx-auto px-4 py-16 relative">
         <ParallaxSection speed={0.1}>
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-80px' }}
-            className="bg-white/5 border border-[#FF4500]/30 rounded-2xl p-8 md:p-12 text-center relative overflow-hidden"
+          <div
+            className="section-reveal bg-white/5 border border-[#FF4500]/30 rounded-2xl p-8 md:p-12 text-center relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(255,69,0,0.08),transparent)] pointer-events-none" />
             <div className="absolute inset-0 dot-grid pointer-events-none" />
             <div className="relative z-10">
-              <motion.div
-                initial={{ scale: 0 }}
-                whileInView={{ scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+              <div
                 className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#FF4500]/10 border border-[#FF4500]/30 mb-6"
               >
                 <AnimatedCounter value={21} suffix="x" className="text-[#FF4500] text-4xl font-black stat-glow" />
-              </motion.div>
+              </div>
             <h2 className="text-white text-2xl md:text-3xl font-bold tracking-tight mb-4">
               Quem responde primeiro, fecha primeiro.
             </h2>
@@ -301,31 +280,19 @@ export default function LandingPage() {
               <span className="text-[#FF4500] font-semibold">menos de 2 minutos</span>.
             </p>
             <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mt-8">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white/5 rounded-xl p-4 border border-white/10"
-              >
+              <div className="section-reveal bg-white/5 rounded-xl p-4 border border-white/10">
                 <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Sem GrowSorcio</p>
                 <p className="text-white font-bold text-lg">+30 min</p>
                 <p className="text-zinc-500 text-xs mt-1">para o primeiro contato</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-[#FF4500]/10 rounded-xl p-4 border border-[#FF4500]/30"
-              >
+              </div>
+              <div className="section-reveal bg-[#FF4500]/10 rounded-xl p-4 border border-[#FF4500]/30">
                 <p className="text-[#FF4500] text-xs uppercase tracking-wider mb-1">Com GrowSorcio</p>
                 <p className="text-white font-bold text-lg">-2 min</p>
                 <p className="text-zinc-400 text-xs mt-1">do clique ao WhatsApp</p>
-              </motion.div>
+              </div>
             </div>
           </div>
-          </motion.div>
+          </div>
         </ParallaxSection>
       </section>
 
@@ -334,15 +301,9 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-4 py-16 relative">
         <GradientBlobs className="opacity-30" />
         <div className="text-center mb-10 relative z-10">
-          <motion.p
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3"
-          >
+          <p className="section-reveal text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">
             Quem já trocou a planilha
-          </motion.p>
+          </p>
           <TextReveal
             text="Resultado de quem parou de improvisar"
             className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white"
@@ -388,11 +349,11 @@ export default function LandingPage() {
             <div className="proof-marquee">
               {/* Set 1 */}
               {PROOF_LOGOS.map((logo) => (
-                <img key={`a-${logo.alt}`} src={logo.src} alt={logo.alt} className="proof-logo" />
+                <img key={`a-${logo.alt}`} src={logo.src} alt={logo.alt} className="proof-logo" loading="lazy" />
               ))}
               {/* Set 2 — duplicado para loop contínuo */}
               {PROOF_LOGOS.map((logo) => (
-                <img key={`b-${logo.alt}`} src={logo.src} alt={logo.alt} className="proof-logo" />
+                <img key={`b-${logo.alt}`} src={logo.src} alt={logo.alt} className="proof-logo" loading="lazy" />
               ))}
             </div>
           </div>
@@ -400,21 +361,21 @@ export default function LandingPage() {
       </section>
 
       {/* ── PRICING ─────────────────────────────────────────────────────── */}
-      <PricingSection />
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-32">
+          <div className="w-6 h-6 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
+        </div>
+      }>
+        <PricingSection />
+      </Suspense>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
       <div className="gradient-line max-w-4xl mx-auto" />
       <section id="faq" className="max-w-2xl mx-auto px-4 py-24 relative">
         <div className="text-center mb-12">
-          <motion.p
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3"
-          >
+          <p className="section-reveal text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">
             FAQ
-          </motion.p>
+          </p>
           <TextReveal
             text="Perguntas de quem tá quase convencido"
             className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-4xl text-white"
@@ -430,26 +391,17 @@ export default function LandingPage() {
                 className="w-full flex items-center justify-between gap-4 py-5 text-left min-h-[44px] text-white font-medium hover:text-zinc-200 transition-colors duration-150"
               >
                 <span>{item.pergunta}</span>
-                <motion.div
-                  animate={{ rotate: aberto === i ? 180 : 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ChevronDown size={18} className="text-zinc-500 flex-shrink-0" />
-                </motion.div>
+                <ChevronDown
+                  size={18}
+                  className={`text-zinc-500 flex-shrink-0 transition-transform duration-300 ${aberto === i ? 'rotate-180' : 'rotate-0'}`}
+                />
               </button>
-              <AnimatePresence>
-                {aberto === i && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                    className="overflow-hidden"
-                  >
-                    <p className="text-zinc-400 text-sm leading-relaxed pb-5">{item.resposta}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div
+                className="overflow-hidden transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+                style={{ maxHeight: aberto === i ? '300px' : '0', opacity: aberto === i ? 1 : 0 }}
+              >
+                <p className="text-zinc-400 text-sm leading-relaxed pb-5">{item.resposta}</p>
+              </div>
             </motion.div>
           ))}
         </StaggerContainer>

@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 const heroImg = '/mktconsorcio.webp';
 import TextReveal from './TextReveal';
 import GradientBlobs from './GradientBlobs';
@@ -7,19 +8,19 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 // Kanban mock data (local, não repetir import em LandingPage)
 const KANBAN_COLS = [
   {
-    col: 'Lead Novo',
+    col: 'Seguiu Perfil',
     titleClass: 'text-orange-400',
     borderClass: 'border-l-2 border-l-orange-400',
     cards: ['Ana Lima', 'Carlos R.', 'Priya S.'],
   },
   {
-    col: 'Em Qualificação',
+    col: 'Reunião Agendada',
     titleClass: 'text-yellow-400',
     borderClass: 'border-l-2 border-l-yellow-400',
     cards: ['Roberto F.', 'Marina T.'],
   },
   {
-    col: 'Reunião Agendada',
+    col: 'Proposta Enviada',
     titleClass: 'text-emerald-400',
     borderClass: 'border-l-2 border-l-emerald-400',
     cards: ['Juliana M.'],
@@ -28,15 +29,16 @@ const KANBAN_COLS = [
 
 /**
  * HeroSection — primeira dobra da landing page.
- *
- * Props:
- *   heroRef     — ref para o scroll tracking do framer-motion
- *   heroOpacity — MotionValue para fade-out no scroll
- *   heroScale   — MotionValue para scale-out no scroll
- *   heroY       — MotionValue para parallax Y no scroll
+ * Self-contained: gere internamente o scroll tracking e parallax.
  */
-export default function HeroSection({ heroRef, heroOpacity, heroScale, heroY }) {
+export default function HeroSection() {
+  const heroRef = useRef(null);
   const isMobile = useMediaQuery('(max-width: 768px)');
+
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroScale  = useTransform(scrollYProgress, [0, 0.8], [1, 0.95]);
+  const heroY      = useTransform(scrollYProgress, [0, 1], [0, 100]);
 
   // Posição do astronauta: mobile centraliza mais, desktop mantém center
   const bgPosition = isMobile ? '62% center' : 'center center';

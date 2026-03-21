@@ -60,7 +60,7 @@ router.post('/lead', async (req, res) => {
       instagram: instagram || null,
       whatsapp: whatsapp || null,
       temperatura: 'frio',
-      etapa_funil: 'Lead Novo',
+      etapa_funil: 'Lead Anúncio',
       tipo_de_bem: tipo_de_bem || null,
       valor_da_carta: valor_da_carta ? Number(valor_da_carta) : null,
       recurso_para_lance: recurso_para_lance ? Number(recurso_para_lance) : null,

@@ -85,7 +85,7 @@ async function run() {
     restricao_cpf: Boolean(l.restricao_cpf),
     urgencia: l.urgencia || null,
     temperatura: l.temperatura || 'frio',
-    etapa_funil: l.etapa_funil || 'Lead Novo',
+    etapa_funil: l.etapa_funil || 'Analisar Perfil',
     motivo_descarte: l.motivo_descarte || null,
     snooze_ate: asDate(l.snooze_ate),
     data_proxima_acao: asDate(l.data_proxima_acao),

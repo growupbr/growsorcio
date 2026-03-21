@@ -164,6 +164,7 @@ function DocumentoA4({ dados, innerRef }) {
 
   return (
     <div
+      id="pdf-content"
       ref={innerRef}
       className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl shadow-black/20 overflow-hidden"
       style={{ fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif" }}
@@ -417,69 +418,16 @@ export default function Propostas() {
     if (!el) return;
     setDownloading(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-
-      // Renderiza o documento em container off-screen de largura fixa (794px ≈ A4 a 96dpi)
-      // para capturar o conteúdo COMPLETO, ignorando o overflow do painel
-      const RENDER_W = 794;
-      const clone = el.cloneNode(true);
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = [
-        'position:fixed',
-        'top:0',
-        'left:-9999px',
-        `width:${RENDER_W}px`,
-        'background:#ffffff',
-        'z-index:-9999',
-        'overflow:visible',
-        'border-radius:0',
-      ].join(';');
-      // Remove rounded corners e sombra do clone para não deixar espaço em branco nas bordas do PDF
-      clone.style.borderRadius = '0';
-      clone.style.boxShadow = 'none';
-      clone.style.maxWidth = 'none';
-      clone.style.width = '100%';
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
-
-      const canvas = await html2canvas(wrapper, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: RENDER_W,
-        height: wrapper.scrollHeight,
-        windowWidth: RENDER_W,
-        scrollX: 0,
-        scrollY: 0,
-      });
-      document.body.removeChild(wrapper);
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.97);
-      const MARGIN_MM = 8;
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const contentW = pageW - MARGIN_MM * 2;
-      const ratio = canvas.width / canvas.height;
-      const contentH = contentW / ratio;
-
-      if (contentH <= pageH - MARGIN_MM * 2) {
-        // Cabe numa página
-        pdf.addImage(imgData, 'JPEG', MARGIN_MM, MARGIN_MM, contentW, contentH);
-      } else {
-        // Divide em páginas com margem
-        const pageContentH = pageH - MARGIN_MM * 2;
-        const totalPages = Math.ceil(contentH / pageContentH);
-        for (let p = 0; p < totalPages; p++) {
-          if (p > 0) pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', MARGIN_MM, MARGIN_MM - p * pageContentH, contentW, contentH);
-        }
-      }
-
-      const nome = dados.nomeCliente?.replace(/\s+/g, '_') || 'Cliente';
-      pdf.save(`Proposta_GrowSorcio_${nome}.pdf`);
+      const html2pdf = (await import('html2pdf.js')).default;
+      const nomeCliente = (dados.nomeCliente || 'Cliente').replace(/\s+/g, '_');
+      const opt = {
+        margin: 0,
+        filename: `Proposta_GrowSorcio_${nomeCliente}.pdf`,
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      };
+      await html2pdf().set(opt).from(el).save();
     } finally {
       setDownloading(false);
     }

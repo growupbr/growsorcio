@@ -1,14 +1,18 @@
 const FASE_MAP = {
-  'Lead Novo':                 'entrada',
-  'Tentativa de Contato':      'entrada',
-  'Em Qualificação':           'qualificacao',
-  'Reunião Agendada':          'qualificacao',
-  'Reunião Realizada':         'negociacao',
-  'Simulação Enviada':         'negociacao',
-  'Follow-up / Negociação':    'negociacao',
-  'Análise de Crédito / Docs': 'credito',
-  'Fechado (Ganho)':           'fechado',
-  'Descartado (Perda)':        'perdido',
+  'Lead Anúncio':       'entrada',
+  'Analisar Perfil':    'entrada',
+  'Seguiu Perfil':      'entrada',
+  'Abordagem Enviada':  'entrada',
+  'Respondeu':          'qualificacao',
+  'Em Desenvolvimento': 'qualificacao',
+  'Follow-up Ativo':    'qualificacao',
+  'Lead Capturado':     'qualificacao',
+  'Reunião Agendada':   'negociacao',
+  'Reunião Realizada':  'negociacao',
+  'Proposta Enviada':   'negociacao',
+  'Follow-up Proposta': 'negociacao',
+  'Fechado':            'fechado',
+  'Perdido':            'perdido',
 };
 
 const FASE_STYLE = {
