@@ -74,9 +74,9 @@ function Pill({ label, ativo, onClick, cor, bg, border }) {
     fontWeight: 600,
   };
   const estiloInativo = {
-    background: '#0F172A',
-    border:     '1px solid #334155',
-    color:      '#94A3B8',
+    background: '#27272a',
+    border:     '1px solid rgba(255,255,255,0.08)',
+    color:      '#a1a1aa',
   };
 
   return (
@@ -89,14 +89,14 @@ function Pill({ label, ativo, onClick, cor, bg, border }) {
       }}
       onMouseEnter={e => {
         if (!ativo) {
-          e.currentTarget.style.borderColor = '#475569';
-          e.currentTarget.style.color = '#F8FAFC';
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)';
+          e.currentTarget.style.color = '#f4f4f5';
         }
       }}
       onMouseLeave={e => {
         if (!ativo) {
-          e.currentTarget.style.borderColor = '#334155';
-          e.currentTarget.style.color = '#94A3B8';
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+          e.currentTarget.style.color = '#a1a1aa';
         }
       }}
     >
@@ -220,7 +220,7 @@ export default function Leads() {
       {/* ── Painel de filtros ── */}
       <div
         className="rounded-2xl p-5 mb-6 space-y-4"
-        style={{ background: '#0F172A', border: '1px solid #334155' }}
+        style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
       >
 
         {/* Linha 1: Busca + Ordenar */}
@@ -228,7 +228,7 @@ export default function Leads() {
           <div className="relative flex-1" style={{ minWidth: 220 }}>
             <span
               className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-              style={{ color: '#484F58' }}
+              style={{ color: 'rgba(255,255,255,0.25)' }}
             >
               <SearchIcon />
             </span>
@@ -253,7 +253,7 @@ export default function Leads() {
         </div>
 
         {/* Divisor */}
-        <div style={{ borderTop: '1px solid #1C2333' }} />
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
 
         {/* Linha 2: Origem — pills */}
         <div className="flex items-center gap-3 flex-wrap">
@@ -353,14 +353,14 @@ export default function Leads() {
             <div
               key={i}
               className="h-[68px] rounded-xl animate-pulse"
-              style={{ background: '#0F172A', border: '1px solid #334155' }}
+              style={{ background: '#27272a', border: '1px solid rgba(255,255,255,0.05)' }}
             />
           ))}
         </div>
       ) : leads.length === 0 ? (
         <div
           className="rounded-2xl py-20 text-center"
-          style={{ background: '#0F172A', border: '1px solid #334155' }}
+          style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.06)' }}
         >
           {temFiltroAtivo ? (
             <>
@@ -387,14 +387,14 @@ export default function Leads() {
       ) : (
         <div
           className="rounded-2xl overflow-hidden"
-          style={{ border: '1px solid #334155', boxShadow: '0 4px 24px rgba(0,0,0,0.35)' }}
+          style={{ border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
         >
           {/* Header */}
           <div
             className="grid px-6 py-3"
             style={{
-              background: '#0F172A',
-              borderBottom: '1px solid #334155',
+              background: '#18181b',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
               gridTemplateColumns: '2fr 1fr 1.2fr 1fr 1fr',
             }}
           >
@@ -417,12 +417,12 @@ export default function Leads() {
                 className="grid px-6 py-4 cursor-pointer"
                 style={{
                   gridTemplateColumns: '2fr 1fr 1.2fr 1fr 1fr',
-                  borderBottom: idx < leads.length - 1 ? '1px solid #334155' : 'none',
+                  borderBottom: idx < leads.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                   borderLeft: lead.origem === 'anuncio' ? '3px solid #7c3aed' : '3px solid transparent',
                   background: 'transparent',
                   transition: 'background 150ms ease-out',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(30,41,59,0.7)'}
+                onMouseEnter={e => e.currentTarget.style.background = '#27272a'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 {/* Lead */}
