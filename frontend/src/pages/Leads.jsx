@@ -196,10 +196,10 @@ export default function Leads() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="font-extrabold leading-tight" style={{ fontSize: 28, color: '#F8FAFC' }}>
+          <h1 className="font-extrabold leading-tight" style={{ fontSize: 28, color: '#f4f4f5' }}>
             Leads
           </h1>
-          <p className="mt-1.5 text-sm" style={{ color: '#94A3B8' }}>
+          <p className="mt-1.5 text-sm" style={{ color: '#a1a1aa' }}>
             {labelContador}
           </p>
         </div>
@@ -364,7 +364,7 @@ export default function Leads() {
         >
           {temFiltroAtivo ? (
             <>
-              <p className="text-sm mb-2" style={{ color: '#94A3B8' }}>
+              <p className="text-sm mb-2" style={{ color: '#a1a1aa' }}>
                 Nenhum lead encontrado com os filtros atuais
               </p>
               <button
@@ -377,7 +377,7 @@ export default function Leads() {
             </>
           ) : (
             <>
-              <p className="text-sm mb-4" style={{ color: '#94A3B8' }}>Nenhum lead cadastrado</p>
+              <p className="text-sm mb-4" style={{ color: '#a1a1aa' }}>Nenhum lead cadastrado</p>
               <button className="btn-primary" onClick={() => navigate('/leads/novo')}>
                 <PlusIcon /> Adicionar primeiro lead
               </button>
@@ -430,7 +430,7 @@ export default function Leads() {
                   <Avatar nome={lead.nome} />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold truncate" style={{ color: '#F8FAFC' }}>
+                      <p className="text-sm font-semibold truncate" style={{ color: '#f4f4f5' }}>
                         {lead.nome}
                       </p>
                       {lead.origem === 'anuncio' && (
@@ -449,7 +449,7 @@ export default function Leads() {
                       )}
                     </div>
                     {lead.whatsapp && (
-                      <p className="text-xs mt-0.5 truncate" style={{ color: '#94A3B8' }}>
+                      <p className="text-xs mt-0.5 truncate" style={{ color: '#a1a1aa' }}>
                         {lead.whatsapp}
                       </p>
                     )}
@@ -458,7 +458,7 @@ export default function Leads() {
 
                 {/* Tipo de bem */}
                 <div className="flex items-center">
-                  <span className="text-sm truncate" style={{ color: '#94A3B8' }}>
+                  <span className="text-sm truncate" style={{ color: '#a1a1aa' }}>
                     {lead.tipo_de_bem || '—'}
                   </span>
                 </div>
@@ -477,7 +477,7 @@ export default function Leads() {
                 <div className="flex items-center">
                   <span
                     className="flex items-center gap-1.5 text-sm font-medium"
-                    style={{ color: vencido(lead.data_proxima_acao) ? '#f87171' : '#94A3B8' }}
+                    style={{ color: vencido(lead.data_proxima_acao) ? '#f87171' : '#a1a1aa' }}
                   >
                     {vencido(lead.data_proxima_acao) && <AlertIcon />}
                     {formatarData(lead.data_proxima_acao)}

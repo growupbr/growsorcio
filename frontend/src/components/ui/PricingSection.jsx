@@ -89,7 +89,7 @@ function fireConfetti() {
     particleCount: 80,
     spread: 70,
     origin: { y: 0.6 },
-    colors: ["#FF4500", "#FF6B35", "#1E293B", "#ffffff"],
+    colors: ["#FF4500", "#FF6B35", "#27272a", "#ffffff"],
   });
 }
 

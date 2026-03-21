@@ -84,8 +84,8 @@ export default function QuickAddModal({ onClose, onCriado }) {
 
         {erro && <p className="text-sm" style={{ color: '#f87171' }}>{erro}</p>}
 
-        <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid #1C2333' }}>
-          <span className="text-xs" style={{ color: '#484F58' }}>⌘ Enter para salvar</span>
+        <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid #27272a' }}>
+          <span className="text-xs" style={{ color: '#71717a' }}>⌘ Enter para salvar</span>
           <div className="flex gap-3">
             <button type="button" className="btn-ghost" onClick={onClose}>
               Cancelar

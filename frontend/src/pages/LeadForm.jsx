@@ -17,7 +17,7 @@ const MOTIVOS_DESCARTE = [
 
 function SectionTitle({ children }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#484F58' }}>
+    <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#71717a' }}>
       {children}
     </p>
   );
@@ -110,7 +110,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
       {/* Método Blessed 4.0 */}
       <section
         className="rounded-xl p-4"
-        style={{ background: '#161B22', border: '1px solid rgba(255,69,0,0.20)' }}
+        style={{ background: '#18181b', border: '1px solid rgba(255,69,0,0.20)' }}
       >
         <SectionTitle>Filtro Blessed 4.0</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -154,7 +154,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
           className="mt-3 flex items-center gap-3 p-3 rounded-lg cursor-pointer"
           style={{
             background: form.restricao_cpf ? 'rgba(239,68,68,0.08)' : 'transparent',
-            border: `1px solid ${form.restricao_cpf ? 'rgba(239,68,68,0.30)' : '#1C2333'}`,
+            border: `1px solid ${form.restricao_cpf ? 'rgba(239,68,68,0.30)' : '#27272a'}`,
           }}
           onClick={() => setForm(f => ({ ...f, restricao_cpf: !f.restricao_cpf }))}
         >
@@ -162,7 +162,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
             className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
             style={{
               background: form.restricao_cpf ? '#ef4444' : 'transparent',
-              border: `2px solid ${form.restricao_cpf ? '#ef4444' : '#30363D'}`,
+              border: `2px solid ${form.restricao_cpf ? '#ef4444' : '#52525b'}`,
             }}
           >
             {form.restricao_cpf && (
@@ -172,10 +172,10 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
             )}
           </div>
           <div>
-            <p className="text-sm font-semibold" style={{ color: form.restricao_cpf ? '#ef4444' : '#8B949E' }}>
+            <p className="text-sm font-semibold" style={{ color: form.restricao_cpf ? '#ef4444' : '#a1a1aa' }}>
               Restrição no CPF
             </p>
-            <p className="text-xs" style={{ color: '#484F58' }}>Marque se o lead tem CPF negativado ou restrito</p>
+            <p className="text-xs" style={{ color: '#71717a' }}>Marque se o lead tem CPF negativado ou restrito</p>
           </div>
         </div>
       </section>
@@ -183,7 +183,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
       {/* Funil */}
       <section
         className="rounded-xl p-4"
-        style={{ background: '#161B22', border: '1px solid #1C2333' }}
+        style={{ background: '#18181b', border: '1px solid #27272a' }}
       >
         <SectionTitle>Funil de Vendas</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -250,7 +250,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
 
       {erro && <p className="text-sm" style={{ color: '#f87171' }}>{erro}</p>}
 
-      <div className="flex justify-end gap-3 pt-2" style={{ borderTop: '1px solid #1C2333' }}>
+      <div className="flex justify-end gap-3 pt-2" style={{ borderTop: '1px solid #27272a' }}>
         <button type="button" className="btn-ghost" onClick={onCancelar}>Cancelar</button>
         <button type="submit" className="btn-primary" disabled={salvando}>
           {salvando ? 'Salvando...' : lead?.id ? 'Salvar alterações' : 'Criar lead'}

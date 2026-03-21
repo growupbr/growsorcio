@@ -6,12 +6,12 @@
 
 /* ── CSS Design Tokens ─────────────────────────────────────────────────────── */
 :root {
-  --color-bg:        #020617;
-  --color-surface:   #0F172A;
-  --color-surface-2: #1E293B;
-  --color-surface-3: #334155;
-  --color-text:      #F8FAFC;
-  --color-muted:     #94A3B8;
+  --color-bg:        #09090b;  /* zinc-950 */
+  --color-surface:   #18181b;  /* zinc-900 */
+  --color-surface-2: #27272a;  /* zinc-800 */
+  --color-surface-3: #3f3f46;  /* zinc-700 */
+  --color-text:      #f4f4f5;  /* zinc-100 */
+  --color-muted:     #a1a1aa;  /* zinc-400 */
   --color-accent:    #FF4500;
   --color-success:   #22C55E;
   --color-danger:    #EF4444;

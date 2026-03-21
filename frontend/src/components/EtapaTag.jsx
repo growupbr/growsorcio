@@ -21,7 +21,7 @@ const FASE_STYLE = {
   negociacao:  { background: 'rgba(245,158,11,0.10)',  color: '#f59e0b', border: 'rgba(245,158,11,0.22)' },
   credito:     { background: 'rgba(14,165,233,0.10)',  color: '#38bdf8', border: 'rgba(14,165,233,0.22)' },
   fechado:     { background: 'rgba(34,197,94,0.10)',   color: '#22c55e', border: 'rgba(34,197,94,0.22)' },
-  perdido:     { background: 'rgba(72,79,88,0.15)',    color: '#8B949E', border: 'rgba(72,79,88,0.30)' },
+  perdido:     { background: 'rgba(113,113,122,0.15)',    color: '#a1a1aa', border: 'rgba(113,113,122,0.30)' },
 };
 
 export default function EtapaTag({ etapa }) {

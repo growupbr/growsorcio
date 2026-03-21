@@ -16,29 +16,29 @@ export default function Modal({ title, onClose, children, wide = false }) {
       <div
         className={`w-full ${wide ? 'max-w-3xl' : 'max-w-xl'} max-h-[90vh] flex flex-col rounded-xl`}
         style={{
-          background: '#0D1117',
-          border: '1px solid #1C2333',
+          background: '#09090b',
+          border: '1px solid #27272a',
           boxShadow: '0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03)',
         }}
       >
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-          style={{ borderBottom: '1px solid #1C2333' }}
+          style={{ borderBottom: '1px solid #27272a' }}
         >
-          <h2 className="text-base font-semibold" style={{ color: '#F0F6FC' }}>
+          <h2 className="text-base font-semibold" style={{ color: '#f4f4f5' }}>
             {title}
           </h2>
           <button
             onClick={onClose}
             className="rounded-md p-1.5 transition-colors duration-150 cursor-pointer"
-            style={{ color: '#484F58' }}
+            style={{ color: '#71717a' }}
             onMouseEnter={e => {
-              e.currentTarget.style.color = '#F0F6FC';
-              e.currentTarget.style.background = '#161B22';
+              e.currentTarget.style.color = '#f4f4f5';
+              e.currentTarget.style.background = '#18181b';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.color = '#484F58';
+              e.currentTarget.style.color = '#71717a';
               e.currentTarget.style.background = 'transparent';
             }}
           >

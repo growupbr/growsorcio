@@ -100,7 +100,7 @@ function Sk({ className }) {
   return (
     <div
       className={`animate-pulse rounded-xl ${className}`}
-      style={{ background: '#1E293B' }}
+      style={{ background: '#27272a' }}
     />
   );
 }
@@ -137,7 +137,7 @@ function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="chart-tooltip">
-      {label && <p className="text-xs mb-1.5" style={{ color: '#8B949E' }}>{label}</p>}
+      {label && <p className="text-xs mb-1.5" style={{ color: '#a1a1aa' }}>{label}</p>}
       {payload.map((p, i) => (
         <p key={i} className="font-semibold text-sm" style={{ color: p.color || p.fill || '#FF4500' }}>
           {p.name ? `${p.name}: ` : ''}{p.value}
@@ -155,13 +155,13 @@ function MetricaCard({ label, valor, sub, destaque, icon: Icon }) {
       className="rounded-2xl p-5 relative overflow-hidden transition-all duration-150 cursor-default"
       style={{
         background: destaque
-          ? 'linear-gradient(135deg, rgba(255,69,0,0.12) 0%, #0F172A 70%)'
-          : '#0F172A',
-        border: `1px solid ${destaque ? 'rgba(255,69,0,0.32)' : '#334155'}`,
+          ? 'linear-gradient(135deg, rgba(255,69,0,0.12) 0%, #18181b 70%)'
+          : '#18181b',
+        border: `1px solid ${destaque ? 'rgba(255,69,0,0.32)' : '#3f3f46'}`,
       }}
     >
       {/* Label */}
-      <p style={{ fontSize: 11, letterSpacing: '0.1em', color: '#94A3B8', fontWeight: 600 }}
+      <p style={{ fontSize: 11, letterSpacing: '0.1em', color: '#a1a1aa', fontWeight: 600 }}
          className="uppercase mb-4">
         {label}
       </p>
@@ -169,14 +169,14 @@ function MetricaCard({ label, valor, sub, destaque, icon: Icon }) {
       {/* Valor */}
       <p
         className="tabular-nums leading-none"
-        style={{ fontSize: 36, fontWeight: 800, color: destaque ? '#FF4500' : '#F8FAFC' }}
+        style={{ fontSize: 36, fontWeight: 800, color: destaque ? '#FF4500' : '#f4f4f5' }}
       >
         {valor}
       </p>
 
       {/* Sub */}
       {sub && (
-        <p className="mt-2 text-xs font-medium" style={{ color: '#8B949E' }}>{sub}</p>
+        <p className="mt-2 text-xs font-medium" style={{ color: '#a1a1aa' }}>{sub}</p>
       )}
 
       {/* Ícone */}
@@ -213,7 +213,7 @@ function AlertaSection({ followUps, cadencias, reunioes }) {
       <div
         className="rounded-xl px-5 py-4 flex items-center gap-4"
         style={{
-          background: 'linear-gradient(135deg, #0D1117 0%, #0a0f1a 100%)',
+          background: 'linear-gradient(135deg, #09090b 0%, #09090b 100%)',
           border: '1px solid rgba(34,197,94,0.2)',
         }}
       >
@@ -225,7 +225,7 @@ function AlertaSection({ followUps, cadencias, reunioes }) {
         </div>
         <div>
           <p className="text-sm font-semibold" style={{ color: '#22c55e' }}>Tudo em dia</p>
-          <p className="text-xs mt-0.5" style={{ color: '#8B949E' }}>Nenhum alerta para hoje.</p>
+          <p className="text-xs mt-0.5" style={{ color: '#a1a1aa' }}>Nenhum alerta para hoje.</p>
         </div>
       </div>
     );
@@ -263,14 +263,14 @@ function AlertaSection({ followUps, cadencias, reunioes }) {
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: '#F0F6FC' }}>
+                <p className="text-sm font-medium truncate" style={{ color: '#f4f4f5' }}>
                   {item.nome || item.lead_nome}
                 </p>
                 {item.etapa_funil && (
-                  <p className="text-xs truncate" style={{ color: '#8B949E' }}>{item.etapa_funil}</p>
+                  <p className="text-xs truncate" style={{ color: '#a1a1aa' }}>{item.etapa_funil}</p>
                 )}
                 {item.descricao && (
-                  <p className="text-xs truncate" style={{ color: '#8B949E' }}>{item.descricao}</p>
+                  <p className="text-xs truncate" style={{ color: '#a1a1aa' }}>{item.descricao}</p>
                 )}
               </div>
               {item.data_proxima_acao && (
@@ -281,7 +281,7 @@ function AlertaSection({ followUps, cadencias, reunioes }) {
             </div>
           ))}
           {items.length > 4 && (
-            <p className="text-xs pt-1 pl-2" style={{ color: '#484F58' }}>+{items.length - 4} mais</p>
+            <p className="text-xs pt-1 pl-2" style={{ color: '#71717a' }}>+{items.length - 4} mais</p>
           )}
         </div>
       </div>
@@ -315,10 +315,10 @@ function FunilConversao({ totalPorEtapa }) {
   return (
     <div className="card p-5 h-full">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-sm font-semibold" style={{ color: '#F0F6FC' }}>
+        <h3 className="text-sm font-semibold" style={{ color: '#f4f4f5' }}>
           Funil de conversão
         </h3>
-        <span className="text-[11px]" style={{ color: '#484F58' }}>% do estágio anterior</span>
+        <span className="text-[11px]" style={{ color: '#71717a' }}>% do estágio anterior</span>
       </div>
       <div className="space-y-2">
         {dados.map((item, idx) => {
@@ -335,14 +335,14 @@ function FunilConversao({ totalPorEtapa }) {
             <div key={item.etapa} className="flex items-center gap-3">
               <span
                 className="text-xs w-36 flex-shrink-0 text-right truncate"
-                style={{ color: '#8B949E' }}
+                style={{ color: '#a1a1aa' }}
                 title={item.etapa}
               >
                 {item.etapa}
               </span>
               <div
                 className="flex-1 rounded-full h-1.5 overflow-hidden"
-                style={{ background: '#1C2333' }}
+                style={{ background: '#3f3f46' }}
               >
                 <div
                   className="h-full rounded-full transition-all duration-700"
@@ -356,7 +356,7 @@ function FunilConversao({ totalPorEtapa }) {
               </div>
               <span
                 className="text-sm font-bold w-6 text-right tabular-nums"
-                style={{ color: '#F0F6FC' }}
+                style={{ color: '#f4f4f5' }}
               >
                 {item.total}
               </span>
@@ -366,7 +366,7 @@ function FunilConversao({ totalPorEtapa }) {
                     {pctConversao}%
                   </span>
                 ) : (
-                  <span className="text-xs" style={{ color: '#30363D' }}>—</span>
+                  <span className="text-xs" style={{ color: '#52525b' }}>—</span>
                 )}
               </div>
             </div>
@@ -375,7 +375,7 @@ function FunilConversao({ totalPorEtapa }) {
       </div>
       <div className="flex justify-end mt-4 gap-4">
         {[['#22c55e', '≥70%'], ['#f59e0b', '40–69%'], ['#ef4444', '<40%']].map(([color, label]) => (
-          <span key={label} className="flex items-center gap-1 text-xs" style={{ color: '#484F58' }}>
+          <span key={label} className="flex items-center gap-1 text-xs" style={{ color: '#71717a' }}>
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: color }} />
             {label}
           </span>
@@ -422,10 +422,10 @@ export default function Dashboard() {
           <Icons.Alert />
         </div>
         <p className="font-semibold mb-2" style={{ color: '#f87171' }}>Erro ao carregar o dashboard</p>
-        <p className="text-sm mb-6" style={{ color: '#8B949E' }}>{erro}</p>
+        <p className="text-sm mb-6" style={{ color: '#a1a1aa' }}>{erro}</p>
         <pre
           className="text-xs text-left rounded-xl p-4"
-          style={{ background: '#0D1117', border: '1px solid #1C2333', color: '#8B949E' }}
+          style={{ background: '#09090b', border: '1px solid #27272a', color: '#a1a1aa' }}
         >
 {`cd backend
 cp .env.example .env  # se ainda não existir
@@ -493,10 +493,10 @@ npm run dev`}
       {/* ── Header ── */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-extrabold leading-tight" style={{ fontSize: 28, color: '#F0F6FC' }}>
+          <h1 className="font-extrabold leading-tight" style={{ fontSize: 28, color: '#f4f4f5' }}>
             Dashboard
           </h1>
-          <p className="mt-1.5 text-sm" style={{ color: '#8B949E' }}>
+          <p className="mt-1.5 text-sm" style={{ color: '#a1a1aa' }}>
             {taxaGlobal
               ? <>Taxa de conversão global: <span style={{ color: '#FF4500', fontWeight: 600 }}>{taxaGlobal}%</span> · Seguiu → Fechado</>
               : 'Visão geral do funil de vendas'
@@ -531,24 +531,24 @@ npm run dev`}
       {/* ── Origem dos Leads ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-5">
-          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#94A3B8'}}>Leads Anúncio</p>
+          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#a1a1aa'}}>Leads Anúncio</p>
           <p className="text-3xl font-extrabold tabular-nums" style={{color:'#8B5CF6'}}>{totalAnuncio}</p>
-          <p className="text-xs mt-1" style={{color:'#94A3B8'}}>{totalAnuncio > 0 ? `${taxaResposta}% responderam` : '—'}</p>
+          <p className="text-xs mt-1" style={{color:'#a1a1aa'}}>{totalAnuncio > 0 ? `${taxaResposta}% responderam` : '—'}</p>
         </div>
         <div className="card p-5">
-          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#94A3B8'}}>Prospecção</p>
+          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#a1a1aa'}}>Prospecção</p>
           <p className="text-3xl font-extrabold tabular-nums" style={{color:'#FF4500'}}>{totalProspeccao}</p>
-          <p className="text-xs mt-1" style={{color:'#94A3B8'}}>orgânico + indicação</p>
+          <p className="text-xs mt-1" style={{color:'#a1a1aa'}}>orgânico + indicação</p>
         </div>
         <div className="card p-5">
-          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#94A3B8'}}>Reuniões Anúncio</p>
+          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#a1a1aa'}}>Reuniões Anúncio</p>
           <p className="text-3xl font-extrabold tabular-nums" style={{color:'#8B5CF6'}}>{reunioesAnuncio}</p>
-          <p className="text-xs mt-1" style={{color:'#94A3B8'}}>{totalAnuncio > 0 ? `${Math.round((reunioesAnuncio/totalAnuncio)*100)}% de conv.` : '—'}</p>
+          <p className="text-xs mt-1" style={{color:'#a1a1aa'}}>{totalAnuncio > 0 ? `${Math.round((reunioesAnuncio/totalAnuncio)*100)}% de conv.` : '—'}</p>
         </div>
         <div className="card p-5">
-          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#94A3B8'}}>Reuniões Prospecção</p>
+          <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#a1a1aa'}}>Reuniões Prospecção</p>
           <p className="text-3xl font-extrabold tabular-nums" style={{color:'#FF4500'}}>{reunioesProspeccao}</p>
-          <p className="text-xs mt-1" style={{color:'#94A3B8'}}>{totalProspeccao > 0 ? `${Math.round((reunioesProspeccao/totalProspeccao)*100)}% de conv.` : '—'}</p>
+          <p className="text-xs mt-1" style={{color:'#a1a1aa'}}>{totalProspeccao > 0 ? `${Math.round((reunioesProspeccao/totalProspeccao)*100)}% de conv.` : '—'}</p>
         </div>
       </div>
 
@@ -576,23 +576,23 @@ npm run dev`}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Barras — leads por etapa */}
         <div className="card p-5 lg:col-span-2">
-          <h3 className="text-sm font-semibold mb-5" style={{ color: '#F0F6FC' }}>
+          <h3 className="text-sm font-semibold mb-5" style={{ color: '#f4f4f5' }}>
             Leads por etapa do funil
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={dadosBarras} margin={{ top: 16, right: 4, left: -20, bottom: 45 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1C2333" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
               <XAxis
                 dataKey="etapa"
-                tick={{ fill: '#484F58', fontSize: 10, fontFamily: 'Plus Jakarta Sans' }}
+                tick={{ fill: '#71717a', fontSize: 10, fontFamily: 'Plus Jakarta Sans' }}
                 angle={-35}
                 textAnchor="end"
                 interval={0}
-                axisLine={{ stroke: '#1C2333' }}
+                axisLine={{ stroke: '#3f3f46' }}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
+                tick={{ fill: '#71717a', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
                 allowDecimals={false}
                 axisLine={false}
                 tickLine={false}
@@ -602,7 +602,7 @@ npm run dev`}
                 <LabelList
                   dataKey="total"
                   position="top"
-                  style={{ fill: '#8B949E', fontSize: 11, fontFamily: 'Plus Jakarta Sans', fontWeight: 600 }}
+                  style={{ fill: '#a1a1aa', fontSize: 11, fontFamily: 'Plus Jakarta Sans', fontWeight: 600 }}
                 />
                 {dadosBarras.map((_, index) => (
                   <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} fillOpacity={0.9} />
@@ -614,7 +614,7 @@ npm run dev`}
 
         {/* Pizza — temperatura */}
         <div className="card p-5">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: '#F0F6FC' }}>
+          <h3 className="text-sm font-semibold mb-4" style={{ color: '#f4f4f5' }}>
             Temperatura dos leads
           </h3>
           {dadosPizza.length > 0 ? (
@@ -637,7 +637,7 @@ npm run dev`}
                   iconType="circle"
                   iconSize={7}
                   formatter={(value) => (
-                    <span style={{ color: '#8B949E', fontSize: 12, fontFamily: 'Plus Jakarta Sans' }}>
+                    <span style={{ color: '#a1a1aa', fontSize: 12, fontFamily: 'Plus Jakarta Sans' }}>
                       {value}
                     </span>
                   )}
@@ -647,7 +647,7 @@ npm run dev`}
             </ResponsiveContainer>
           ) : (
             <div className="h-48 flex items-center justify-center">
-              <p className="text-sm" style={{ color: '#484F58' }}>Sem dados</p>
+              <p className="text-sm" style={{ color: '#71717a' }}>Sem dados</p>
             </div>
           )}
         </div>
@@ -667,7 +667,7 @@ npm run dev`}
 
         {/* Área — evolução semanal */}
         <div className="card p-5">
-          <h3 className="text-sm font-semibold mb-5" style={{ color: '#F0F6FC' }}>
+          <h3 className="text-sm font-semibold mb-5" style={{ color: '#f4f4f5' }}>
             Novos leads por semana
           </h3>
           {evolucao.length > 0 ? (
@@ -679,15 +679,15 @@ npm run dev`}
                     <stop offset="95%" stopColor="#FF4500" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1C2333" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
                 <XAxis
                   dataKey="semana"
-                  tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
-                  axisLine={{ stroke: '#1C2333' }}
+                  tick={{ fill: '#71717a', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
+                  axisLine={{ stroke: '#3f3f46' }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#484F58', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
+                  tick={{ fill: '#71717a', fontSize: 11, fontFamily: 'Plus Jakarta Sans' }}
                   allowDecimals={false}
                   axisLine={false}
                   tickLine={false}
@@ -707,7 +707,7 @@ npm run dev`}
             </ResponsiveContainer>
           ) : (
             <div className="h-48 flex items-center justify-center">
-              <p className="text-sm" style={{ color: '#484F58' }}>Sem dados nas últimas 8 semanas</p>
+              <p className="text-sm" style={{ color: '#71717a' }}>Sem dados nas últimas 8 semanas</p>
             </div>
           )}
         </div>

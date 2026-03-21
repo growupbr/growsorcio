@@ -97,7 +97,7 @@ function EditarInteracaoForm({ interacao, onSalvo, onCancelar }) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-3"
-      style={{ background: '#1E293B', border: '1px solid rgba(255,69,0,0.32)' }}>
+      style={{ background: '#27272a', border: '1px solid rgba(255,69,0,0.32)' }}>
       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF4500' }}>Editar interação</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -156,8 +156,8 @@ function NovaInteracaoForm({ leadId, onSalvo }) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-3"
-      style={{ background: '#0F172A', border: '1px solid #334155' }}>
-      <p className="text-sm font-semibold" style={{ color: '#F0F6FC' }}>Registrar interação</p>
+      style={{ background: '#18181b', border: '1px solid #3f3f46' }}>
+      <p className="text-sm font-semibold" style={{ color: '#f4f4f5' }}>Registrar interação</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label">Data</label>
@@ -197,7 +197,7 @@ function CadenciaChecklist({ cadencia, onToggle }) {
   const concluidos = cadencia.filter((i) => i.concluido);
 
   if (pendentes.length === 0 && concluidos.length === 0) {
-    return <p className="text-sm py-4 text-center" style={{ color: '#484F58' }}>Nenhum item de cadência.</p>;
+    return <p className="text-sm py-4 text-center" style={{ color: '#71717a' }}>Nenhum item de cadência.</p>;
   }
 
   return (
@@ -205,18 +205,18 @@ function CadenciaChecklist({ cadencia, onToggle }) {
       {[...pendentes, ...concluidos].map((item) => (
         <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg transition-colors"
           style={{
-            background: item.concluido ? 'transparent' : '#0F172A',
-            border: `1px solid ${item.concluido ? '#1E293B' : '#334155'}`,
+            background: item.concluido ? 'transparent' : '#18181b',
+            border: `1px solid ${item.concluido ? '#27272a' : '#3f3f46'}`,
             opacity: item.concluido ? 0.5 : 1,
           }}>
           <button onClick={() => onToggle(item)}
             className="flex-shrink-0 w-4 h-4 mt-0.5 rounded transition-all cursor-pointer flex items-center justify-center"
             style={{
               background: item.concluido ? '#22c55e' : 'transparent',
-              border: `1.5px solid ${item.concluido ? '#22c55e' : '#30363D'}`,
+              border: `1.5px solid ${item.concluido ? '#22c55e' : '#52525b'}`,
             }}
             onMouseEnter={e => { if (!item.concluido) e.currentTarget.style.borderColor = '#FF4500'; }}
-            onMouseLeave={e => { if (!item.concluido) e.currentTarget.style.borderColor = '#30363D'; }}>
+            onMouseLeave={e => { if (!item.concluido) e.currentTarget.style.borderColor = '#52525b'; }}>
             {item.concluido && (
               <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="w-2.5 h-2.5">
                 <polyline points="20 6 9 17 4 12"/>
@@ -225,15 +225,15 @@ function CadenciaChecklist({ cadencia, onToggle }) {
           </button>
           <div className="flex-1 min-w-0">
             <p className="text-sm" style={{
-              color: item.concluido ? '#484F58' : '#F0F6FC',
+              color: item.concluido ? '#71717a' : '#f4f4f5',
               textDecoration: item.concluido ? 'line-through' : 'none',
             }}>
               {item.descricao}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs" style={{ color: '#484F58' }}>{formatarData(item.data_prevista)}</span>
+              <span className="text-xs" style={{ color: '#71717a' }}>{formatarData(item.data_prevista)}</span>
               {item.etapa_relacionada && (
-                <span className="text-xs" style={{ color: '#30363D' }}>· {item.etapa_relacionada}</span>
+                <span className="text-xs" style={{ color: '#52525b' }}>· {item.etapa_relacionada}</span>
               )}
             </div>
           </div>
@@ -267,19 +267,19 @@ function MoverEtapaModal({ lead, onMover, onFechar }) {
             className="w-full text-left px-4 py-3 rounded-lg text-sm transition-all duration-150 flex items-center gap-3 cursor-pointer"
             style={{
               background: etapaSelecionada === etapa ? 'rgba(255,69,0,0.10)' : 'transparent',
-              color: etapaSelecionada === etapa ? '#FF4500' : '#8B949E',
+              color: etapaSelecionada === etapa ? '#FF4500' : '#a1a1aa',
               border: `1px solid ${etapaSelecionada === etapa ? 'rgba(255,69,0,0.25)' : 'transparent'}`,
             }}
             onMouseEnter={e => {
               if (etapaSelecionada !== etapa) {
-                e.currentTarget.style.background = '#161B22';
-                e.currentTarget.style.color = '#F0F6FC';
+                e.currentTarget.style.background = '#18181b';
+                e.currentTarget.style.color = '#f4f4f5';
               }
             }}
             onMouseLeave={e => {
               if (etapaSelecionada !== etapa) {
                 e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#8B949E';
+                e.currentTarget.style.color = '#a1a1aa';
               }
             }}>
             {etapaSelecionada === etapa && (
@@ -342,8 +342,8 @@ function SnoozeModal({ lead, onSalvo, onFechar }) {
   return (
     <Modal title="Congelar lead — Régua 21 dias" onClose={onFechar}>
       <div className="space-y-4">
-        <p className="text-sm" style={{ color: '#8B949E' }}>
-          Congela o lead em <strong style={{ color: '#F0F6FC' }}>Follow-up Ativo</strong> e aciona
+        <p className="text-sm" style={{ color: '#a1a1aa' }}>
+          Congela o lead em <strong style={{ color: '#f4f4f5' }}>Follow-up Ativo</strong> e aciona
           a régua de reengajamento de 21 dias via webhook no n8n.
         </p>
         <div>
@@ -351,7 +351,7 @@ function SnoozeModal({ lead, onSalvo, onFechar }) {
           <input type="date" className="input" value={data} onChange={e => setData(e.target.value)}
             min={hoje()} />
         </div>
-        <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid #334155' }}>
+        <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid #3f3f46' }}>
           {lead.snooze_ate ? (
             <button className="btn-ghost text-sm" onClick={remover} disabled={salvando}>Descongelar</button>
           ) : <div />}
@@ -432,7 +432,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
     return (
       <div className="flex items-center justify-center h-48">
         <div className="w-6 h-6 rounded-full border-2 animate-spin"
-          style={{ borderColor: '#1C2333', borderTopColor: '#FF4500' }} />
+          style={{ borderColor: '#27272a', borderTopColor: '#FF4500' }} />
       </div>
     );
   }
@@ -484,7 +484,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
                 </span>
               )}
             </div>
-            <h2 className="font-extrabold leading-tight" style={{ fontSize: 24, color: '#F8FAFC' }}>
+            <h2 className="font-extrabold leading-tight" style={{ fontSize: 24, color: '#f4f4f5' }}>
               {lead.nome}
             </h2>
             {lead.motivo_descarte && (
@@ -536,9 +536,9 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
         {/* Info rápida */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {infoItems.map(({ label, valor }) => (
-            <div key={label} className="rounded-xl p-3" style={{ background: '#1E293B', border: '1px solid #334155' }}>
-              <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#94A3B8' }}>{label}</p>
-              <p className="text-sm font-semibold" style={{ color: '#F8FAFC' }}>{valor}</p>
+            <div key={label} className="rounded-xl p-3" style={{ background: '#27272a', border: '1px solid #3f3f46' }}>
+              <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#a1a1aa' }}>{label}</p>
+              <p className="text-sm font-semibold" style={{ color: '#f4f4f5' }}>{valor}</p>
             </div>
           ))}
         </div>
@@ -554,29 +554,29 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
             <span className="text-sm font-semibold" style={{ color: '#FF4500' }}>Próxima ação</span>
-            <span className="text-sm font-medium" style={{ color: '#F0F6FC' }}>{lead.tipo_proxima_acao}</span>
-            <span className="text-sm" style={{ color: '#8B949E' }}>em {formatarData(lead.data_proxima_acao)}</span>
+            <span className="text-sm font-medium" style={{ color: '#f4f4f5' }}>{lead.tipo_proxima_acao}</span>
+            <span className="text-sm" style={{ color: '#a1a1aa' }}>em {formatarData(lead.data_proxima_acao)}</span>
           </div>
         )}
       </div>
 
       {/* ─── Abas ──────────────────────────────────────────────────── */}
-      <div className="flex gap-0 mb-5" style={{ borderBottom: '1px solid #334155' }}>
+      <div className="flex gap-0 mb-5" style={{ borderBottom: '1px solid #3f3f46' }}>
         {abas.map((aba) => (
           <button key={aba.id} onClick={() => setAbaAtiva(aba.id)}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-150 cursor-pointer border-b-2 -mb-px"
             style={{
-              color: abaAtiva === aba.id ? '#F0F6FC' : '#8B949E',
+              color: abaAtiva === aba.id ? '#f4f4f5' : '#a1a1aa',
               borderColor: abaAtiva === aba.id ? '#FF4500' : 'transparent',
             }}
-            onMouseEnter={e => { if (abaAtiva !== aba.id) e.currentTarget.style.color = '#C9D1D9'; }}
-            onMouseLeave={e => { if (abaAtiva !== aba.id) e.currentTarget.style.color = '#8B949E'; }}>
+            onMouseEnter={e => { if (abaAtiva !== aba.id) e.currentTarget.style.color = '#d4d4d8'; }}
+            onMouseLeave={e => { if (abaAtiva !== aba.id) e.currentTarget.style.color = '#a1a1aa'; }}>
             {aba.label}
             {aba.count != null && aba.count > 0 && (
               <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums"
                 style={{
-                  background: abaAtiva === aba.id ? 'rgba(255,69,0,0.15)' : '#161B22',
-                  color: abaAtiva === aba.id ? '#FF4500' : '#484F58',
+                  background: abaAtiva === aba.id ? 'rgba(255,69,0,0.15)' : '#18181b',
+                  color: abaAtiva === aba.id ? '#FF4500' : '#71717a',
                 }}>
                 {aba.count}
               </span>
@@ -591,11 +591,11 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
         <div className="space-y-4">
           <NovaInteracaoForm leadId={lead.id} onSalvo={carregar} />
           {lead.interacoes?.length === 0 && (
-            <p className="text-sm text-center py-6" style={{ color: '#484F58' }}>Nenhuma interação registrada.</p>
+            <p className="text-sm text-center py-6" style={{ color: '#71717a' }}>Nenhuma interação registrada.</p>
           )}
           <div className="space-y-3">
             {lead.interacoes?.map((interacao) => (
-              <div key={interacao.id} className="rounded-xl p-4" style={{ background: '#0F172A', border: '1px solid #334155' }}>
+              <div key={interacao.id} className="rounded-xl p-4" style={{ background: '#18181b', border: '1px solid #3f3f46' }}>
                 {editandoInteracaoId === interacao.id ? (
                   <EditarInteracaoForm
                     interacao={interacao}
@@ -610,28 +610,28 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5">
-                        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8B949E' }}>
+                        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#a1a1aa' }}>
                           {interacao.tipo}
                         </span>
-                        <span className="text-xs" style={{ color: '#484F58' }}>{formatarData(interacao.data)}</span>
+                        <span className="text-xs" style={{ color: '#71717a' }}>{formatarData(interacao.data)}</span>
                         <div className="flex items-center gap-1 ml-auto">
                           <button onClick={() => setEditandoInteracaoId(interacao.id)}
                             className="text-xs px-2 py-0.5 rounded cursor-pointer transition-colors"
-                            style={{ color: '#484F58', background: 'transparent' }}
-                            onMouseEnter={e => { e.currentTarget.style.color = '#8B949E'; e.currentTarget.style.background = '#161B22'; }}
-                            onMouseLeave={e => { e.currentTarget.style.color = '#484F58'; e.currentTarget.style.background = 'transparent'; }}>
+                            style={{ color: '#71717a', background: 'transparent' }}
+                            onMouseEnter={e => { e.currentTarget.style.color = '#a1a1aa'; e.currentTarget.style.background = '#18181b'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = '#71717a'; e.currentTarget.style.background = 'transparent'; }}>
                             Editar
                           </button>
                           <button onClick={() => handleExcluirInteracao(interacao.id)}
                             className="text-xs px-2 py-0.5 rounded cursor-pointer transition-colors"
-                            style={{ color: '#484F58', background: 'transparent' }}
+                            style={{ color: '#71717a', background: 'transparent' }}
                             onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.color = '#484F58'; e.currentTarget.style.background = 'transparent'; }}>
+                            onMouseLeave={e => { e.currentTarget.style.color = '#71717a'; e.currentTarget.style.background = 'transparent'; }}>
                             Excluir
                           </button>
                         </div>
                       </div>
-                      <p className="text-sm" style={{ color: '#F0F6FC' }}>{interacao.descricao}</p>
+                      <p className="text-sm" style={{ color: '#f4f4f5' }}>{interacao.descricao}</p>
                       {interacao.proxima_acao && (
                         <p className="text-xs mt-2 font-medium" style={{ color: '#FF4500' }}>
                           → {interacao.proxima_acao}
@@ -653,7 +653,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
       {abaAtiva === 'dados' && (
         <div className="space-y-4">
           <div>
-            <p className="text-[11px] uppercase tracking-widest font-medium mb-3" style={{ color: '#484F58' }}>
+            <p className="text-[11px] uppercase tracking-widest font-medium mb-3" style={{ color: '#71717a' }}>
               Filtro Blessed 4.0
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -666,14 +666,14 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
               ].map(({ label, valor, icon }) => (
                 <div key={label} className="rounded-xl p-4"
                   style={{
-                    background: '#0F172A',
-                    border: `1px solid ${label === 'Restrição CPF' && lead.restricao_cpf ? 'rgba(239,68,68,0.35)' : '#334155'}`,
+                  background: '#18181b',
+                    border: `1px solid ${label === 'Restrição CPF' && lead.restricao_cpf ? 'rgba(239,68,68,0.35)' : '#3f3f46'}`,
                   }}>
-                  <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#94A3B8' }}>
+                  <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#a1a1aa' }}>
                     {label}
                   </p>
                   <p className="text-sm font-semibold"
-                    style={{ color: label === 'Restrição CPF' && lead.restricao_cpf ? '#ef4444' : '#F8FAFC' }}>
+                    style={{ color: label === 'Restrição CPF' && lead.restricao_cpf ? '#ef4444' : '#f4f4f5' }}>
                     {valor}
                   </p>
                 </div>
@@ -682,8 +682,8 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
           </div>
 
           {lead.observacoes && (
-            <div className="rounded-xl p-4" style={{ background: '#0F172A', border: '1px solid #334155' }}>
-              <p className="text-[11px] uppercase tracking-widest font-semibold mb-2" style={{ color: '#94A3B8' }}>Observações</p>
+            <div className="rounded-xl p-4" style={{ background: '#18181b', border: '1px solid #3f3f46' }}>
+              <p className="text-[11px] uppercase tracking-widest font-semibold mb-2" style={{ color: '#a1a1aa' }}>Observações</p>
               <p className="text-sm whitespace-pre-wrap" style={{ color: '#CBD5E1' }}>{lead.observacoes}</p>
             </div>
           )}
@@ -694,8 +694,8 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
               { label: 'Criado em',     valor: formatarData(lead.criado_em) },
               { label: 'Atualizado em', valor: formatarData(lead.atualizado_em) },
             ].map(({ label, valor }) => (
-              <div key={label} className="rounded-xl p-3" style={{ background: '#1E293B', border: '1px solid #334155' }}>
-                <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#94A3B8' }}>{label}</p>
+              <div key={label} className="rounded-xl p-3" style={{ background: '#27272a', border: '1px solid #3f3f46' }}>
+                <p className="text-[11px] uppercase tracking-widest font-semibold mb-1" style={{ color: '#a1a1aa' }}>{label}</p>
                 <p className="text-sm font-medium" style={{ color: '#CBD5E1' }}>{valor}</p>
               </div>
             ))}
@@ -725,9 +725,9 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
 
       {confirmandoExclusao && (
         <Modal title="Confirmar exclusão" onClose={() => setConfirmandoExclusao(false)}>
-          <p className="text-sm mb-6" style={{ color: '#8B949E' }}>
+          <p className="text-sm mb-6" style={{ color: '#a1a1aa' }}>
             Tem certeza que deseja excluir{' '}
-            <strong style={{ color: '#F0F6FC' }}>{lead.nome}</strong>?{' '}
+            <strong style={{ color: '#f4f4f5' }}>{lead.nome}</strong>?{' '}
             Esta ação não pode ser desfeita.
           </p>
           <div className="flex justify-end gap-3">
