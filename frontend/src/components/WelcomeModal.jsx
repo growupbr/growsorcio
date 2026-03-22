@@ -2,6 +2,22 @@ import { useEffect, useRef } from 'react';
 
 const STORAGE_KEY = 'growsorcio_onboarding_v1';
 
+function getStorageItem(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function setStorageItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Ignore storage errors (private mode / blocked storage)
+  }
+}
+
 // ── Ícone de Play ──────────────────────────────────────────────────────────────
 function PlayIcon() {
   return (
@@ -64,7 +80,7 @@ export default function WelcomeModal({ onClose }) {
   });
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, 'true');
+    setStorageItem(STORAGE_KEY, 'true');
     onClose();
   }
 
@@ -291,5 +307,5 @@ export default function WelcomeModal({ onClose }) {
 
 /** Retorna true se o modal ainda não foi visto pelo utilizador */
 export function shouldShowWelcome() {
-  return !localStorage.getItem(STORAGE_KEY);
+  return !getStorageItem(STORAGE_KEY);
 }

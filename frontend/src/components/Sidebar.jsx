@@ -18,6 +18,22 @@ import {
 import GrowsorcioLogo from './GrowsorcioLogo';
 import { useAuth } from '../hooks/useAuth';
 
+function getStoredSidebarState() {
+  try {
+    return localStorage.getItem('sidebar-collapsed') === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function setStoredSidebarState(value) {
+  try {
+    localStorage.setItem('sidebar-collapsed', String(value));
+  } catch {
+    // Ignore storage errors (private mode / blocked storage)
+  }
+}
+
 const NAV_ITEMS = [
   { to: '/dashboard',   label: 'Dashboard',           icon: LayoutDashboard },
   { to: '/kanban',      label: 'Kanban',              icon: KanbanIcon },
@@ -66,13 +82,11 @@ function SidebarLink({ to, label, icon: Icon, locked, collapsed }) {
 
 export default function Sidebar() {
   const { logout } = useAuth();
-  const [collapsed, setCollapsed] = useState(() =>
-    localStorage.getItem('sidebar-collapsed') === 'true'
-  );
+  const [collapsed, setCollapsed] = useState(getStoredSidebarState);
 
   const toggle = () => {
     setCollapsed((prev) => {
-      localStorage.setItem('sidebar-collapsed', String(!prev));
+      setStoredSidebarState(!prev);
       return !prev;
     });
   };
