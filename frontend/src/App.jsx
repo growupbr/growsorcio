@@ -1,15 +1,15 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
-import Kanban from './pages/Kanban';
-import Leads from './pages/Leads';
-import NovoLead from './pages/NovoLead';
 import { useNotificacoes } from './hooks/useNotificacoes';
 import { useAuth } from './hooks/useAuth';
 
 // Lazy-loaded para reduzir bundle inicial (páginas pesadas)
 const LandingPage  = lazy(() => import('./pages/LandingPage'));
+const Dashboard   = lazy(() => import('./pages/Dashboard'));
+const Kanban      = lazy(() => import('./pages/Kanban'));
+const Leads       = lazy(() => import('./pages/Leads'));
+const NovoLead    = lazy(() => import('./pages/NovoLead'));
 const Calculadora  = lazy(() => import('./pages/Calculadora'));
 const Propostas    = lazy(() => import('./pages/Propostas'));
 const Conversas    = lazy(() => import('./pages/Conversas'));
