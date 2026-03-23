@@ -19,6 +19,7 @@ const TreinamentoAula  = lazy(() => import('./pages/TreinamentoAula'));
 const Config           = lazy(() => import('./pages/Config'));
 const Login        = lazy(() => import('./pages/Login'));
 const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'));
+const Checkout     = lazy(() => import('./pages/Checkout'));
 
 function PageLoader() {
   return (
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
@@ -90,6 +92,7 @@ export default function App() {
         <Route path="/v1-preview" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+        <Route path="/checkout" element={<Checkout />} />
         <Route path="/*" element={<Navigate to="/v1-preview" replace />} />
       </Routes>
     </Suspense>

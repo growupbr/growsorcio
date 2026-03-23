@@ -13,6 +13,50 @@ const LANDING_URL = process.env.LANDING_URL || 'https://growsorcio.com.br';
 // ── POST /api/billing/checkout ───────────────────────────────────────────────
 // Cria cliente + cobrança na AbacatePay e retorna a URL de pagamento
 // authMiddleware aplicado aqui — não no router global (billing/webhook deve ser público)
+// ── POST /api/billing/checkout-public ───────────────────────────────────────
+// Endpoint público para novos clientes da landing page (sem auth)
+// organizationId fica null — webhook associa quando o pagamento for confirmado
+router.post('/checkout-public', async (req, res) => {
+  const { plan, billingPeriod = 'monthly', name, email, cellphone, taxId } = req.body;
+
+  if (!plan || !name || !email || !cellphone || !taxId) {
+    return res.status(400).json({ erro: 'Campos obrigatórios: plan, name, email, cellphone, taxId' });
+  }
+  if (!['start', 'pro', 'elite'].includes(plan)) {
+    return res.status(400).json({ erro: 'Plano inválido. Use: start, pro ou elite' });
+  }
+
+  try {
+    // 1. Cria o cliente na AbacatePay
+    const customer = await createCustomer({ name, email, cellphone, taxId });
+
+    // 2. Cria a cobrança
+    const billing = await createBilling({
+      plan,
+      billingPeriod,
+      customerId: customer.id,
+      returnUrl:     `${LANDING_URL}/checkout?plan=${plan}&period=${billingPeriod}`,
+      completionUrl: `${APP_URL}/pagamento-confirmado`,
+    });
+
+    // 3. Salva como pending sem organização — webhook vai associar após pagamento
+    await supabase.from('subscriptions').upsert({
+      organization_id:        null,
+      customer_email:         email,
+      plan,
+      billing_period:         billingPeriod,
+      status:                 'pending',
+      abacatepay_customer_id: customer.id,
+      abacatepay_billing_id:  billing.id,
+    }, { onConflict: 'abacatepay_billing_id' });
+
+    return res.json({ url: billing.url, billingId: billing.id });
+  } catch (err) {
+    console.error('[billing/checkout-public]', err.message);
+    return res.status(500).json({ erro: err.message });
+  }
+});
+
 router.post('/checkout', authMiddleware, async (req, res) => {
   const { plan, billingPeriod = 'monthly', name, email, cellphone, taxId } = req.body;
 
