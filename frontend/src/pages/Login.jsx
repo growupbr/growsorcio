@@ -31,7 +31,17 @@ export default function Login() {
         return;
       }
 
-      navigate('/dashboard', { replace: true });
+      // Se estiver no domínio da landing (growsorcio.com.br), redirecionar para o app
+      const isAppDomain =
+        window.location.hostname.startsWith('app.') ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+      if (isAppDomain) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        window.location.href = 'https://app.growsorcio.com.br/dashboard';
+      }
     } catch {
       setErro('Erro ao conectar. Tente novamente.');
     } finally {
