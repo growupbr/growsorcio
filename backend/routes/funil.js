@@ -1,8 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const { handleSupabaseError } = require('../supabase');
+const { supabase: serviceDb, handleSupabaseError } = require('../supabase');
+
+const DEFAULT_FUNNEL_STAGES = [
+  { name: 'Lead Anúncio',       display_order: 0,  color: '#a78bfa', is_lost: false },
+  { name: 'Analisar Perfil',    display_order: 1,  color: '#f97316', is_lost: false },
+  { name: 'Seguiu Perfil',      display_order: 2,  color: '#f97316', is_lost: false },
+  { name: 'Abordagem Enviada',  display_order: 3,  color: '#f97316', is_lost: false },
+  { name: 'Respondeu',          display_order: 4,  color: '#38bdf8', is_lost: false },
+  { name: 'Em Desenvolvimento', display_order: 5,  color: '#38bdf8', is_lost: false },
+  { name: 'Follow-up Ativo',    display_order: 6,  color: '#38bdf8', is_lost: false },
+  { name: 'Lead Capturado',     display_order: 7,  color: '#38bdf8', is_lost: false },
+  { name: 'Reunião Agendada',   display_order: 8,  color: '#f59e0b', is_lost: false },
+  { name: 'Reunião Realizada',  display_order: 9,  color: '#f59e0b', is_lost: false },
+  { name: 'Proposta Enviada',   display_order: 10, color: '#f59e0b', is_lost: false },
+  { name: 'Follow-up Proposta', display_order: 11, color: '#f59e0b', is_lost: false },
+  { name: 'Fechado',            display_order: 12, color: '#22c55e', is_lost: false },
+  { name: 'Perdido',            display_order: 13, color: '#52525b', is_lost: true  },
+];
 
 // GET /api/funil — lista etapas da org, ordenadas por display_order
+// Auto-seed default stages if none exist yet for this org
 router.get('/', async (req, res) => {
   try {
     const { supabase: db, organizationId } = req;
@@ -11,8 +29,25 @@ router.get('/', async (req, res) => {
       .select('*')
       .eq('organization_id', organizationId)
       .order('display_order', { ascending: true });
+
     if (error) return handleSupabaseError(res, error, 'Erro ao listar etapas');
-    return res.json(data || []);
+
+    if (data && data.length > 0) return res.json(data);
+
+    // Org still has no stages — seed the defaults using service role (bypass RLS)
+    const toInsert = DEFAULT_FUNNEL_STAGES.map((s) => ({ ...s, organization_id: organizationId }));
+    const { data: seeded, error: seedError } = await serviceDb
+      .from('funnel_stages')
+      .insert(toInsert)
+      .select('*');
+
+    if (seedError) {
+      // Seed failed (e.g. table not migrated yet) — return empty so frontend fallback takes over
+      console.error('[funil] Seed failed:', seedError.message);
+      return res.json([]);
+    }
+
+    return res.json(seeded.sort((a, b) => a.display_order - b.display_order));
   } catch (error) {
     return handleSupabaseError(res, error, 'Erro ao listar etapas');
   }
