@@ -26,6 +26,23 @@ const TEMP_AUTO = {
   'Perdido':            'frio',
 };
 
+const DEFAULT_STAGE_META = {
+  'Lead Anúncio':       { color: '#a78bfa', is_lost: false },
+  'Analisar Perfil':    { color: '#f97316', is_lost: false },
+  'Seguiu Perfil':      { color: '#f97316', is_lost: false },
+  'Abordagem Enviada':  { color: '#f97316', is_lost: false },
+  'Respondeu':          { color: '#38bdf8', is_lost: false },
+  'Em Desenvolvimento': { color: '#38bdf8', is_lost: false },
+  'Follow-up Ativo':    { color: '#38bdf8', is_lost: false },
+  'Lead Capturado':     { color: '#38bdf8', is_lost: false },
+  'Reunião Agendada':   { color: '#f59e0b', is_lost: false },
+  'Reunião Realizada':  { color: '#f59e0b', is_lost: false },
+  'Proposta Enviada':   { color: '#f59e0b', is_lost: false },
+  'Follow-up Proposta': { color: '#f59e0b', is_lost: false },
+  'Fechado':            { color: '#22c55e', is_lost: false },
+  'Perdido':            { color: '#52525b', is_lost: true },
+};
+
 function resolverTemperatura(etapa, temperaturaAtual) {
   return TEMP_AUTO[etapa] ?? temperaturaAtual;
 }
@@ -40,6 +57,46 @@ async function validarEtapa(db, organizationId, etapaName) {
     .eq('name', etapaName)
     .maybeSingle();
   return data;
+}
+
+async function garantirEtapa(db, organizationId, etapaName) {
+  const nome = String(etapaName || '').trim();
+  if (!nome) return null;
+
+  const existente = await validarEtapa(db, organizationId, nome);
+  if (existente) return existente;
+
+  const defaults = DEFAULT_STAGE_META[nome] || { color: '#52525b', is_lost: false };
+
+  const { data: last } = await db
+    .from('funnel_stages')
+    .select('display_order')
+    .eq('organization_id', organizationId)
+    .order('display_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const display_order = last ? last.display_order + 1 : 0;
+
+  const { error } = await db
+    .from('funnel_stages')
+    .insert({
+      organization_id: organizationId,
+      name: nome,
+      color: defaults.color,
+      is_lost: defaults.is_lost,
+      display_order,
+    });
+
+  if (error) {
+    // Em corrida de requests, outro insert pode acontecer primeiro.
+    // Nessa situação, apenas tenta ler novamente.
+    const retry = await validarEtapa(db, organizationId, nome);
+    if (retry) return retry;
+    return null;
+  }
+
+  return validarEtapa(db, organizationId, nome);
 }
 
 function toDateOnly(value) {
@@ -350,7 +407,7 @@ router.post('/bulk-update', async (req, res) => {
 
     if (action === 'mudar_etapa') {
       if (!etapa_funil) return res.status(400).json({ erro: 'etapa_funil é obrigatório para mudar_etapa' });
-      const stage = await validarEtapa(db, organizationId, etapa_funil);
+      const stage = await garantirEtapa(db, organizationId, etapa_funil);
       if (!stage) return res.status(400).json({ erro: 'Etapa inválida para esta organização' });
       if (stage.is_lost && !motivo_descarte) {
         return res.status(400).json({ erro: 'motivo_descarte é obrigatório para etapa de descarte' });
@@ -517,7 +574,7 @@ router.post('/', async (req, res) => {
     const { supabase: db, organizationId } = req;
 
     if (etapa_funil) {
-      const stage = await validarEtapa(db, organizationId, etapa_funil);
+      const stage = await garantirEtapa(db, organizationId, etapa_funil);
       if (!stage) return res.status(400).json({ erro: 'Etapa inválida' });
       if (stage.is_lost && !motivo_descarte) {
         return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
@@ -611,7 +668,7 @@ router.put('/:id', async (req, res) => {
 
     let stageValidado = null;
     if (etapa_funil) {
-      stageValidado = await validarEtapa(db, organizationId, etapa_funil);
+      stageValidado = await garantirEtapa(db, organizationId, etapa_funil);
       if (!stageValidado) return res.status(400).json({ erro: 'Etapa inválida' });
     }
 
@@ -669,7 +726,7 @@ router.patch('/:id/etapa', async (req, res) => {
     const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const stage = await validarEtapa(db, organizationId, etapa_funil);
+    const stage = await garantirEtapa(db, organizationId, etapa_funil);
     if (!stage) return res.status(400).json({ erro: 'Etapa inválida' });
     if (stage.is_lost && !motivo_descarte) {
       return res.status(400).json({ erro: 'Motivo do descarte é obrigatório ao descartar um lead' });
