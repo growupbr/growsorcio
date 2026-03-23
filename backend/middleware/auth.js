@@ -43,8 +43,9 @@ async function authMiddleware(req, res, next) {
     return res.status(403).json({ erro: 'Usuário não associado a uma organização' });
   }
 
-  // Client por-request com JWT do usuário — RLS ativo no banco
-  req.supabase = createUserClient(token);
+  // Usa o service role client nas rotas de dados — RLS não está configurado no Supabase,
+  // o isolamento é garantido pelo filtro manual .eq('organization_id', organizationId)
+  req.supabase = supabase;
   req.user = user;
   req.organizationId = organizationId;
   next();
