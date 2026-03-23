@@ -37,6 +37,11 @@ app.use('/api/cadencia', authMiddleware, require('./routes/cadencia'));
 app.use('/api/funil', authMiddleware, require('./routes/funil'));
 app.use('/api/billing', require('./routes/billing')); // auth aplicado por rota interna
 
+// Diagnóstico — retorna userId e organizationId do token atual
+app.get('/api/me', authMiddleware, (req, res) => {
+  res.json({ userId: req.user.id, email: req.user.email, organizationId: req.organizationId });
+});
+
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`GrowSorcio — Backend rodando em http://localhost:${PORT}`);
