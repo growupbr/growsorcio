@@ -66,7 +66,21 @@ function dateKeyForWeek(d) {
   return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }
 
-async function criarCadenciaReuniao(db, organizationId, leadId, dataReuniao) {
+function scopedByOwner(query, req) {
+  let q = query.eq('organization_id', req.organizationId);
+  if (req.userScopeEnabled) {
+    q = q.eq('owner_user_id', req.userId);
+  }
+  return q;
+}
+
+function withOwnerField(payload, req) {
+  if (!req.userScopeEnabled) return payload;
+  return { ...payload, owner_user_id: req.userId };
+}
+
+async function criarCadenciaReuniao(db, req, leadId, dataReuniao) {
+  const { organizationId } = req;
   const base = dataReuniao ? new Date(dataReuniao) : new Date();
   const fmt = (d) => d.toISOString().slice(0, 10);
   const add = (n) => {
@@ -92,13 +106,13 @@ async function criarCadenciaReuniao(db, organizationId, leadId, dataReuniao) {
     ['Follow-up final — solicitar documentos para adesão', fmt(add(21)), 'Negociação'],
   ];
 
-  const payload = itens.map(([descricao, data_prevista, etapa_relacionada]) => ({
+  const payload = itens.map(([descricao, data_prevista, etapa_relacionada]) => withOwnerField({
     organization_id: organizationId,
     lead_id: leadId,
     descricao,
     data_prevista,
     etapa_relacionada,
-  }));
+  }, req));
 
   const { error } = await db.from('cadencia_itens').insert(payload);
   if (error) throw error;
@@ -131,10 +145,10 @@ router.get('/stats/resumo', async (req, res) => {
   try {
     const { supabase: db, organizationId } = req;
 
-    const { data: leads, error: leadsError } = await db
-      .from('leads')
-      .select('*')
-      .eq('organization_id', organizationId);
+    const { data: leads, error: leadsError } = await scopedByOwner(
+      db.from('leads').select('*'),
+      req
+    );
     if (leadsError) return handleSupabaseError(res, leadsError, 'Erro ao calcular resumo');
 
     const leadList = leads || [];
@@ -193,12 +207,15 @@ router.get('/stats/resumo', async (req, res) => {
       (l) => l.snooze_ate && l.snooze_ate > hoje && ['Follow-up Ativo', 'Follow-up Proposta'].includes(l.etapa_funil)
     ).length;
 
-    const { data: cadenciaRows, error: cadenciaError } = await db
+    let cadenciaQuery = db
       .from('cadencia_itens')
       .select('*')
       .eq('organization_id', organizationId)
       .eq('concluido', false)
       .lte('data_prevista', hoje);
+    if (req.userScopeEnabled) cadenciaQuery = cadenciaQuery.eq('owner_user_id', req.userId);
+
+    const { data: cadenciaRows, error: cadenciaError } = await cadenciaQuery;
     if (cadenciaError) return handleSupabaseError(res, cadenciaError, 'Erro ao calcular resumo');
 
     const leadNameById = new Map(leadList.map((l) => [l.id, l.nome]));
@@ -237,11 +254,10 @@ router.get('/stats/evolucao', async (req, res) => {
     const { supabase: db, organizationId } = req;
     const minDate = new Date(Date.now() - 56 * 86400000).toISOString();
 
-    const { data: leads, error } = await db
-      .from('leads')
-      .select('criado_em')
-      .eq('organization_id', organizationId)
-      .gte('criado_em', minDate);
+    const { data: leads, error } = await scopedByOwner(
+      db.from('leads').select('criado_em').gte('criado_em', minDate),
+      req
+    );
     if (error) return handleSupabaseError(res, error, 'Erro ao calcular evolução');
 
     const counts = new Map();
@@ -270,11 +286,10 @@ router.get('/stats/evolucao', async (req, res) => {
 router.get('/export/csv', async (req, res) => {
   try {
     const { supabase: db, organizationId } = req;
-    const { data: csvLeads, error } = await db
-      .from('leads')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .order('criado_em', { ascending: false });
+    const { data: csvLeads, error } = await scopedByOwner(
+      db.from('leads').select('*').order('criado_em', { ascending: false }),
+      req
+    );
 
     if (error) return handleSupabaseError(res, error, 'Erro ao exportar CSV');
 
@@ -366,12 +381,15 @@ router.post('/bulk-update', async (req, res) => {
     }
 
     // UPDATE em lote — 1 query SQL com IN(ids), isolado à org
-    const { data, error } = await db
+    let bulkQuery = db
       .from('leads')
       .update(updatePayload)
       .eq('organization_id', organizationId)
       .in('id', validIds)
       .select('id, etapa_funil, motivo_descarte, temperatura, atualizado_em');
+    if (req.userScopeEnabled) bulkQuery = bulkQuery.eq('owner_user_id', req.userId);
+
+    const { data, error } = await bulkQuery;
 
     if (error) return handleSupabaseError(res, error, 'Erro na atualização em lote');
 
@@ -391,7 +409,7 @@ router.get('/', async (req, res) => {
   const { etapa, temperatura, busca, ordem, origem, periodo, tipo_de_bem } = req.query;
   try {
     const { supabase: db, organizationId } = req;
-    let query = db.from('leads').select('*').eq('organization_id', organizationId);
+    let query = scopedByOwner(db.from('leads').select('*'), req);
 
     if (etapa) query = query.eq('etapa_funil', etapa);
     if (temperatura) query = query.eq('temperatura', temperatura);
@@ -434,30 +452,45 @@ router.get('/:id', async (req, res) => {
     const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: lead, error: leadError } = await db
-      .from('leads')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('id', leadId)
-      .maybeSingle();
+    const { data: lead, error: leadError } = await scopedByOwner(
+      db.from('leads').select('*').eq('id', leadId),
+      req
+    ).maybeSingle();
 
     if (leadError) return handleSupabaseError(res, leadError, 'Erro ao buscar lead');
     if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
 
     const [{ data: interacoes, error: intError }, { data: cadencia, error: cadError }] = await Promise.all([
-      db
-        .from('interacoes')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .eq('lead_id', leadId)
-        .order('data', { ascending: false })
-        .order('id', { ascending: false }),
-      db
-        .from('cadencia_itens')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .eq('lead_id', leadId)
-        .order('data_prevista', { ascending: true }),
+      (req.userScopeEnabled
+        ? db
+            .from('interacoes')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .eq('owner_user_id', req.userId)
+            .eq('lead_id', leadId)
+            .order('data', { ascending: false })
+            .order('id', { ascending: false })
+        : db
+            .from('interacoes')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .eq('lead_id', leadId)
+            .order('data', { ascending: false })
+            .order('id', { ascending: false })),
+      (req.userScopeEnabled
+        ? db
+            .from('cadencia_itens')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .eq('owner_user_id', req.userId)
+            .eq('lead_id', leadId)
+            .order('data_prevista', { ascending: true })
+        : db
+            .from('cadencia_itens')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .eq('lead_id', leadId)
+            .order('data_prevista', { ascending: true })),
     ]);
 
     if (intError) return handleSupabaseError(res, intError, 'Erro ao buscar lead');
@@ -492,11 +525,13 @@ router.post('/', async (req, res) => {
     }
 
     if (whatsapp || email) {
-      let dupQuery = db
-        .from('leads')
-        .select('id, nome')
-        .eq('organization_id', organizationId)
-        .limit(1);
+      let dupQuery = scopedByOwner(
+        db
+          .from('leads')
+          .select('id, nome')
+          .limit(1),
+        req
+      );
 
       if (whatsapp && email) dupQuery = dupQuery.or(`whatsapp.eq.${whatsapp},email.eq.${email}`);
       else if (whatsapp) dupQuery = dupQuery.eq('whatsapp', whatsapp);
@@ -515,7 +550,7 @@ router.post('/', async (req, res) => {
     const etapaFinal = etapa_funil || 'Analisar Perfil';
     const tempFinal = resolverTemperatura(etapaFinal, temperatura || 'frio');
 
-    const payload = {
+    const payload = withOwnerField({
       organization_id: organizationId,
       nome,
       whatsapp: whatsapp || null,
@@ -533,7 +568,7 @@ router.post('/', async (req, res) => {
       tipo_proxima_acao: tipo_proxima_acao || null,
       observacoes: observacoes || null,
       origem: origem || 'prospeccao',
-    };
+    }, req);
 
     const { data: lead, error } = await db
       .from('leads')
@@ -544,7 +579,7 @@ router.post('/', async (req, res) => {
     if (error) return handleSupabaseError(res, error, 'Erro ao criar lead');
 
     if (etapaFinal === 'Reunião Agendada') {
-      await criarCadenciaReuniao(db, organizationId, lead.id, data_proxima_acao);
+      await criarCadenciaReuniao(db, req, lead.id, data_proxima_acao);
     }
 
     return res.status(201).json(lead);
@@ -566,12 +601,10 @@ router.put('/:id', async (req, res) => {
     const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: atual, error: findError } = await db
-      .from('leads')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('id', leadId)
-      .maybeSingle();
+    const { data: atual, error: findError } = await scopedByOwner(
+      db.from('leads').select('*').eq('id', leadId),
+      req
+    ).maybeSingle();
 
     if (findError) return handleSupabaseError(res, findError, 'Erro ao atualizar lead');
     if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
@@ -610,18 +643,15 @@ router.put('/:id', async (req, res) => {
       origem: origem ?? atual.origem,
     };
 
-    const { data: updated, error } = await db
-      .from('leads')
-      .update(payload)
-      .eq('organization_id', organizationId)
-      .eq('id', leadId)
-      .select('*')
-      .single();
+    const { data: updated, error } = await scopedByOwner(
+      db.from('leads').update(payload).eq('id', leadId),
+      req
+    ).select('*').single();
 
     if (error) return handleSupabaseError(res, error, 'Erro ao atualizar lead');
 
     if (etapa_funil === 'Reunião Agendada' && atual.etapa_funil !== 'Reunião Agendada') {
-      await criarCadenciaReuniao(db, organizationId, atual.id, data_proxima_acao || atual.data_proxima_acao);
+      await criarCadenciaReuniao(db, req, atual.id, data_proxima_acao || atual.data_proxima_acao);
     }
 
     return res.json(updated);
@@ -645,34 +675,32 @@ router.patch('/:id/etapa', async (req, res) => {
       return res.status(400).json({ erro: 'Motivo do descarte é obrigatório ao descartar um lead' });
     }
 
-    const { data: atual, error: findError } = await db
-      .from('leads')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('id', leadId)
-      .maybeSingle();
+    const { data: atual, error: findError } = await scopedByOwner(
+      db.from('leads').select('*').eq('id', leadId),
+      req
+    ).maybeSingle();
 
     if (findError) return handleSupabaseError(res, findError, 'Erro ao atualizar etapa');
     if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
 
     const novaTemp = resolverTemperatura(etapa_funil, atual.temperatura);
 
-    const { data: updated, error } = await db
-      .from('leads')
-      .update({
-        etapa_funil,
-        temperatura: novaTemp,
-        motivo_descarte: motivo_descarte || atual.motivo_descarte,
-      })
-      .eq('organization_id', organizationId)
-      .eq('id', leadId)
-      .select('*')
-      .single();
+    const { data: updated, error } = await scopedByOwner(
+      db
+        .from('leads')
+        .update({
+          etapa_funil,
+          temperatura: novaTemp,
+          motivo_descarte: motivo_descarte || atual.motivo_descarte,
+        })
+        .eq('id', leadId),
+      req
+    ).select('*').single();
 
     if (error) return handleSupabaseError(res, error, 'Erro ao atualizar etapa');
 
     if (etapa_funil === 'Reunião Agendada' && atual.etapa_funil !== 'Reunião Agendada') {
-      await criarCadenciaReuniao(db, organizationId, atual.id, atual.data_proxima_acao);
+      await criarCadenciaReuniao(db, req, atual.id, atual.data_proxima_acao);
     }
 
     return res.json(updated);
@@ -688,12 +716,10 @@ router.patch('/:id/snooze', async (req, res) => {
     const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: atual, error: findError } = await db
-      .from('leads')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('id', leadId)
-      .maybeSingle();
+    const { data: atual, error: findError } = await scopedByOwner(
+      db.from('leads').select('*').eq('id', leadId),
+      req
+    ).maybeSingle();
 
     if (findError) return handleSupabaseError(res, findError, 'Erro ao aplicar snooze');
     if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
@@ -705,13 +731,10 @@ router.patch('/:id/snooze', async (req, res) => {
         : atual.etapa_funil,
     };
 
-    const { data: updated, error } = await db
-      .from('leads')
-      .update(payload)
-      .eq('organization_id', organizationId)
-      .eq('id', leadId)
-      .select('*')
-      .single();
+    const { data: updated, error } = await scopedByOwner(
+      db.from('leads').update(payload).eq('id', leadId),
+      req
+    ).select('*').single();
 
     if (error) return handleSupabaseError(res, error, 'Erro ao aplicar snooze');
     return res.json(updated);
@@ -726,21 +749,18 @@ router.delete('/:id', async (req, res) => {
     const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: lead, error: findError } = await db
-      .from('leads')
-      .select('id')
-      .eq('organization_id', organizationId)
-      .eq('id', leadId)
-      .maybeSingle();
+    const { data: lead, error: findError } = await scopedByOwner(
+      db.from('leads').select('id').eq('id', leadId),
+      req
+    ).maybeSingle();
 
     if (findError) return handleSupabaseError(res, findError, 'Erro ao remover lead');
     if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
 
-    const { error } = await db
-      .from('leads')
-      .delete()
-      .eq('organization_id', organizationId)
-      .eq('id', leadId);
+    const { error } = await scopedByOwner(
+      db.from('leads').delete().eq('id', leadId),
+      req
+    );
 
     if (error) return handleSupabaseError(res, error, 'Erro ao remover lead');
     return res.json({ mensagem: 'Lead removido com sucesso' });
