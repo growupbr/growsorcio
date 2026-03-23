@@ -1,11 +1,19 @@
+import { supabase } from './supabaseClient';
+
 const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:3334');
 const BASE = `${BASE_URL}/api`;
 
+async function getAuthHeader() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+
 async function request(path, options = {}) {
+  const authHeader = await getAuthHeader();
   let res;
   try {
     res = await fetch(`${BASE}${path}`, {
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      headers: { 'Content-Type': 'application/json', ...authHeader, ...options.headers },
       ...options,
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
