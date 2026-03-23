@@ -66,4 +66,24 @@ async function getBilling(billingId) {
   return apiFetch('GET', `/v1/billing/get?id=${billingId}`);
 }
 
-module.exports = { createCustomer, createBilling, getBilling, PRICES };
+// ── PIX QR Code direto (sem checkout page) ───────────────────────────────────
+async function createPixQrCode({ plan, billingPeriod, name, email, cellphone, taxId }) {
+  const amount = PRICES[plan]?.[billingPeriod];
+  if (!amount) throw new Error(`Plano inválido: ${plan}/${billingPeriod}`);
+
+  const periodLabel = billingPeriod === 'yearly' ? 'Anual' : 'Mensal';
+  const planLabel   = { start: 'Grow START', pro: 'Grow PRO', elite: 'Grow ELITE AI' }[plan];
+
+  return apiFetch('POST', '/v1/pixQrCode/create', {
+    amount,
+    description: `${planLabel} — ${periodLabel}`,
+    expiresIn: 3600, // 1 hora
+    customer: { name, email, cellphone, taxId },
+  });
+}
+
+async function getPixQrCode(pixId) {
+  return apiFetch('GET', `/v1/pixQrCode/check?id=${pixId}`);
+}
+
+module.exports = { createCustomer, createBilling, getBilling, createPixQrCode, getPixQrCode, PRICES };

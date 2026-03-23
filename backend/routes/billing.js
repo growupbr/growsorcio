@@ -5,7 +5,7 @@ const express = require('express');
 const router  = express.Router();
 const { supabase } = require('../supabase');
 const { authMiddleware } = require('../middleware/auth');
-const { createCustomer, createBilling } = require('../services/abacatepay');
+const { createCustomer, createBilling, createPixQrCode, getPixQrCode } = require('../services/abacatepay');
 
 const APP_URL    = process.env.APP_URL    || 'https://app.growsorcio.com.br';
 const LANDING_URL = process.env.LANDING_URL || 'https://growsorcio.com.br';
@@ -85,6 +85,45 @@ router.post('/checkout', authMiddleware, async (req, res) => {
     return res.json({ url: billing.url, billingId: billing.id });
   } catch (err) {
     console.error('[billing/checkout]', err.message);
+    return res.status(500).json({ erro: err.message });
+  }
+});
+
+// ── POST /api/billing/pix ────────────────────────────────────────────────────
+// Gera PIX QR Code diretamente — sem página intermediária do AbacatePay
+// Público (landing page)
+router.post('/pix', async (req, res) => {
+  const { plan, billingPeriod = 'monthly', name, email, cellphone, taxId } = req.body;
+
+  if (!plan || !name || !email || !cellphone || !taxId) {
+    return res.status(400).json({ erro: 'Campos obrigatórios: plan, name, email, cellphone, taxId' });
+  }
+  if (!['start', 'pro', 'elite'].includes(plan)) {
+    return res.status(400).json({ erro: 'Plano inválido.' });
+  }
+
+  try {
+    const pix = await createPixQrCode({ plan, billingPeriod, name, email, cellphone, taxId });
+    return res.json({
+      pixId:       pix.id,
+      brCode:      pix.brCode,        // copia-e-cola
+      qrCodeImage: pix.brCodeBase64,  // data:image/png;base64,...
+      amount:      pix.amount,
+      expiresAt:   pix.expiresAt,
+    });
+  } catch (err) {
+    console.error('[billing/pix]', err.message);
+    return res.status(500).json({ erro: err.message });
+  }
+});
+
+// ── GET /api/billing/pix/:id ─────────────────────────────────────────────────
+// Polling de status do PIX
+router.get('/pix/:id', async (req, res) => {
+  try {
+    const pix = await getPixQrCode(req.params.id);
+    return res.json({ status: pix.status }); // PENDING | PAID | EXPIRED
+  } catch (err) {
     return res.status(500).json({ erro: err.message });
   }
 });
