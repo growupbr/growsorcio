@@ -39,17 +39,6 @@ router.post('/checkout-public', async (req, res) => {
       completionUrl: `${APP_URL}/pagamento-confirmado`,
     });
 
-    // 3. Salva como pending sem organização — webhook vai associar após pagamento
-    await supabase.from('subscriptions').upsert({
-      organization_id:        null,
-      customer_email:         email,
-      plan,
-      billing_period:         billingPeriod,
-      status:                 'pending',
-      abacatepay_customer_id: customer.id,
-      abacatepay_billing_id:  billing.id,
-    }, { onConflict: 'abacatepay_billing_id' });
-
     return res.json({ url: billing.url, billingId: billing.id });
   } catch (err) {
     console.error('[billing/checkout-public]', err.message);

@@ -6,11 +6,21 @@ const app = express();
 const PORT = process.env.PORT || 3334;
 
 const ORIGENS_PERMITIDAS = process.env.NODE_ENV === 'production'
-  ? ['https://app.growsorcio.com.br']
+  ? [
+      'https://app.growsorcio.com.br',
+      'https://growsorcio.com.br',
+      'https://www.growsorcio.com.br',
+    ]
   : ['http://localhost:3000', 'http://localhost:5173'];
 
 app.use(cors({
-  origin: ORIGENS_PERMITIDAS,
+  origin(origin, callback) {
+    if (!origin || ORIGENS_PERMITIDAS.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origem não permitida por CORS: ${origin}`));
+  },
   credentials: true,
 }));
 app.use(express.json());
