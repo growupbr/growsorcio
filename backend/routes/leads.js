@@ -47,6 +47,11 @@ function resolverTemperatura(etapa, temperaturaAtual) {
   return TEMP_AUTO[etapa] ?? temperaturaAtual;
 }
 
+function stageFallback(etapaName) {
+  const nome = String(etapaName || '').trim();
+  return { name: nome, is_lost: nome === 'Perdido' };
+}
+
 // Valida se uma etapa pertence à org e retorna o registro (ou null se inválida)
 async function validarEtapa(db, organizationId, etapaName) {
   if (!etapaName) return null;
@@ -407,8 +412,7 @@ router.post('/bulk-update', async (req, res) => {
 
     if (action === 'mudar_etapa') {
       if (!etapa_funil) return res.status(400).json({ erro: 'etapa_funil é obrigatório para mudar_etapa' });
-      const stage = await garantirEtapa(db, organizationId, etapa_funil);
-      if (!stage) return res.status(400).json({ erro: 'Etapa inválida para esta organização' });
+      const stage = await garantirEtapa(db, organizationId, etapa_funil) || stageFallback(etapa_funil);
       if (stage.is_lost && !motivo_descarte) {
         return res.status(400).json({ erro: 'motivo_descarte é obrigatório para etapa de descarte' });
       }
@@ -574,8 +578,7 @@ router.post('/', async (req, res) => {
     const { supabase: db, organizationId } = req;
 
     if (etapa_funil) {
-      const stage = await garantirEtapa(db, organizationId, etapa_funil);
-      if (!stage) return res.status(400).json({ erro: 'Etapa inválida' });
+      const stage = await garantirEtapa(db, organizationId, etapa_funil) || stageFallback(etapa_funil);
       if (stage.is_lost && !motivo_descarte) {
         return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
       }
@@ -668,8 +671,7 @@ router.put('/:id', async (req, res) => {
 
     let stageValidado = null;
     if (etapa_funil) {
-      stageValidado = await garantirEtapa(db, organizationId, etapa_funil);
-      if (!stageValidado) return res.status(400).json({ erro: 'Etapa inválida' });
+      stageValidado = await garantirEtapa(db, organizationId, etapa_funil) || stageFallback(etapa_funil);
     }
 
     const etapaFinal = etapa_funil ?? atual.etapa_funil;
@@ -726,8 +728,7 @@ router.patch('/:id/etapa', async (req, res) => {
     const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const stage = await garantirEtapa(db, organizationId, etapa_funil);
-    if (!stage) return res.status(400).json({ erro: 'Etapa inválida' });
+    const stage = await garantirEtapa(db, organizationId, etapa_funil) || stageFallback(etapa_funil);
     if (stage.is_lost && !motivo_descarte) {
       return res.status(400).json({ erro: 'Motivo do descarte é obrigatório ao descartar um lead' });
     }
