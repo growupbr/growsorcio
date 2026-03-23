@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { supabase, getOrganizationId, handleSupabaseError } = require('../supabase');
+const { handleSupabaseError } = require('../supabase');
 
 const TIPOS_VALIDOS = ['DM', 'WhatsApp', 'Ligação', 'Reunião', 'E-mail', 'Anotação'];
 
@@ -10,8 +10,8 @@ router.get('/', async (req, res) => {
   if (!lead_id) return res.status(400).json({ erro: 'lead_id é obrigatório' });
 
   try {
-    const organizationId = await getOrganizationId();
-    const { data, error } = await supabase
+    const { supabase: db, organizationId } = req;
+    const { data, error } = await db
       .from('interacoes')
       .select('*')
       .eq('organization_id', organizationId)
@@ -38,9 +38,9 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
 
-    const { data: lead, error: leadError } = await supabase
+    const { data: lead, error: leadError } = await db
       .from('leads')
       .select('id')
       .eq('organization_id', organizationId)
@@ -50,7 +50,7 @@ router.post('/', async (req, res) => {
     if (leadError) return handleSupabaseError(res, leadError, 'Erro ao validar lead');
     if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
 
-    const { data: created, error } = await supabase
+    const { data: created, error } = await db
       .from('interacoes')
       .insert({
         organization_id: organizationId,
@@ -78,9 +78,9 @@ router.put('/:id', async (req, res) => {
   }
 
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
 
-    const { data: interacao, error: findError } = await supabase
+    const { data: interacao, error: findError } = await db
       .from('interacoes')
       .select('*')
       .eq('organization_id', organizationId)
@@ -97,7 +97,7 @@ router.put('/:id', async (req, res) => {
       proxima_acao: proxima_acao !== undefined ? proxima_acao : interacao.proxima_acao,
     };
 
-    const { data: updated, error } = await supabase
+    const { data: updated, error } = await db
       .from('interacoes')
       .update(payload)
       .eq('organization_id', organizationId)
@@ -115,9 +115,9 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/interacoes/:id
 router.delete('/:id', async (req, res) => {
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
 
-    const { data: interacao, error: findError } = await supabase
+    const { data: interacao, error: findError } = await db
       .from('interacoes')
       .select('id')
       .eq('organization_id', organizationId)
@@ -127,7 +127,7 @@ router.delete('/:id', async (req, res) => {
     if (findError) return handleSupabaseError(res, findError, 'Erro ao remover interação');
     if (!interacao) return res.status(404).json({ erro: 'Interação não encontrada' });
 
-    const { error } = await supabase
+    const { error } = await db
       .from('interacoes')
       .delete()
       .eq('organization_id', organizationId)

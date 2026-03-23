@@ -11,9 +11,21 @@ export default defineConfig({
     },
   },
   build: {
-    minify: 'terser',
-    terserOptions: {
-      compress: { drop_console: true, drop_debugger: true },
+    minify: 'esbuild',          // built-in, no extra dep
+    chunkSizeWarningLimit: 500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React — cacheable across every deploy
+          'vendor-react':    ['react', 'react-dom', 'react-router-dom'],
+          // Heavy visualisation lib — only loaded with Dashboard
+          'vendor-recharts': ['recharts'],
+          // DnD — only loaded with Kanban
+          'vendor-dnd':      ['@dnd-kit/core', '@dnd-kit/utilities'],
+          // Animation — only loaded with LandingPage
+          'vendor-framer':   ['framer-motion'],
+        },
+      },
     },
   },
 });

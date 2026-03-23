@@ -58,4 +58,14 @@ export const api = {
   exportarCSV: () => {
     window.open(`${BASE_URL}/api/leads/export/csv`, '_blank');
   },
+
+  // Funil de etapas
+  listarEtapas: () => request('/funil'),
+  criarEtapa: (dados) => request('/funil', { method: 'POST', body: dados }),
+  atualizarEtapa: (id, dados) => request(`/funil/${id}`, { method: 'PUT', body: dados }),
+  reordenarEtapas: (items) => request('/funil/reorder', { method: 'PATCH', body: items }),
+  excluirEtapa: (id) => request(`/funil/${id}`, { method: 'DELETE' }),
+
+  // Bulk actions
+  bulkUpdate: (payload) => request('/leads/bulk-update', { method: 'POST', body: payload }),
 };

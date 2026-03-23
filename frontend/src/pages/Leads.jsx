@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import TemperaturaBadge from '../components/TemperaturaBadge';
 import EtapaTag from '../components/EtapaTag';
 import Modal from '../components/Modal';
+import BulkActionBar from '../components/BulkActionBar';
 import LeadPerfil from './LeadPerfil';
 import { ETAPAS } from '../constants/etapas';
 
@@ -138,6 +139,7 @@ export default function Leads() {
   const [carregando, setCarregando] = useState(true);
   const [leadAberto, setLeadAberto] = useState(null);
   const [filtros, setFiltros]       = useState(filtrosPadrao);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   // Busca com debounce de 350ms para evitar fetch a cada tecla
   const [buscaInput, setBuscaInput] = useState(filtrosPadrao().busca);
   const buscaDebounceRef = useRef(null);
@@ -181,6 +183,39 @@ export default function Leads() {
     setBuscaInput('');
     clearTimeout(buscaDebounceRef.current);
     setFiltros({ busca: '', etapa: '', temperatura: '', periodo: '', origem: '', ordem: 'proxima_acao' });
+  }
+
+  // ── Bulk selection helpers ─────────────────────────────────────────────────
+  const todosIds = leads.map((l) => l.id);
+  const todosSelected = todosIds.length > 0 && todosIds.every((id) => selectedIds.has(id));
+  const alguemSelected = todosIds.some((id) => selectedIds.has(id));
+
+  function toggleSelect(id, e) {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll(e) {
+    e.stopPropagation();
+    if (todosSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(todosIds));
+    }
+  }
+
+  function handleBulkSuccess(diffs) {
+    // Aplica diffs otimisticamente — evita re-fetch completo
+    setLeadsBase((prev) =>
+      prev.map((lead) => {
+        const diff = diffs.find((d) => d.id === lead.id);
+        return diff ? { ...lead, ...diff } : lead;
+      })
+    );
   }
 
   const temFiltroAtivo =
@@ -391,40 +426,59 @@ export default function Leads() {
         >
           {/* Header */}
           <div
-            className="grid px-6 py-3"
+            className="grid px-6 py-3 items-center"
             style={{
               background: '#18181b',
               borderBottom: '1px solid rgba(255,255,255,0.06)',
-              gridTemplateColumns: '2fr 1fr 1.2fr 1fr 1fr',
+              gridTemplateColumns: '36px 2fr 1fr 1.2fr 1fr 1fr',
             }}
           >
+            {/* Checkbox selecionar todos */}
+            <div className="flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={todosSelected}
+                ref={(el) => { if (el) el.indeterminate = alguemSelected && !todosSelected; }}
+                onChange={toggleSelectAll}
+                onClick={(e) => e.stopPropagation()}
+                className="w-4 h-4 rounded cursor-pointer accent-orange-500"
+              />
+            </div>
             {['Lead', 'Tipo de bem', 'Etapa', 'Temperatura', 'Próxima ação'].map((h) => (
-              <span
-                key={h}
-                className="section-label"
-              >
-                {h}
-              </span>
+              <span key={h} className="section-label">{h}</span>
             ))}
           </div>
 
           {/* Linhas */}
           <div>
-            {leads.map((lead, idx) => (
+            {leads.map((lead, idx) => {
+              const isSelected = selectedIds.has(lead.id);
+              return (
               <div
                 key={lead.id}
                 onClick={() => setLeadAberto(lead.id)}
-                className="grid px-6 py-4 cursor-pointer"
+                className="grid px-6 py-4 cursor-pointer items-center"
                 style={{
-                  gridTemplateColumns: '2fr 1fr 1.2fr 1fr 1fr',
+                  gridTemplateColumns: '36px 2fr 1fr 1.2fr 1fr 1fr',
                   borderBottom: idx < leads.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                  borderLeft: lead.origem === 'anuncio' ? '3px solid #7c3aed' : '3px solid transparent',
-                  background: 'transparent',
+                  borderLeft: isSelected
+                    ? '3px solid #FF4500'
+                    : lead.origem === 'anuncio' ? '3px solid #7c3aed' : '3px solid transparent',
+                  background: isSelected ? 'rgba(255,69,0,0.04)' : 'transparent',
                   transition: 'background 150ms ease-out',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = '#27272a'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#27272a'; }}
+                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
               >
+                {/* Checkbox */}
+                <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => toggleSelect(lead.id, e)}
+                    className="w-4 h-4 rounded cursor-pointer accent-orange-500"
+                  />
+                </div>
                 {/* Lead */}
                 <div className="flex items-center gap-3 min-w-0">
                   <Avatar nome={lead.nome} />
@@ -484,7 +538,8 @@ export default function Leads() {
                   </span>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}
@@ -499,6 +554,13 @@ export default function Leads() {
           />
         </Modal>
       )}
+
+      {/* Bulk action bar */}
+      <BulkActionBar
+        selectedIds={selectedIds}
+        onDeselect={() => setSelectedIds(new Set())}
+        onSuccess={handleBulkSuccess}
+      />
     </div>
   );
 }

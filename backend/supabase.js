@@ -4,42 +4,26 @@ const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SUPABASE_MIGRATION_ORG_NAME = process.env.SUPABASE_MIGRATION_ORG_NAME || 'GrowSorcio Migrado';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error('Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no backend/.env');
 }
+if (!SUPABASE_ANON_KEY) {
+  throw new Error('Configure SUPABASE_ANON_KEY no backend/.env');
+}
 
+// service_role: bypassa RLS — usar APENAS para auth.getUser() e webhooks externos
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
-let cachedOrganizationId = null;
-
-async function getOrganizationId() {
-  if (cachedOrganizationId) return cachedOrganizationId;
-
-  if (process.env.SUPABASE_ORGANIZATION_ID) {
-    cachedOrganizationId = process.env.SUPABASE_ORGANIZATION_ID;
-    return cachedOrganizationId;
-  }
-
-  const { data, error } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('name', SUPABASE_MIGRATION_ORG_NAME)
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) {
-    throw new Error(
-      `Organizacao nao encontrada com nome '${SUPABASE_MIGRATION_ORG_NAME}'. Defina SUPABASE_ORGANIZATION_ID no .env.`
-    );
-  }
-
-  cachedOrganizationId = data.id;
-  return cachedOrganizationId;
+// Client autenticado com JWT do usuário — RLS ativo, isolamento garantido pelo banco
+function createUserClient(token) {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
 }
 
 function handleSupabaseError(res, error, fallback = 'Erro interno') {
@@ -49,6 +33,6 @@ function handleSupabaseError(res, error, fallback = 'Erro interno') {
 
 module.exports = {
   supabase,
-  getOrganizationId,
+  createUserClient,
   handleSupabaseError,
 };

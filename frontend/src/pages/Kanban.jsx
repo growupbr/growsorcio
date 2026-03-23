@@ -5,19 +5,11 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api/client';
+import { useFunilStages } from '../hooks/useFunilStages';
 import TemperaturaBadge from '../components/TemperaturaBadge';
+import BulkActionBar from '../components/BulkActionBar';
 import Modal from '../components/Modal';
 import LeadPerfil from './LeadPerfil';
-import { ETAPAS_KANBAN as ETAPAS } from '../constants/etapas';
-
-// Dot colors per phase — minimal Huly-style indicators
-const FASE_DOT = {
-  anuncio:   '#a78bfa',
-  captacao:  '#f97316',
-  comercial: '#f59e0b',
-  fechado:   '#22c55e',
-  perdido:   '#52525b',
-};
 
 function formatarData(str) {
   if (!str) return null;
@@ -133,7 +125,7 @@ function InlineAddForm({ etapaNome, onAdd, onCancel }) {
 
 // ─── Lead Card (draggável) ────────────────────────────────────────────────────
 
-function LeadCard({ lead, onClick }) {
+function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: String(lead.id),
     data: { lead },
@@ -143,6 +135,7 @@ function LeadCard({ lead, onClick }) {
     transform: CSS.Translate.toString(transform),
     opacity: isDragging ? 0 : 1,
     transition: isDragging ? 'none' : 'opacity 0.2s ease',
+    ...(isSelected ? { borderColor: 'rgba(255,69,0,0.45)', background: 'rgba(255,69,0,0.05)' } : {}),
   };
 
   return (
@@ -156,8 +149,24 @@ function LeadCard({ lead, onClick }) {
           onClick(lead.id);
         }
       }}
-      className="kanban-card group hover:border-zinc-700/60 transition-colors duration-200"
+      className="kanban-card group hover:border-zinc-700/60 transition-colors duration-200 relative"
     >
+      {/* Checkbox de seleção — top-right, visível no hover ou quando selecionado */}
+      <div
+        className={`absolute top-2 right-2 z-10 transition-opacity duration-150 ${
+          isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onToggleSelect && onToggleSelect(lead.id); }}
+      >
+        <input
+          type="checkbox"
+          checked={!!isSelected}
+          onChange={() => {}}
+          className="w-4 h-4 rounded cursor-pointer accent-orange-500"
+        />
+      </div>
+
       {/* Badge anúncio */}
       {lead.origem === 'anuncio' && (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full mb-2
@@ -249,9 +258,9 @@ function LeadCardOverlay({ lead }) {
 
 // ─── Coluna do Kanban ─────────────────────────────────────────────────────────
 
-function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd }) {
-  const { setNodeRef } = useDroppable({ id: etapa.nome });
-  const dotColor = FASE_DOT[etapa.fase] || '#52525b';
+function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect }) {
+  const { setNodeRef } = useDroppable({ id: etapa.name });
+  const dotColor = etapa.color || '#52525b';
 
   return (
     <div ref={setNodeRef} className="flex-shrink-0 flex flex-col" style={{ width: 260 }}>
@@ -259,7 +268,7 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
       <div className="flex items-center gap-2 px-1 py-2">
         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dotColor }} />
         <span className="text-xs font-semibold text-zinc-300 truncate">
-          {etapa.nome}
+          {etapa.name}
         </span>
         <span className="text-[10px] font-bold text-zinc-600 tabular-nums ml-auto">
           {leads.length}
@@ -269,7 +278,7 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
       {/* Botão "+" ou formulário inline — logo abaixo do header */}
       {adicionando ? (
         <InlineAddForm
-          etapaNome={etapa.nome}
+          etapaNome={etapa.name}
           onAdd={onAdd}
           onCancel={onCancelarAdd}
         />
@@ -301,7 +310,13 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
             </p>
           </div>
         ) : leads.map((lead) => (
-          <LeadCard key={lead.id} lead={lead} onClick={onCardClick} />
+          <LeadCard
+            key={lead.id}
+            lead={lead}
+            onClick={onCardClick}
+            isSelected={selectedIds?.has(lead.id)}
+            onToggleSelect={onToggleSelect}
+          />
         ))}
       </div>
     </div>
@@ -349,6 +364,7 @@ function KanbanSkeleton() {
 // ─── Página Kanban ────────────────────────────────────────────────────────────
 
 export default function Kanban() {
+  const { etapas, carregando: carregandoEtapas } = useFunilStages();
   const [leads, setLeads] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [leadAberto, setLeadAberto] = useState(null);
@@ -356,6 +372,24 @@ export default function Kanban() {
   const [sobreColuna, setSobreColuna] = useState(null);
   // Coluna com formulário inline ativo (null = nenhuma)
   const [colunaAdicionando, setColunaAdicionando] = useState(null);
+  const [selectedIds, setSelectedIds]               = useState(new Set());
+
+  function toggleSelect(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function handleBulkSuccess(diffs) {
+    setLeads((prev) =>
+      prev.map((lead) => {
+        const diff = diffs.find((d) => d.id === lead.id);
+        return diff ? { ...lead, ...diff } : lead;
+      })
+    );
+  }
 
   const carregarLeads = useCallback(async () => {
     try {
@@ -375,12 +409,12 @@ export default function Kanban() {
   // Agrupa leads por etapa — memoizado para não reprocessar em cada drag/hover
   const leadsPorEtapa = useMemo(() => {
     const mapa = {};
-    ETAPAS.forEach(({ nome }) => { mapa[nome] = []; });
+    etapas.forEach(({ name }) => { mapa[name] = []; });
     leads.forEach((lead) => {
       if (mapa[lead.etapa_funil]) mapa[lead.etapa_funil].push(lead);
     });
     return mapa;
-  }, [leads]);
+  }, [leads, etapas]);
 
   // Criação inline (estilo Trello)
   async function handleAdicionarLead(nome, etapaNome) {
@@ -433,7 +467,7 @@ export default function Kanban() {
     }
   }
 
-  if (carregando) return <KanbanSkeleton />;
+  if (carregando || carregandoEtapas) return <KanbanSkeleton />;
 
   return (
     <div className="h-full flex flex-col bg-zinc-950">
@@ -446,14 +480,14 @@ export default function Kanban() {
             {leads.length} lead{leads.length !== 1 ? 's' : ''}
           </span>
         </div>
-        <div className="flex items-center gap-5">
-          {Object.entries(FASE_DOT).map(([fase, color]) => (
+        <div className="flex items-center gap-2 flex-wrap">
+          {etapas.map((etapa) => (
             <span
-              key={fase}
-              className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500"
+              key={etapa.id}
+              className="flex items-center gap-1 text-[10px] font-medium text-zinc-600"
             >
-              <span className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style={{ background: color }} />
-              {fase}
+              <span className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style={{ background: etapa.color }} />
+              {etapa.name}
             </span>
           ))}
         </div>
@@ -470,17 +504,19 @@ export default function Kanban() {
             onDragEnd={handleDragEnd}
           >
             <div className="flex gap-4 items-start">
-              {ETAPAS.map((etapa) => (
+              {etapas.map((etapa) => (
                 <Coluna
-                  key={etapa.nome}
+                  key={etapa.id}
                   etapa={etapa}
-                  leads={leadsPorEtapa[etapa.nome]}
+                  leads={leadsPorEtapa[etapa.name] || []}
                   onCardClick={setLeadAberto}
-                  isOver={sobreColuna === etapa.nome}
-                  adicionando={colunaAdicionando === etapa.nome}
-                  onIniciarAdd={() => setColunaAdicionando(etapa.nome)}
+                  isOver={sobreColuna === etapa.name}
+                  adicionando={colunaAdicionando === etapa.name}
+                  onIniciarAdd={() => setColunaAdicionando(etapa.name)}
                   onAdd={handleAdicionarLead}
                   onCancelarAdd={() => setColunaAdicionando(null)}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelect}
                 />
               ))}
             </div>
@@ -503,6 +539,13 @@ export default function Kanban() {
           />
         </Modal>
       )}
+
+      {/* Bulk action bar */}
+      <BulkActionBar
+        selectedIds={selectedIds}
+        onDeselect={() => setSelectedIds(new Set())}
+        onSuccess={handleBulkSuccess}
+      />
     </div>
   );
 }

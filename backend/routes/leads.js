@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { supabase, getOrganizationId, handleSupabaseError } = require('../supabase');
-const { ETAPAS_VALIDAS } = require('../constants/etapas');
+const { handleSupabaseError } = require('../supabase');
 
 const MOTIVOS_DESCARTE = [
   'Sem margem', 'Restrição CPF', 'Apenas curioso',
@@ -31,6 +30,18 @@ function resolverTemperatura(etapa, temperaturaAtual) {
   return TEMP_AUTO[etapa] ?? temperaturaAtual;
 }
 
+// Valida se uma etapa pertence à org e retorna o registro (ou null se inválida)
+async function validarEtapa(db, organizationId, etapaName) {
+  if (!etapaName) return null;
+  const { data } = await db
+    .from('funnel_stages')
+    .select('id, name, is_lost')
+    .eq('organization_id', organizationId)
+    .eq('name', etapaName)
+    .maybeSingle();
+  return data;
+}
+
 function toDateOnly(value) {
   if (!value) return null;
   return String(value).slice(0, 10);
@@ -55,7 +66,7 @@ function dateKeyForWeek(d) {
   return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }
 
-async function criarCadenciaReuniao(organizationId, leadId, dataReuniao) {
+async function criarCadenciaReuniao(db, organizationId, leadId, dataReuniao) {
   const base = dataReuniao ? new Date(dataReuniao) : new Date();
   const fmt = (d) => d.toISOString().slice(0, 10);
   const add = (n) => {
@@ -89,7 +100,7 @@ async function criarCadenciaReuniao(organizationId, leadId, dataReuniao) {
     etapa_relacionada,
   }));
 
-  const { error } = await supabase.from('cadencia_itens').insert(payload);
+  const { error } = await db.from('cadencia_itens').insert(payload);
   if (error) throw error;
 }
 
@@ -118,9 +129,9 @@ router.get('/stats/resumo', async (req, res) => {
   const dataInicio = dataInicioPeriodo(periodo);
   const hoje = new Date().toISOString().slice(0, 10);
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
 
-    const { data: leads, error: leadsError } = await supabase
+    const { data: leads, error: leadsError } = await db
       .from('leads')
       .select('*')
       .eq('organization_id', organizationId);
@@ -182,7 +193,7 @@ router.get('/stats/resumo', async (req, res) => {
       (l) => l.snooze_ate && l.snooze_ate > hoje && ['Follow-up Ativo', 'Follow-up Proposta'].includes(l.etapa_funil)
     ).length;
 
-    const { data: cadenciaRows, error: cadenciaError } = await supabase
+    const { data: cadenciaRows, error: cadenciaError } = await db
       .from('cadencia_itens')
       .select('*')
       .eq('organization_id', organizationId)
@@ -223,10 +234,10 @@ router.get('/stats/resumo', async (req, res) => {
 // GET /api/leads/stats/evolucao
 router.get('/stats/evolucao', async (req, res) => {
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
     const minDate = new Date(Date.now() - 56 * 86400000).toISOString();
 
-    const { data: leads, error } = await supabase
+    const { data: leads, error } = await db
       .from('leads')
       .select('criado_em')
       .eq('organization_id', organizationId)
@@ -258,8 +269,8 @@ router.get('/stats/evolucao', async (req, res) => {
 // GET /api/leads/export/csv
 router.get('/export/csv', async (req, res) => {
   try {
-    const organizationId = await getOrganizationId();
-    const { data: csvLeads, error } = await supabase
+    const { supabase: db, organizationId } = req;
+    const { data: csvLeads, error } = await db
       .from('leads')
       .select('*')
       .eq('organization_id', organizationId)
@@ -295,14 +306,92 @@ router.get('/motivos-descarte', (req, res) => {
   res.json(MOTIVOS_DESCARTE);
 });
 
+// POST /api/leads/bulk-update — atualização em lote (mudar_etapa | arquivar)
+// body: { ids: number[], action: 'mudar_etapa'|'arquivar', etapa_funil?, motivo_descarte? }
+// retorna apenas os diffs dos registros alterados
+router.post('/bulk-update', async (req, res) => {
+  const { ids, action, etapa_funil, motivo_descarte } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ erro: 'ids é obrigatório e deve ser um array não vazio' });
+  }
+  if (!['mudar_etapa', 'arquivar'].includes(action)) {
+    return res.status(400).json({ erro: 'action inválida. Use mudar_etapa ou arquivar' });
+  }
+  if (ids.length > 500) {
+    return res.status(400).json({ erro: 'Máximo de 500 leads por operação em lote' });
+  }
+
+  const validIds = ids.map(Number).filter((n) => Number.isFinite(n) && n > 0);
+  if (validIds.length === 0) {
+    return res.status(400).json({ erro: 'Nenhum ID válido fornecido' });
+  }
+
+  try {
+    const { supabase: db, organizationId } = req;
+
+    let updatePayload;
+    let novaEtapa;
+
+    if (action === 'mudar_etapa') {
+      if (!etapa_funil) return res.status(400).json({ erro: 'etapa_funil é obrigatório para mudar_etapa' });
+      const stage = await validarEtapa(db, organizationId, etapa_funil);
+      if (!stage) return res.status(400).json({ erro: 'Etapa inválida para esta organização' });
+      if (stage.is_lost && !motivo_descarte) {
+        return res.status(400).json({ erro: 'motivo_descarte é obrigatório para etapa de descarte' });
+      }
+      novaEtapa = etapa_funil;
+      updatePayload = {
+        etapa_funil,
+        temperatura: resolverTemperatura(etapa_funil, 'morno'),
+        ...(stage.is_lost ? { motivo_descarte: motivo_descarte || null } : {}),
+      };
+    } else {
+      // arquivar: busca a primeira etapa is_lost=true da org
+      const { data: lostStage } = await db
+        .from('funnel_stages')
+        .select('name')
+        .eq('organization_id', organizationId)
+        .eq('is_lost', true)
+        .order('display_order', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      novaEtapa = lostStage?.name || 'Perdido';
+      updatePayload = {
+        etapa_funil: novaEtapa,
+        temperatura: 'frio',
+        motivo_descarte: motivo_descarte || 'Arquivado',
+      };
+    }
+
+    // UPDATE em lote — 1 query SQL com IN(ids), isolado à org
+    const { data, error } = await db
+      .from('leads')
+      .update(updatePayload)
+      .eq('organization_id', organizationId)
+      .in('id', validIds)
+      .select('id, etapa_funil, motivo_descarte, temperatura, atualizado_em');
+
+    if (error) return handleSupabaseError(res, error, 'Erro na atualização em lote');
+
+    return res.json({
+      updated: data?.length ?? 0,
+      diffs: data || [],
+    });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro na atualização em lote');
+  }
+});
+
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 // GET /api/leads
 router.get('/', async (req, res) => {
   const { etapa, temperatura, busca, ordem, origem, periodo, tipo_de_bem } = req.query;
   try {
-    const organizationId = await getOrganizationId();
-    let query = supabase.from('leads').select('*').eq('organization_id', organizationId);
+    const { supabase: db, organizationId } = req;
+    let query = db.from('leads').select('*').eq('organization_id', organizationId);
 
     if (etapa) query = query.eq('etapa_funil', etapa);
     if (temperatura) query = query.eq('temperatura', temperatura);
@@ -342,10 +431,10 @@ router.get('/', async (req, res) => {
 // GET /api/leads/:id
 router.get('/:id', async (req, res) => {
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: lead, error: leadError } = await supabase
+    const { data: lead, error: leadError } = await db
       .from('leads')
       .select('*')
       .eq('organization_id', organizationId)
@@ -356,14 +445,14 @@ router.get('/:id', async (req, res) => {
     if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
 
     const [{ data: interacoes, error: intError }, { data: cadencia, error: cadError }] = await Promise.all([
-      supabase
+      db
         .from('interacoes')
         .select('*')
         .eq('organization_id', organizationId)
         .eq('lead_id', leadId)
         .order('data', { ascending: false })
         .order('id', { ascending: false }),
-      supabase
+      db
         .from('cadencia_itens')
         .select('*')
         .eq('organization_id', organizationId)
@@ -390,18 +479,20 @@ router.post('/', async (req, res) => {
   } = req.body;
 
   if (!nome) return res.status(400).json({ erro: 'Nome é obrigatório' });
-  if (etapa_funil && !ETAPAS_VALIDAS.includes(etapa_funil)) {
-    return res.status(400).json({ erro: 'Etapa inválida' });
-  }
-  if (etapa_funil === 'Perdido' && !motivo_descarte) {
-    return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
-  }
 
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
+
+    if (etapa_funil) {
+      const stage = await validarEtapa(db, organizationId, etapa_funil);
+      if (!stage) return res.status(400).json({ erro: 'Etapa inválida' });
+      if (stage.is_lost && !motivo_descarte) {
+        return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
+      }
+    }
 
     if (whatsapp || email) {
-      let dupQuery = supabase
+      let dupQuery = db
         .from('leads')
         .select('id, nome')
         .eq('organization_id', organizationId)
@@ -444,7 +535,7 @@ router.post('/', async (req, res) => {
       origem: origem || 'prospeccao',
     };
 
-    const { data: lead, error } = await supabase
+    const { data: lead, error } = await db
       .from('leads')
       .insert(payload)
       .select('*')
@@ -453,7 +544,7 @@ router.post('/', async (req, res) => {
     if (error) return handleSupabaseError(res, error, 'Erro ao criar lead');
 
     if (etapaFinal === 'Reunião Agendada') {
-      await criarCadenciaReuniao(organizationId, lead.id, data_proxima_acao);
+      await criarCadenciaReuniao(db, organizationId, lead.id, data_proxima_acao);
     }
 
     return res.status(201).json(lead);
@@ -464,7 +555,6 @@ router.post('/', async (req, res) => {
 
 // PUT /api/leads/:id
 router.put('/:id', async (req, res) => {
-
   const {
     nome, whatsapp, email, instagram,
     tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia,
@@ -472,14 +562,11 @@ router.put('/:id', async (req, res) => {
     data_proxima_acao, tipo_proxima_acao, observacoes, origem,
   } = req.body;
 
-  if (etapa_funil && !ETAPAS_VALIDAS.includes(etapa_funil)) {
-    return res.status(400).json({ erro: 'Etapa inválida' });
-  }
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: atual, error: findError } = await supabase
+    const { data: atual, error: findError } = await db
       .from('leads')
       .select('*')
       .eq('organization_id', organizationId)
@@ -489,8 +576,14 @@ router.put('/:id', async (req, res) => {
     if (findError) return handleSupabaseError(res, findError, 'Erro ao atualizar lead');
     if (!atual) return res.status(404).json({ erro: 'Lead não encontrado' });
 
+    let stageValidado = null;
+    if (etapa_funil) {
+      stageValidado = await validarEtapa(db, organizationId, etapa_funil);
+      if (!stageValidado) return res.status(400).json({ erro: 'Etapa inválida' });
+    }
+
     const etapaFinal = etapa_funil ?? atual.etapa_funil;
-    if (etapaFinal === 'Perdido' && !(motivo_descarte || atual.motivo_descarte)) {
+    if (stageValidado?.is_lost && !(motivo_descarte || atual.motivo_descarte)) {
       return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
     }
 
@@ -517,7 +610,7 @@ router.put('/:id', async (req, res) => {
       origem: origem ?? atual.origem,
     };
 
-    const { data: updated, error } = await supabase
+    const { data: updated, error } = await db
       .from('leads')
       .update(payload)
       .eq('organization_id', organizationId)
@@ -528,7 +621,7 @@ router.put('/:id', async (req, res) => {
     if (error) return handleSupabaseError(res, error, 'Erro ao atualizar lead');
 
     if (etapa_funil === 'Reunião Agendada' && atual.etapa_funil !== 'Reunião Agendada') {
-      await criarCadenciaReuniao(organizationId, atual.id, data_proxima_acao || atual.data_proxima_acao);
+      await criarCadenciaReuniao(db, organizationId, atual.id, data_proxima_acao || atual.data_proxima_acao);
     }
 
     return res.json(updated);
@@ -540,18 +633,19 @@ router.put('/:id', async (req, res) => {
 // PATCH /api/leads/:id/etapa
 router.patch('/:id/etapa', async (req, res) => {
   const { etapa_funil, motivo_descarte } = req.body;
-  if (!etapa_funil || !ETAPAS_VALIDAS.includes(etapa_funil)) {
-    return res.status(400).json({ erro: 'Etapa inválida' });
-  }
-  if (etapa_funil === 'Perdido' && !motivo_descarte) {
-    return res.status(400).json({ erro: 'Motivo do descarte é obrigatório ao descartar um lead' });
-  }
+  if (!etapa_funil) return res.status(400).json({ erro: 'Etapa é obrigatória' });
 
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: atual, error: findError } = await supabase
+    const stage = await validarEtapa(db, organizationId, etapa_funil);
+    if (!stage) return res.status(400).json({ erro: 'Etapa inválida' });
+    if (stage.is_lost && !motivo_descarte) {
+      return res.status(400).json({ erro: 'Motivo do descarte é obrigatório ao descartar um lead' });
+    }
+
+    const { data: atual, error: findError } = await db
       .from('leads')
       .select('*')
       .eq('organization_id', organizationId)
@@ -563,7 +657,7 @@ router.patch('/:id/etapa', async (req, res) => {
 
     const novaTemp = resolverTemperatura(etapa_funil, atual.temperatura);
 
-    const { data: updated, error } = await supabase
+    const { data: updated, error } = await db
       .from('leads')
       .update({
         etapa_funil,
@@ -578,7 +672,7 @@ router.patch('/:id/etapa', async (req, res) => {
     if (error) return handleSupabaseError(res, error, 'Erro ao atualizar etapa');
 
     if (etapa_funil === 'Reunião Agendada' && atual.etapa_funil !== 'Reunião Agendada') {
-      await criarCadenciaReuniao(organizationId, atual.id, atual.data_proxima_acao);
+      await criarCadenciaReuniao(db, organizationId, atual.id, atual.data_proxima_acao);
     }
 
     return res.json(updated);
@@ -591,10 +685,10 @@ router.patch('/:id/etapa', async (req, res) => {
 router.patch('/:id/snooze', async (req, res) => {
   const { snooze_ate } = req.body;
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: atual, error: findError } = await supabase
+    const { data: atual, error: findError } = await db
       .from('leads')
       .select('*')
       .eq('organization_id', organizationId)
@@ -611,7 +705,7 @@ router.patch('/:id/snooze', async (req, res) => {
         : atual.etapa_funil,
     };
 
-    const { data: updated, error } = await supabase
+    const { data: updated, error } = await db
       .from('leads')
       .update(payload)
       .eq('organization_id', organizationId)
@@ -629,10 +723,10 @@ router.patch('/:id/snooze', async (req, res) => {
 // DELETE /api/leads/:id
 router.delete('/:id', async (req, res) => {
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
     const leadId = Number(req.params.id);
 
-    const { data: lead, error: findError } = await supabase
+    const { data: lead, error: findError } = await db
       .from('leads')
       .select('id')
       .eq('organization_id', organizationId)
@@ -642,7 +736,7 @@ router.delete('/:id', async (req, res) => {
     if (findError) return handleSupabaseError(res, findError, 'Erro ao remover lead');
     if (!lead) return res.status(404).json({ erro: 'Lead não encontrado' });
 
-    const { error } = await supabase
+    const { error } = await db
       .from('leads')
       .delete()
       .eq('organization_id', organizationId)

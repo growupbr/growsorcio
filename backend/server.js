@@ -15,12 +15,17 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Rotas
-app.use('/api/leads', require('./routes/leads'));
-app.use('/api/interacoes', require('./routes/interacoes'));
-app.use('/api/cadencia', require('./routes/cadencia'));
+const { authMiddleware } = require('./middleware/auth');
+
+// Rotas públicas (sem autenticação)
 app.use('/api/webhook', require('./routes/webhook'));
-app.use('/api/billing', require('./routes/billing'));
+
+// Rotas protegidas — JWT obrigatório, req.supabase e req.organizationId injetados
+app.use('/api/leads', authMiddleware, require('./routes/leads'));
+app.use('/api/interacoes', authMiddleware, require('./routes/interacoes'));
+app.use('/api/cadencia', authMiddleware, require('./routes/cadencia'));
+app.use('/api/funil', authMiddleware, require('./routes/funil'));
+app.use('/api/billing', require('./routes/billing')); // auth aplicado por rota interna
 
 if (require.main === module) {
   app.listen(PORT, () => {

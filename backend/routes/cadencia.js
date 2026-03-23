@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { supabase, getOrganizationId, handleSupabaseError } = require('../supabase');
+const { handleSupabaseError } = require('../supabase');
 
 // PATCH /api/cadencia/:id/concluir
 router.patch('/:id/concluir', async (req, res) => {
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
 
-    const { data: item, error: findError } = await supabase
+    const { data: item, error: findError } = await db
       .from('cadencia_itens')
       .select('*')
       .eq('organization_id', organizationId)
@@ -17,7 +17,7 @@ router.patch('/:id/concluir', async (req, res) => {
     if (findError) return handleSupabaseError(res, findError, 'Erro ao concluir item');
     if (!item) return res.status(404).json({ erro: 'Item não encontrado' });
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('cadencia_itens')
       .update({ concluido: true })
       .eq('organization_id', organizationId)
@@ -35,9 +35,9 @@ router.patch('/:id/concluir', async (req, res) => {
 // PATCH /api/cadencia/:id/reabrir
 router.patch('/:id/reabrir', async (req, res) => {
   try {
-    const organizationId = await getOrganizationId();
+    const { supabase: db, organizationId } = req;
 
-    const { data: item, error: findError } = await supabase
+    const { data: item, error: findError } = await db
       .from('cadencia_itens')
       .select('*')
       .eq('organization_id', organizationId)
@@ -47,7 +47,7 @@ router.patch('/:id/reabrir', async (req, res) => {
     if (findError) return handleSupabaseError(res, findError, 'Erro ao reabrir item');
     if (!item) return res.status(404).json({ erro: 'Item não encontrado' });
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('cadencia_itens')
       .update({ concluido: false })
       .eq('organization_id', organizationId)

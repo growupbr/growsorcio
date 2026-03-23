@@ -3,7 +3,8 @@
 const crypto  = require('crypto');
 const express = require('express');
 const router  = express.Router();
-const { supabase, getOrganizationId } = require('../supabase');
+const { supabase } = require('../supabase');
+const { authMiddleware } = require('../middleware/auth');
 const { createCustomer, createBilling } = require('../services/abacatepay');
 
 const APP_URL    = process.env.APP_URL    || 'https://app.growsorcio.com.br';
@@ -11,8 +12,9 @@ const LANDING_URL = process.env.LANDING_URL || 'https://growsorcio.com.br';
 
 // ── POST /api/billing/checkout ───────────────────────────────────────────────
 // Cria cliente + cobrança na AbacatePay e retorna a URL de pagamento
-router.post('/checkout', async (req, res) => {
-  const { plan, billingPeriod = 'monthly', name, email, cellphone, taxId, organizationId } = req.body;
+// authMiddleware aplicado aqui — não no router global (billing/webhook deve ser público)
+router.post('/checkout', authMiddleware, async (req, res) => {
+  const { plan, billingPeriod = 'monthly', name, email, cellphone, taxId } = req.body;
 
   if (!plan || !name || !email || !cellphone || !taxId) {
     return res.status(400).json({ erro: 'Campos obrigatórios: plan, name, email, cellphone, taxId' });
@@ -22,7 +24,8 @@ router.post('/checkout', async (req, res) => {
   }
 
   try {
-    const resolvedOrganizationId = organizationId || await getOrganizationId();
+    // organizationId vem do JWT — não aceitar do body (IDOR)
+    const { organizationId } = req;
 
     // 1. Cria o cliente na AbacatePay
     const customer = await createCustomer({ name, email, cellphone, taxId });
@@ -36,9 +39,9 @@ router.post('/checkout', async (req, res) => {
       completionUrl: `${APP_URL}/pagamento-confirmado`,
     });
 
-    // 3. Salva assinatura como 'pending' no Supabase
+    // 3. Salva assinatura como 'pending' no Supabase (service_role — operação administrativa)
     await supabase.from('subscriptions').upsert({
-      organization_id:        resolvedOrganizationId,
+      organization_id:        organizationId,
       plan,
       billing_period:         billingPeriod,
       status:                 'pending',

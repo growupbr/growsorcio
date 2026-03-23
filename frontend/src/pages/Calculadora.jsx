@@ -1,5 +1,4 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
-import html2canvas from 'html2canvas';
 import logoSrc from '../assets/logogrowsorcio.webp';
 import {
   Calculator, CheckCircle, MessageCircle, DollarSign,
@@ -405,6 +404,8 @@ export default function Calculadora() {
     if (!exportRef.current || exporting) return;
     setExporting(true);
     try {
+      // Carrega html2canvas sob demanda (≈200 KB) — só quando clicado
+      const { default: html2canvas } = await import('html2canvas');
       // Captura o elemento em alta resolução
       const captured = await html2canvas(exportRef.current, {
         backgroundColor: '#09090b',

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { supabase, getOrganizationId, handleSupabaseError } = require('../supabase');
+const { supabase, handleSupabaseError } = require('../supabase');
 
 // Campos que mapeiam diretamente para colunas da tabela leads
 const CAMPOS_COLUNA = new Set(['nome', 'instagram', 'whatsapp']);
@@ -52,7 +52,11 @@ router.post('/lead', async (req, res) => {
   const { tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia } = body;
 
   try {
-    const organizationId = await getOrganizationId();
+    // Webhooks públicos: org_id vem da env — cada instância serve uma org
+    const organizationId = process.env.SUPABASE_ORGANIZATION_ID;
+    if (!organizationId) {
+      return res.status(503).json({ success: false, erro: 'Servidor não configurado para receber leads' });
+    }
 
     const payload = {
       organization_id: organizationId,
