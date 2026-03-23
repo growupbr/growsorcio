@@ -46,6 +46,37 @@ function maskCPF(v) {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 }
 
+function validarCPF(cpf) {
+  const d = cpf.replace(/\D/g, '');
+  if (d.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(d)) return false; // todos iguais (000...000, 111...111)
+  let soma = 0;
+  for (let i = 0; i < 9; i++) soma += parseInt(d[i]) * (10 - i);
+  let r = (soma * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(d[9])) return false;
+  soma = 0;
+  for (let i = 0; i < 10; i++) soma += parseInt(d[i]) * (11 - i);
+  r = (soma * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  return r === parseInt(d[10]);
+}
+
+const ERROS_API = {
+  'Invalid taxId': 'CPF inválido. Verifique os números e tente novamente.',
+  'Invalid cellphone': 'WhatsApp inválido. Use o formato (XX) 99999-9999.',
+  'Customer already exists': 'E-mail já cadastrado. Tente outro e-mail.',
+  'Invalid email': 'E-mail inválido.',
+  'Failed to fetch': 'Não foi possível conectar ao servidor. Tente novamente em instantes.',
+};
+
+function traduzirErro(msg) {
+  for (const [key, val] of Object.entries(ERROS_API)) {
+    if (msg?.toLowerCase().includes(key.toLowerCase())) return val;
+  }
+  return msg || 'Erro ao iniciar pagamento. Tente novamente.';
+}
+
 // ─── Componente ───────────────────────────────────────────────────────────────
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -73,18 +104,31 @@ export default function Checkout() {
   async function handleSubmit(e) {
     e.preventDefault();
     setErro('');
+
+    const cpfLimpo = form.taxId.replace(/\D/g, '');
+    if (!validarCPF(cpfLimpo)) {
+      setErro('CPF inválido. Verifique os números e tente novamente.');
+      return;
+    }
+
+    const celLimpo = form.cellphone.replace(/\D/g, '');
+    if (celLimpo.length < 10) {
+      setErro('WhatsApp inválido. Use o formato (XX) 99999-9999.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { url } = await criarCheckoutPublico({
         plan: planId,
         billingPeriod: period,
         ...form,
-        cellphone: form.cellphone.replace(/\D/g, ''),
-        taxId: form.taxId.replace(/\D/g, ''),
+        cellphone: celLimpo,
+        taxId: cpfLimpo,
       });
       window.location.href = url;
     } catch (err) {
-      setErro(err.message || 'Erro ao iniciar pagamento. Tente novamente.');
+      setErro(traduzirErro(err.message));
       setLoading(false);
     }
   }
