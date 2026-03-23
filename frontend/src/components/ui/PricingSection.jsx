@@ -5,6 +5,21 @@ import { Check, Star, Shield } from "lucide-react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import CheckoutModal from "../CheckoutModal";
 
+const ABACATEPAY_LINKS = {
+  start: {
+    monthly: import.meta.env.VITE_ABACATEPAY_LINK_START_MONTHLY,
+    yearly: import.meta.env.VITE_ABACATEPAY_LINK_START_YEARLY,
+  },
+  pro: {
+    monthly: import.meta.env.VITE_ABACATEPAY_LINK_PRO_MONTHLY,
+    yearly: import.meta.env.VITE_ABACATEPAY_LINK_PRO_YEARLY,
+  },
+  elite: {
+    monthly: import.meta.env.VITE_ABACATEPAY_LINK_ELITE_MONTHLY,
+    yearly: import.meta.env.VITE_ABACATEPAY_LINK_ELITE_YEARLY,
+  },
+};
+
 const PLANS = [
   {
     id: "start",
@@ -97,6 +112,19 @@ export default function PricingSection() {
   const [isMonthly, setIsMonthly] = useState(true);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [checkout, setCheckout] = useState(null); // { plan, billingPeriod }
+
+  function handlePlanClick(planId) {
+    const billingPeriod = isMonthly ? "monthly" : "yearly";
+    const directCheckoutLink = ABACATEPAY_LINKS?.[planId]?.[billingPeriod];
+
+    if (directCheckoutLink) {
+      window.location.href = directCheckoutLink;
+      return;
+    }
+
+    // Fallback: mantém fluxo atual via modal quando link direto não estiver configurado
+    setCheckout({ plan: planId, billingPeriod });
+  }
 
   function handleToggle() {
     const next = !isMonthly;
@@ -226,7 +254,7 @@ export default function PricingSection() {
 
               {/* Botão */}
               <button
-                onClick={() => setCheckout({ plan: plan.id, billingPeriod: isMonthly ? 'monthly' : 'yearly' })}
+                onClick={() => handlePlanClick(plan.id)}
                 className={[
                   "w-full py-3 rounded-lg text-sm font-semibold text-center transition-colors duration-150 min-h-[44px] flex items-center justify-center cursor-pointer",
                   isCenter
