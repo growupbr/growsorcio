@@ -709,9 +709,11 @@ router.put('/:id', async (req, res) => {
       temperatura: tempFinal,
       etapa_funil: etapaFinal,
       motivo_descarte: motivo_descarte !== undefined ? motivo_descarte : atual.motivo_descarte,
-      data_proxima_acao: data_proxima_acao ?? atual.data_proxima_acao,
-      tipo_proxima_acao: tipo_proxima_acao ?? atual.tipo_proxima_acao,
-      observacoes: observacoes ?? atual.observacoes,
+      // Usar !== undefined para distinguir "não enviado" de "enviado vazio".
+      // Campos de DATE precisam de || null para converter "" → null (Postgres rejeita string vazia em DATE)
+      data_proxima_acao: data_proxima_acao !== undefined ? (data_proxima_acao || null) : atual.data_proxima_acao,
+      tipo_proxima_acao: tipo_proxima_acao !== undefined ? (tipo_proxima_acao || null) : atual.tipo_proxima_acao,
+      observacoes: observacoes !== undefined ? (observacoes || null) : atual.observacoes,
       origem: origem ?? atual.origem,
     };
 

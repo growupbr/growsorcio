@@ -64,9 +64,17 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
     try {
       const payload = {
         ...form,
-        valor_da_carta:     form.valor_da_carta     ? Number(form.valor_da_carta.replace(/\./g, '').replace(',', '.'))     : null,
-        recurso_para_lance: form.recurso_para_lance ? Number(form.recurso_para_lance.replace(/\./g, '').replace(',', '.')) : null,
-        restricao_cpf:      form.restricao_cpf ? 1 : 0,
+        valor_da_carta:      form.valor_da_carta     ? Number(form.valor_da_carta.replace(/\./g, '').replace(',', '.'))     : null,
+        recurso_para_lance:  form.recurso_para_lance ? Number(form.recurso_para_lance.replace(/\./g, '').replace(',', '.')) : null,
+        restricao_cpf:       form.restricao_cpf ? 1 : 0,
+        // Campos de data: string vazia → null para evitar erro "invalid input syntax for type date"
+        data_proxima_acao:   form.data_proxima_acao   || null,
+        tipo_proxima_acao:   form.tipo_proxima_acao   || null,
+        motivo_descarte:     form.motivo_descarte     || null,
+        urgencia:            form.urgencia            || null,
+        instagram:           form.instagram           || null,
+        email:               form.email               || null,
+        whatsapp:            form.whatsapp            || null,
       };
       const salvo = lead?.id
         ? await api.atualizarLead(lead.id, payload)
