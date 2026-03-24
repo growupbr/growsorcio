@@ -1,6 +1,7 @@
 // /frontend/src/pages/LandingPage.jsx
 import { useState, useEffect, lazy, Suspense } from 'react';
 import logoAdemicon from '../assets/ademicon.webp';
+import kanbanImg from '../assets/growsorciokanban1.webp';
 import logoEmbracon from '../assets/embracon.webp';
 import logoHonda from '../assets/hondaconsorcio.webp';
 import logoHS from '../assets/hsconsorcio.webp';
@@ -25,20 +26,20 @@ const FEATURES = [
   {
     icon: <Zap size={22} className="text-[#FF4500]" />,
     stat: '2 min',
-    titulo: 'Lead do Meta direto no funil',
-    descricao: 'Seu lead clicou no anúncio agora. Em 2 minutos ele está no seu kanban, com nome, interesse e valor de carta preenchidos. Acabou o copia e cola.',
+    titulo: 'Velocidade que Converte',
+    descricao: 'Receba leads do Facebook direto no seu funil e aborde em segundos com o Click-to-Zap. Quem responde primeiro, fecha primeiro.',
   },
   {
     icon: <Brain size={22} className="text-[#FF4500]" />,
-    stat: '4 campos',
-    titulo: 'Sabe com quem vale o seu tempo',
-    descricao: 'Antes de ligar, você já sabe: qual carta quer, quanto tem de lance, se tem restrição no CPF e qual a urgência. Só você entra em contato com quem realmente tem perfil.',
+    stat: '87%',
+    titulo: 'Matemática do Fechamento',
+    descricao: 'Use nossa calculadora nativa para provar que o consórcio ganha do banco. Transforme objeções em contratos assinados.',
   },
   {
     icon: <Calculator size={22} className="text-[#FF4500]" />,
-    stat: '87%',
-    titulo: 'Mata a objeção do financiamento na hora',
-    descricao: "O cliente diz 'prefiro financiar'. Você abre a calculadora, mostra quanto ele vai pagar a mais em juros e a conversa muda. Tudo dentro do CRM, em tempo real.",
+    stat: '40%',
+    titulo: 'Follow-up Blindado',
+    descricao: "O sistema te avisa quem está esfriando. Nunca mais esqueça de cobrar um cliente que 'ficou de ver com a esposa'.",
   },
 ];
 
@@ -72,24 +73,16 @@ const TESTIMONIALS = [
 
 const FAQ_ITEMS = [
   {
-    pergunta: 'Em quanto tempo eu começo a usar de verdade?',
-    resposta: 'Em menos de 10 minutos você conecta seu Meta Ads, cadastra seu primeiro lead e já enxerga o funil funcionando. Sem onboarding de 2 semanas, sem treinamento obrigatório.',
+    pergunta: 'É difícil de configurar?',
+    resposta: 'Não. Em 5 minutos você integra seus anúncios e já começa a operar.',
   },
   {
-    pergunta: 'Posso exportar meus dados se cancelar?',
-    resposta: 'Sim. Seus leads, histórico e documentos são seus. Você exporta tudo em CSV a qualquer momento, sem burocracia. A gente não segura dado como refém.',
+    pergunta: 'Meus dados estão seguros?',
+    resposta: 'Sim. Utilizamos tecnologia de banco de dados com isolamento (RLS). Seus leads são estritamente seus.',
   },
   {
-    pergunta: 'Funciona com Porto, Embracon, Ademicon e as outras?',
-    resposta: 'Sim. O sistema é agnóstico de administradora. A calculadora usa matemática financeira pura — taxa de administração, fundo de reserva, parcela — e funciona para qualquer bandeira do mercado.',
-  },
-  {
-    pergunta: 'O GrowSorcio funciona para qualquer administradora?',
-    resposta: 'Sim. O sistema é agnóstico de administradora. Você cadastra os produtos e regras de cada uma.',
-  },
-  {
-    pergunta: 'E se eu não for bom com tecnologia?',
-    resposta: 'Foi feito para corretor, não para programador. Se você usa WhatsApp, você usa o GrowSorcio. E se travar em alguma coisa, o suporte responde no WhatsApp mesmo.',
+    pergunta: 'Funciona no celular?',
+    resposta: '100%. O sistema é otimizado para você gerenciar seus leads enquanto está na rua atendendo clientes.',
   },
 ];
 
@@ -210,6 +203,32 @@ export default function LandingPage() {
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
       <HeroSection />
+
+      {/* ── O PODER DA PRECISÃO ─────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          {/* Coluna 1 — Imagem */}
+          <div className="section-reveal">
+            <img
+              src={kanbanImg}
+              alt="Interface do GrowSorcio — Kanban de leads"
+              className="rounded-lg shadow-xl w-full object-cover"
+            />
+          </div>
+          {/* Coluna 2 — Texto */}
+          <div className="section-reveal flex flex-col gap-4">
+            <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest">
+              O Poder da Precisão
+            </p>
+            <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-2xl md:text-3xl text-white leading-tight">
+              Chega de ferramentas complexas que você não usa.
+            </h2>
+            <p className="text-zinc-400 text-base leading-relaxed">
+              O GrowSorcio fala a sua língua. Grupo, Cota, Lance e Calculadora de Investimentos. Tudo a um clique de distância, em um layout moderno e intuitivo que funciona no seu computador e no seu celular.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Gradient line divider */}
       <div className="gradient-line max-w-4xl mx-auto" />
@@ -411,8 +430,8 @@ export default function LandingPage() {
       <footer className="border-t border-white/10 py-8">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
           <div className="flex flex-col items-center sm:items-start gap-1">
-            <p className="text-zinc-500">© 2025 GrowSorcio. Todos os direitos reservados. CNPJ em registro.</p>
-            <p className="text-zinc-600 text-sm">Feito no Brasil, para o mercado de consórcio brasileiro 🇧🇷</p>
+            <p className="text-zinc-500">GrowSorcio — Uma solução GrowUp Assessoria de Marketing. Criado por corretores, para corretores.</p>
+            <p className="text-zinc-600 text-sm">© 2025 · Todos os direitos reservados 🇧🇷</p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex items-center gap-4">

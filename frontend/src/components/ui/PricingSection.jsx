@@ -39,7 +39,7 @@ const PLANS = [
     features: [
       "Tudo do START +",
       "Até 03 usuários",
-      "Calculadora com sua marca (PDF)",
+      "Geração de PDFs com a SUA LOGOTIPO",
       "Cofre Digital de Documentos",
       "Follow-up Inteligente com alertas",
       "Notificações em tempo real",
@@ -186,11 +186,11 @@ export default function PricingSection() {
                   : "bg-white/5 border border-white/10",
               ].join(" ")}
             >
-              {/* Badge Recomendado */}
+              {/* Badge Melhor Custo-Benefício */}
               {isCenter && (
-                <span className="flex items-center gap-1 bg-[#FF4500] text-white text-xs font-bold px-3 py-1 rounded-full absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span className="flex items-center gap-1 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
                   <Star size={11} fill="white" strokeWidth={0} />
-                  Recomendado
+                  MELHOR CUSTO-BENEFÍCIO
                 </span>
               )}
 
@@ -224,7 +224,9 @@ export default function PricingSection() {
                 {plan.features.map((feat) => (
                   <li key={feat} className="flex items-start gap-2 text-sm text-zinc-300">
                     <Check size={14} className="text-[#FF4500] mt-0.5 flex-shrink-0" />
-                    {feat}
+                    <span className={feat.includes('SUA LOGOTIPO') ? 'font-bold text-white' : ''}>
+                      {feat}
+                    </span>
                   </li>
                 ))}
               </ul>

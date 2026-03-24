@@ -107,10 +107,9 @@ export default function HeroSection() {
         </motion.div>
 
         <TextReveal
-          text="Você tá perdendo venda todo dia. E sabe disso."
-          className="font-['Space_Grotesk',sans-serif] font-bold text-4xl md:text-6xl text-white tracking-tight leading-tight"
-          highlight={['perdendo', 'venda']}
-          stagger={0.08}
+          text="Pare de Perder Vendas para o Caos do WhatsApp. O Único CRM Desenhado para a Jornada do Consórcio."
+          className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-5xl text-white tracking-tight leading-tight"
+          stagger={0.04}
         />
 
         {/* ── Subheadline ── */}
@@ -124,8 +123,7 @@ export default function HeroSection() {
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.6 }}
           className="text-lg text-zinc-400 max-w-2xl font-['Inter',sans-serif]"
         >
-          O GrowSorcio organiza seu funil, qualifica seu lead antes do primeiro contato
-          e te mostra exatamente onde o dinheiro está parado.
+          Gerencie seus leads em tempo real, use calculadoras de comparação imbatíveis e recupere até 40% das vendas perdidas por falta de follow-up.
         </motion.p>
 
         {/* CTAs */}
@@ -164,34 +162,21 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94], delay: 1.0 }}
-          className="w-full mt-8 aspect-video bg-zinc-900/80 border border-white/10 rounded-xl shadow-[0_0_120px_rgba(255,69,0,0.1)] overflow-hidden p-4 flex gap-3 backdrop-blur-sm relative"
+          className="w-full mt-8 rounded-xl overflow-hidden shadow-[0_0_120px_rgba(255,69,0,0.18)]"
         >
-          <div
-            className="absolute inset-0 rounded-xl border border-white/5 pointer-events-none"
-            style={{ boxShadow: '0 0 60px rgba(255,69,0,0.06) inset' }}
-          />
-          {KANBAN_COLS.map((col, ci) => (
-            <div key={col.col} className="flex-1 flex flex-col gap-2 min-w-0">
-              <p className={`text-xs font-semibold uppercase tracking-wider truncate ${col.titleClass}`}>
-                {col.col}
-              </p>
-              {col.cards.map((name, cardIdx) => (
-                <motion.div
-                  key={name}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 1.2 + ci * 0.15 + cardIdx * 0.1 }}
-                  className={`bg-white/5 border border-white/10 ${col.borderClass} rounded-lg p-2.5 relative hover:bg-white/8 transition-colors duration-200`}
-                >
-                  {cardIdx === 0 && (
-                    <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  )}
-                  <p className="text-zinc-300 text-xs font-medium truncate">{name}</p>
-                  <p className="text-zinc-600 text-xs mt-0.5">Consórcio · R$ 85k</p>
-                </motion.div>
-              ))}
-            </div>
-          ))}
+          <div className="aspect-video w-full">
+            <iframe
+              width="100%"
+              height="100%"
+              src="https://www.youtube.com/embed/MLpWrANjFbI?si=wLdZBEOx1U8eEjZc"
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
         </motion.div>
       </motion.div>
 
