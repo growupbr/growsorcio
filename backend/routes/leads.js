@@ -364,7 +364,9 @@ router.get('/export/csv', async (req, res) => {
   ];
   const esc = (v) => {
     if (v == null) return '';
-    const s = String(v);
+    let s = String(v);
+    // Prevent CSV formula injection (OWASP: prefix dangerous leading chars)
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
     return (s.includes(',') || s.includes('"') || s.includes('\n'))
       ? `"${s.replace(/"/g, '""')}"`
       : s;
@@ -593,9 +595,16 @@ router.post('/', async (req, res) => {
         req
       );
 
-      if (whatsapp && email) dupQuery = dupQuery.or(`whatsapp.eq.${whatsapp},email.eq.${email}`);
-      else if (whatsapp) dupQuery = dupQuery.eq('whatsapp', whatsapp);
-      else dupQuery = dupQuery.eq('email', email);
+      // Sanitize values before embedding in PostgREST .or() filter to prevent filter injection
+      if (whatsapp && email) {
+        const safeWa = String(whatsapp).replace(/"/g, '');
+        const safeMail = String(email).replace(/"/g, '');
+        dupQuery = dupQuery.or(`whatsapp.eq."${safeWa}",email.eq."${safeMail}"`);
+      } else if (whatsapp) {
+        dupQuery = dupQuery.eq('whatsapp', whatsapp);
+      } else {
+        dupQuery = dupQuery.eq('email', email);
+      }
 
       const { data: dup, error: dupError } = await dupQuery.maybeSingle();
       if (dupError) return handleSupabaseError(res, dupError, 'Erro ao validar duplicidade');

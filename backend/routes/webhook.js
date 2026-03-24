@@ -23,6 +23,15 @@ router.post('/lead', async (req, res) => {
     return res.status(429).json({ success: false, erro: 'Muitas requisições. Tente novamente em breve.' });
   }
 
+  // Validação de chave secreta (opcional — só ativa se LEAD_WEBHOOK_SECRET estiver definido no .env)
+  const webhookSecret = process.env.LEAD_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const providedKey = req.headers['x-webhook-key'] || '';
+    if (providedKey !== webhookSecret) {
+      return res.status(401).json({ success: false, erro: 'Chave de webhook inválida' });
+    }
+  }
+
   const body = req.body || {};
   const { nome, instagram, whatsapp, email, ...resto } = body;
 
