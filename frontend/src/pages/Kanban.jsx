@@ -204,13 +204,13 @@ function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
 
       {/* Pills — valor do crédito + urgência */}
       <div className="flex flex-wrap gap-1.5 mb-2 pl-[18px]">
-        {lead.valor_carta && (
+        {lead.valor_da_carta && (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold
                            bg-orange-500/10 text-orange-400">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-2.5 h-2.5 flex-shrink-0">
               <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
             </svg>
-            R$ {lead.valor_carta}
+            R$ {lead.valor_da_carta}
           </span>
         )}
         {lead.urgencia && (
