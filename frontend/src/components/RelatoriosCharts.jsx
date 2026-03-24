@@ -203,7 +203,7 @@ export default function RelatoriosCharts({ dadosEtapa, dadosOrigem, dadosTipoBem
                   tick={{ fill: '#52525b', fontSize: 11, fontWeight: 500 }}
                   axisLine={false} tickLine={false}
                 />
-                <Tooltip content={<PremiumTooltip />} />
+                <Tooltip content={<PremiumTooltip />} cursor={{ stroke: 'rgba(255,69,0,0.2)', strokeWidth: 1, fill: 'rgba(255,255,255,0.03)' }} />
                 <Area
                   type="monotone" dataKey="total" name="Leads"
                   stroke="#FF4500" strokeWidth={2.5}
@@ -272,7 +272,7 @@ export default function RelatoriosCharts({ dadosEtapa, dadosOrigem, dadosTipoBem
                   tick={{ fill: '#52525b', fontSize: 11, fontWeight: 500 }}
                   axisLine={false} tickLine={false}
                 />
-                <Tooltip content={<PremiumTooltip />} />
+                <Tooltip content={<PremiumTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
                 <Bar dataKey="total" name="Leads" radius={[6, 6, 0, 0]} fill={`url(#${BAR_GRADIENT_ID})`}>
                   <LabelList dataKey="total" position="top" style={{ fill: '#71717a', fontSize: 10, fontWeight: 600 }} />
                 </Bar>
@@ -301,7 +301,7 @@ export default function RelatoriosCharts({ dadosEtapa, dadosOrigem, dadosTipoBem
                   tick={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 500 }}
                   axisLine={false} tickLine={false} width={110}
                 />
-                <Tooltip content={<PremiumTooltip />} />
+                <Tooltip content={<PremiumTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
                 <Bar dataKey="total" name="Leads" radius={[0, 6, 6, 0]} fill="url(#barGradHorizontal)">
                   <LabelList dataKey="total" position="right" style={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 600 }} />
                 </Bar>
@@ -327,7 +327,7 @@ export default function RelatoriosCharts({ dadosEtapa, dadosOrigem, dadosTipoBem
                   tick={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 500 }}
                   axisLine={false} tickLine={false} width={150}
                 />
-                <Tooltip content={<PremiumTooltip />} />
+                <Tooltip content={<PremiumTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
                 <Bar dataKey="total" name="Descartados" radius={[0, 6, 6, 0]} fill="url(#barGradGray)">
                   <LabelList dataKey="total" position="right" style={{ fill: '#71717a', fontSize: 11, fontWeight: 600 }} />
                 </Bar>

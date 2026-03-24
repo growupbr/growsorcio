@@ -679,9 +679,13 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ erro: 'Motivo do descarte é obrigatório' });
     }
 
-    const tempFinal = etapa_funil
-      ? resolverTemperatura(etapa_funil, atual.temperatura)
-      : (temperatura ?? atual.temperatura);
+    // Se o usuário enviou temperatura explicitamente, respeita a escolha.
+    // Só auto-resolve pela etapa quando temperatura não foi enviada.
+    const tempFinal = temperatura !== undefined
+      ? temperatura
+      : etapa_funil
+        ? resolverTemperatura(etapa_funil, atual.temperatura)
+        : atual.temperatura;
 
     const payload = {
       nome: nome ?? atual.nome,
