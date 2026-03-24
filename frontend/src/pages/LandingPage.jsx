@@ -1,7 +1,6 @@
 // /frontend/src/pages/LandingPage.jsx
 import { useState, useEffect, lazy, Suspense } from 'react';
 import logoAdemicon from '../assets/ademicon.webp';
-import kanbanImg from '../assets/growsorciokanban1.webp';
 import logoEmbracon from '../assets/embracon.webp';
 import logoHonda from '../assets/hondaconsorcio.webp';
 import logoHS from '../assets/hsconsorcio.webp';
@@ -10,7 +9,7 @@ import logoMaggi from '../assets/maggiconsorcio.webp';
 import logoPorto from '../assets/portoseguroconsorcio.webp';
 import logoRodobens from '../assets/rodobens.webp';
 import { motion } from 'framer-motion';
-import { Zap, Brain, Calculator, ChevronDown, Menu, X, Star, MessageCircle } from 'lucide-react';
+import { Zap, Brain, Calculator, ChevronDown, Menu, X, Star, MessageCircle, Smartphone, BarChart2, Shield } from 'lucide-react';
 // PricingSection carregada de forma lazy — fica abaixo da dobra, não bloqueia LCP
 const PricingSection = lazy(() => import('../components/ui/PricingSection'));
 import GrowsorcioLogo from '../components/GrowsorcioLogo';
@@ -206,27 +205,27 @@ export default function LandingPage() {
 
       {/* ── O PODER DA PRECISÃO ─────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          {/* Coluna 1 — Imagem */}
-          <div className="section-reveal">
-            <img
-              src={kanbanImg}
-              alt="Interface do GrowSorcio — Kanban de leads"
-              className="rounded-lg shadow-xl w-full object-cover"
-            />
-          </div>
-          {/* Coluna 2 — Texto */}
-          <div className="section-reveal flex flex-col gap-4">
-            <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest">
-              O Poder da Precisão
-            </p>
-            <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-2xl md:text-3xl text-white leading-tight">
-              Chega de ferramentas complexas que você não usa.
-            </h2>
-            <p className="text-zinc-400 text-base leading-relaxed">
-              O GrowSorcio fala a sua língua. Grupo, Cota, Lance e Calculadora de Investimentos. Tudo a um clique de distância, em um layout moderno e intuitivo que funciona no seu computador e no seu celular.
-            </p>
-          </div>
+        <div className="section-reveal text-center mb-12">
+          <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">O Poder da Precisão</p>
+          <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-2xl md:text-4xl text-white leading-tight">
+            Chega de ferramentas complexas que você não usa.
+          </h2>
+          <p className="text-zinc-400 text-base leading-relaxed mt-4 max-w-2xl mx-auto">
+            O GrowSorcio fala a sua língua. Grupo, Cota, Lance e Calculadora de Investimentos. Tudo a um clique de distância, em um layout moderno e intuitivo que funciona no computador e no celular.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 section-reveal">
+          {[
+            { icon: <Smartphone size={28} className="text-[#FF4500]" />, label: 'Mobile-first', desc: 'Gerencie seus leads de qualquer lugar, a qualquer hora.' },
+            { icon: <BarChart2 size={28} className="text-[#FF4500]" />, label: 'Dashboard em tempo real', desc: 'Veja exatamente onde estão as oportunidades paradas no funil.' },
+            { icon: <Shield size={28} className="text-[#FF4500]" />, label: 'Dados 100% seus', desc: 'Isolamento total por organização. Seus leads nunca vazam.' },
+          ].map(({ icon, label, desc }) => (
+            <div key={label} className="bg-zinc-900/60 border border-white/8 rounded-xl p-6 flex flex-col gap-3 hover:border-[#FF4500]/30 transition-colors">
+              {icon}
+              <p className="font-semibold text-white text-sm">{label}</p>
+              <p className="text-zinc-500 text-xs leading-relaxed">{desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
