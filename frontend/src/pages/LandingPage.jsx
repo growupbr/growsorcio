@@ -1,6 +1,7 @@
 // /frontend/src/pages/LandingPage.jsx
 import { useState, useEffect, lazy, Suspense } from 'react';
 import logoAdemicon from '../assets/ademicon.webp';
+import kanbanImg from '../assets/growsorciokanban1.webp';
 import logoEmbracon from '../assets/embracon.webp';
 import logoHonda from '../assets/hondaconsorcio.webp';
 import logoHS from '../assets/hsconsorcio.webp';
@@ -247,6 +248,16 @@ export default function LandingPage() {
           <p className="section-reveal text-zinc-500 text-base max-w-2xl mx-auto mt-3">
             Não é RD Station. Não é HubSpot. É um CRM que fala carta, lance, administradora e contemplação.
           </p>
+        </div>
+
+        {/* Imagem do sistema */}
+        <div className="section-reveal relative z-10 mb-12 rounded-xl overflow-hidden shadow-[0_0_80px_rgba(255,69,0,0.12)] border border-white/5">
+          <img
+            src={kanbanImg}
+            alt="Interface do GrowSorcio — Kanban de leads"
+            className="w-full object-cover"
+            loading="lazy"
+          />
         </div>
 
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10" stagger={0.15}>
