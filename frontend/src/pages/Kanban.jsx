@@ -481,24 +481,11 @@ export default function Kanban() {
     <div className="h-full flex flex-col bg-zinc-950">
 
       {/* Header */}
-      <div className="flex flex-col gap-3 px-6 pt-5 pb-4 flex-shrink-0 border-b border-white/5">
-        <div className="flex items-center justify-between">
-          <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
-          <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
-            {leads.length} lead{leads.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {etapas.map((etapa) => (
-            <span
-              key={etapa.id}
-              className="flex items-center gap-1 text-[10px] font-medium text-zinc-600"
-            >
-              <span className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style={{ background: etapa.color }} />
-              {etapa.name}
-            </span>
-          ))}
-        </div>
+      <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0 border-b border-white/5">
+        <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
+        <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
+          {leads.length} lead{leads.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
       {/* Board */}
