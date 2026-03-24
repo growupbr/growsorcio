@@ -41,49 +41,4 @@ create index if not exists idx_leads_org_owner on public.leads (organization_id,
 create index if not exists idx_interacoes_org_owner on public.interacoes (organization_id, owner_user_id);
 create index if not exists idx_cadencia_org_owner on public.cadencia_itens (organization_id, owner_user_id);
 
--- 5) Trigger de timestamp compatível com schemas mistos
--- Corrige o erro: NEW não possui campo updated_at (quando a tabela usa atualizado_em)
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  if to_jsonb(new) ? 'updated_at' then
-    new.updated_at = now();
-  elsif to_jsonb(new) ? 'atualizado_em' then
-    new.atualizado_em = now();
-  end if;
-  return new;
-end;
-$$;
-
--- 6) Garante defaults de criação/atualização em leads
-do $$
-begin
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'leads' and column_name = 'criado_em'
-  ) then
-    execute 'alter table public.leads alter column criado_em set default now()';
-  end if;
-
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'leads' and column_name = 'atualizado_em'
-  ) then
-    execute 'alter table public.leads alter column atualizado_em set default now()';
-  end if;
-end;
-$$;
-
--- 7) Recria trigger de update em leads com a função corrigida
-do $$
-begin
-  if to_regclass('public.leads') is not null then
-    execute 'drop trigger if exists trg_set_updated_at_leads on public.leads';
-    execute 'create trigger trg_set_updated_at_leads before update on public.leads for each row execute function public.set_updated_at()';
-  end if;
-end;
-$$;
-
 commit;
