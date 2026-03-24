@@ -8,10 +8,6 @@ const _orgCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let _hasUserScopeColumns = null;
 
-function mapDistinctOrgIds(rows) {
-  return Array.from(new Set((rows || []).map((r) => r.organization_id).filter(Boolean)));
-}
-
 async function detectUserScopeColumns() {
   if (_hasUserScopeColumns !== null) return _hasUserScopeColumns;
 
@@ -29,23 +25,20 @@ async function detectUserScopeColumns() {
   return _hasUserScopeColumns;
 }
 
-async function inferOrganizationIdFallback() {
-  const { data: orgRows } = await supabase
-    .from('leads')
-    .select('organization_id')
-    .not('organization_id', 'is', null)
-    .limit(5000);
-
-  const distinctLeadOrgs = mapDistinctOrgIds(orgRows);
-  if (distinctLeadOrgs.length === 1) return distinctLeadOrgs[0];
-
+// Fallback APENAS para ambientes single-tenant legados com uma única org já existente.
+// Só é seguro usá-lo se houver exatamente 1 organização no banco (instância dedicada).
+// Em ambientes multi-tenant nunca deve reutilizar orgs de outros clientes.
+async function inferOrganizationIdFallbackLegacy() {
   const { data: orgs } = await supabase
     .from('organizations')
     .select('id')
     .order('created_at', { ascending: true })
-    .limit(1);
+    .limit(2); // lê 2 para detectar se há mais de uma
 
-  return orgs?.[0]?.id || null;
+  // Só reutiliza se houver exatamente 1 organização no banco (sistema single-tenant)
+  if (orgs?.length === 1) return orgs[0].id;
+
+  return null; // Em multi-tenant, não atribui org alheia — cria uma nova
 }
 
 async function createOrganizationForUser(user) {
@@ -75,7 +68,10 @@ async function ensureUserProfile(user) {
     return profile.organization_id;
   }
 
-  let organizationId = await inferOrganizationIdFallback();
+  // Tenta fallback de instância legada (single-tenant com 1 org) antes de criar nova
+  let organizationId = await inferOrganizationIdFallbackLegacy();
+
+  // Se não há org única (multi-tenant), cria uma org dedicada para este usuário
   if (!organizationId) {
     organizationId = await createOrganizationForUser(user);
   }
@@ -93,25 +89,11 @@ async function ensureUserProfile(user) {
   return organizationId;
 }
 
-async function healProfileOrganizationIfNeeded(userId, currentOrgId) {
-  const { data: leadRows } = await supabase
-    .from('leads')
-    .select('organization_id')
-    .not('organization_id', 'is', null)
-    .limit(5000);
-
-  const distinctLeadOrgs = mapDistinctOrgIds(leadRows);
-  if (distinctLeadOrgs.length !== 1) return currentOrgId;
-
-  const onlyOrgId = distinctLeadOrgs[0];
-  if (!onlyOrgId || onlyOrgId === currentOrgId) return currentOrgId;
-
-  await supabase
-    .from('profiles')
-    .upsert({ user_id: userId, organization_id: onlyOrgId }, { onConflict: 'user_id' });
-
-  return onlyOrgId;
-}
+// Função removida: healProfileOrganizationIfNeeded
+// Ela varreia todos os leads do banco (até 5000 registros) em TODA requisição autenticada
+// e poderia re-atribuir silenciosamente um usuário à organização de outro cliente.
+// O perfil de organização agora é criado corretamente em ensureUserProfile() e
+// nunca mais precisa ser "curado" automaticamente.
 
 async function resolveOrganizationId(userId) {
   const now = Date.now();
@@ -147,9 +129,6 @@ async function authMiddleware(req, res, next) {
   let organizationId = await resolveOrganizationId(user.id);
   if (!organizationId) {
     organizationId = await ensureUserProfile(user);
-  }
-  if (organizationId) {
-    organizationId = await healProfileOrganizationIfNeeded(user.id, organizationId);
   }
 
   if (!organizationId) {
