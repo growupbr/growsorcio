@@ -555,7 +555,12 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
             </svg>
             <span className="text-sm font-semibold" style={{ color: '#FF4500' }}>Próxima ação</span>
             <span className="text-sm font-medium" style={{ color: '#f4f4f5' }}>{lead.tipo_proxima_acao}</span>
-            <span className="text-sm" style={{ color: '#a1a1aa' }}>em {formatarData(lead.data_proxima_acao)}</span>
+            <span className="text-sm" style={{ color: '#a1a1aa' }}>
+              em {formatarData(lead.data_proxima_acao)}
+              {lead.hora_proxima_acao && (
+                <span className="ml-1 font-semibold" style={{ color: '#FF4500' }}>às {lead.hora_proxima_acao}</span>
+              )}
+            </span>
           </div>
         )}
       </div>

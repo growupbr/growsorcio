@@ -43,7 +43,8 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
     etapa_funil:        lead?.etapa_funil || 'Analisar Perfil',
     motivo_descarte:    lead?.motivo_descarte || '',
     data_proxima_acao:  lead?.data_proxima_acao || '',
-    tipo_proxima_acao:  lead?.tipo_proxima_acao || '',
+    hora_proxima_acao:  lead?.hora_proxima_acao || '',
+    tipo_proxima_acao:  lead?.tipo_proxima_acao || '',,
     observacoes:        lead?.observacoes || '',
   });
   const [erro, setErro] = useState('');
@@ -69,6 +70,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
         restricao_cpf:       form.restricao_cpf ? 1 : 0,
         // Campos de data: string vazia → null para evitar erro "invalid input syntax for type date"
         data_proxima_acao:   form.data_proxima_acao   || null,
+        hora_proxima_acao:   form.hora_proxima_acao   || null,
         tipo_proxima_acao:   form.tipo_proxima_acao   || null,
         motivo_descarte:     form.motivo_descarte     || null,
         urgencia:            form.urgencia            || null,
@@ -232,7 +234,16 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="label">Data</label>
-            <input type="date" className="input" value={form.data_proxima_acao} onChange={set('data_proxima_acao')} />
+            <div className="flex gap-2">
+              <input type="date" className="input flex-1" value={form.data_proxima_acao} onChange={set('data_proxima_acao')} />
+              <input
+                type="time"
+                className="input"
+                style={{ width: '110px', flexShrink: 0 }}
+                value={form.hora_proxima_acao}
+                onChange={set('hora_proxima_acao')}
+              />
+            </div>
           </div>
           <div>
             <label className="label">Tipo</label>

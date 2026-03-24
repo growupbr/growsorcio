@@ -359,7 +359,7 @@ router.get('/export/csv', async (req, res) => {
     'id','tenant_id','nome','whatsapp','email','instagram',
     'tipo_de_bem','valor_da_carta','recurso_para_lance','restricao_cpf','urgencia',
     'temperatura','etapa_funil','motivo_descarte','snooze_ate',
-    'data_proxima_acao','tipo_proxima_acao','observacoes','origem',
+    'data_proxima_acao','hora_proxima_acao','tipo_proxima_acao','observacoes','origem',
     'criado_em','atualizado_em',
   ];
   const esc = (v) => {
@@ -571,7 +571,7 @@ router.post('/', async (req, res) => {
     nome, whatsapp, email, instagram,
     tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia,
     temperatura, etapa_funil, motivo_descarte,
-    data_proxima_acao, tipo_proxima_acao, observacoes, origem,
+    data_proxima_acao, hora_proxima_acao, tipo_proxima_acao, observacoes, origem,
   } = req.body;
 
   if (!nome) return res.status(400).json({ erro: 'Nome é obrigatório' });
@@ -634,6 +634,7 @@ router.post('/', async (req, res) => {
       etapa_funil: etapaFinal,
       motivo_descarte: motivo_descarte || null,
       data_proxima_acao: data_proxima_acao || null,
+      hora_proxima_acao: hora_proxima_acao || null,
       tipo_proxima_acao: tipo_proxima_acao || null,
       observacoes: observacoes || null,
       origem: origem || 'prospeccao',
@@ -663,7 +664,7 @@ router.put('/:id', async (req, res) => {
     nome, whatsapp, email, instagram,
     tipo_de_bem, valor_da_carta, recurso_para_lance, restricao_cpf, urgencia,
     temperatura, etapa_funil, motivo_descarte,
-    data_proxima_acao, tipo_proxima_acao, observacoes, origem,
+    data_proxima_acao, hora_proxima_acao, tipo_proxima_acao, observacoes, origem,
   } = req.body;
 
   try {
@@ -712,6 +713,7 @@ router.put('/:id', async (req, res) => {
       // Usar !== undefined para distinguir "não enviado" de "enviado vazio".
       // Campos de DATE precisam de || null para converter "" → null (Postgres rejeita string vazia em DATE)
       data_proxima_acao: data_proxima_acao !== undefined ? (data_proxima_acao || null) : atual.data_proxima_acao,
+      hora_proxima_acao: hora_proxima_acao !== undefined ? (hora_proxima_acao || null) : atual.hora_proxima_acao,
       tipo_proxima_acao: tipo_proxima_acao !== undefined ? (tipo_proxima_acao || null) : atual.tipo_proxima_acao,
       observacoes: observacoes !== undefined ? (observacoes || null) : atual.observacoes,
       origem: origem ?? atual.origem,
