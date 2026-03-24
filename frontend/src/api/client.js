@@ -63,8 +63,19 @@ export const api = {
   reabrirCadencia: (id) => request(`/cadencia/${id}/reabrir`, { method: 'PATCH' }),
 
   // Exportar
-  exportarCSV: () => {
-    window.open(`${BASE_URL}/api/leads/export/csv`, '_blank');
+  exportarCSV: async () => {
+    const authHeader = await getAuthHeader();
+    const res = await fetch(`${BASE}/leads/export/csv`, { headers: authHeader });
+    if (!res.ok) throw new Error(`Erro ${res.status}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leads-growsorcio-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   },
 
   // Funil de etapas

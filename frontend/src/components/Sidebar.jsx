@@ -14,6 +14,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  BarChart2,
 } from 'lucide-react';
 import GrowsorcioLogo from './GrowsorcioLogo';
 import { useAuth } from '../hooks/useAuth';
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
   { to: '/dashboard',   label: 'Dashboard',           icon: LayoutDashboard },
   { to: '/kanban',      label: 'Kanban',              icon: KanbanIcon },
   { to: '/leads',       label: 'Leads',               icon: Users },
+  { to: '/relatorios',  label: 'Relatórios',          icon: BarChart2 },
   { to: '/calculadora', label: 'Calculadora',         icon: Calculator },
   { to: '/propostas',   label: 'Propostas',           icon: FileText,       locked: true },
   { to: '/conversas',   label: 'Conversas WhatsApp',  icon: MessageSquare,  locked: true },
