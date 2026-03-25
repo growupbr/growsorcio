@@ -4,9 +4,6 @@ import {
   useSensor, useSensors, useDroppable, useDraggable,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import confetti from 'canvas-confetti';
-import { Building2, Banknote, TrendingUp, Shield, Zap } from 'lucide-react';
-import logoGrow from '../assets/logogrowsorcio.webp';
 import { api } from '../api/client';
 import { useFunilStages } from '../hooks/useFunilStages';
 import TemperaturaBadge from '../components/TemperaturaBadge';
@@ -18,17 +15,6 @@ function formatarMoeda(val) {
   if (val == null || val === '') return null;
   return Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 }
-
-function formatarCompacto(val) {
-  if (!val || val === 0) return null;
-  if (val >= 1_000_000) return `R$ ${(val / 1_000_000).toFixed(1).replace('.', ',')}M`;
-  if (val >= 1_000) return `R$ ${Math.round(val / 1_000)}k`;
-  return formatarMoeda(val);
-}
-
-const ETAPAS_POTENCIAL = new Set([
-  'Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada', 'Follow-up Proposta',
-]);
 
 function formatarData(str) {
   if (!str) return null;
@@ -79,155 +65,6 @@ const InboxIcon = () => (
       d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z"/>
   </svg>
 );
-
-// ─── Modal "Money in the Bank" ────────────────────────────────────────────────
-
-function ModalFechado({ lead, onFechar }) {
-  useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onFechar(); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [onFechar]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ backdropFilter: 'blur(18px)', background: 'rgba(0,0,0,0.80)' }}
-      onClick={onFechar}
-    >
-      <div
-        className="relative max-w-sm w-full rounded-3xl overflow-hidden text-center select-none"
-        style={{
-          background: 'linear-gradient(160deg, #0f172a 0%, #1a0800 60%, #0f172a 100%)',
-          boxShadow:
-            '0 0 0 1.5px rgba(255,69,0,0.50), 0 0 60px rgba(255,69,0,0.30), 0 0 120px rgba(34,197,94,0.12), 0 40px 80px rgba(0,0,0,0.9)',
-          animation: 'modalPop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Animated glow border top */}
-        <div
-          className="absolute inset-x-0 top-0 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, #FF4500, #FFD700, #22C55E, #FF4500, transparent)' }}
-        />
-
-        {/* Header sparkle */}
-        <div className="pt-8 pb-4 px-8">
-          <div className="flex justify-center mb-5">
-            <div
-              className="w-20 h-20 rounded-2xl flex items-center justify-center p-2"
-              style={{
-                background: 'rgba(255,69,0,0.08)',
-                boxShadow: '0 0 0 1px rgba(255,69,0,0.20), 0 0 32px rgba(255,69,0,0.18)',
-              }}
-            >
-              <img src={logoGrow} alt="GrowSorcio" className="w-full h-full object-contain" />
-            </div>
-          </div>
-
-          {/* Trophy emoji */}
-          <div className="text-5xl mb-4 leading-none" role="img" aria-label="Troféu">🏆</div>
-
-          {/* Main message */}
-          <h2
-            className="text-white font-extrabold leading-tight mb-3"
-            style={{ fontSize: '1.45rem', letterSpacing: '-0.02em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            Mais um sonho realizado!
-          </h2>
-
-          {/* Valor destaque */}
-          {lead.valor_da_carta > 0 && (
-            <div
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl mb-4"
-              style={{
-                background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(255,215,0,0.10) 100%)',
-                border: '1px solid rgba(34,197,94,0.30)',
-                boxShadow: '0 0 20px rgba(34,197,94,0.12)',
-              }}
-            >
-              <span className="text-2xl font-black text-emerald-400" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                {formatarMoeda(lead.valor_da_carta)}
-              </span>
-            </div>
-          )}
-
-          <p
-            className="text-zinc-400 text-base font-semibold mb-1"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            Carta na conta. Pra cima! 🚀
-          </p>
-          <p className="text-zinc-600 text-xs mb-2">{lead.nome}</p>
-        </div>
-
-        {/* Bottom CTA bar */}
-        <div
-          className="px-8 pb-8"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
-        >
-          <p className="text-[10px] text-zinc-700 mt-5 mb-4 uppercase tracking-widest font-semibold">
-            Tira o print e compartilha! 📸
-          </p>
-          <button
-            onClick={onFechar}
-            className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-150 active:scale-95 cursor-pointer"
-            style={{
-              background: 'linear-gradient(135deg, #FF4500 0%, #FF6A00 100%)',
-              boxShadow: '0 0 20px rgba(255,69,0,0.30)',
-            }}
-          >
-            Continuar fechando 🔥
-          </button>
-        </div>
-
-        {/* Bottom glow border */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, #22C55E, #FF4500, transparent)' }}
-        />
-      </div>
-
-      <style>{`
-        @keyframes modalPop {
-          0%   { opacity: 0; transform: scale(0.72) translateY(24px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─── Blessed Badge ────────────────────────────────────────────────────────────
-
-const BLESSED_ITEMS = [
-  { Icon: Building2,  key: 'tipo_de_bem',       label: 'Bem',    check: (v) => !!v },
-  { Icon: Banknote,   key: 'valor_da_carta',     label: 'Valor',  check: (v) => v > 0 },
-  { Icon: TrendingUp, key: 'recurso_para_lance', label: 'Lance',  check: (v) => v > 0 },
-  { Icon: Shield,     key: 'restricao_cpf',      label: 'CPF',    check: (v) => v === false || v === 0 },
-  { Icon: Zap,        key: 'urgencia',           label: 'Urgência', check: (v) => !!v },
-];
-
-function BlessedBadge({ lead }) {
-  return (
-    <div className="flex items-center gap-1.5 pt-2 mt-2 border-t border-white/5">
-      {BLESSED_ITEMS.map(({ Icon, key, label, check }) => {
-        const lit = check(lead[key]);
-        return (
-          <div
-            key={key}
-            title={label}
-            className={`transition-transform duration-150 hover:scale-110 ${
-              lit ? 'text-yellow-500' : 'text-zinc-800'
-            }`}
-          >
-            <Icon size={11} strokeWidth={lit ? 2.5 : 1.5} />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 // ─── Formulário inline ───────────────────────────────────────────────────────
 
@@ -402,9 +239,6 @@ function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
           )}
         </div>
       )}
-
-      {/* Blessed Badge — Método Blessed (Bem / Valor / Lance / CPF / Urgência) */}
-      <BlessedBadge lead={lead} />
     </div>
   );
 }
@@ -432,12 +266,9 @@ function LeadCardOverlay({ lead }) {
 
 // ─── Coluna do Kanban ─────────────────────────────────────────────────────────
 
-function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect, totalValor }) {
+function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect }) {
   const { setNodeRef } = useDroppable({ id: etapa.name });
   const dotColor = etapa.color || '#52525b';
-
-  const isFechado = etapa.name === 'Fechado';
-  const isPotencial = ETAPAS_POTENCIAL.has(etapa.name);
 
   return (
     <div ref={setNodeRef} className="flex-shrink-0 flex flex-col" style={{ width: 260 }}>
@@ -451,20 +282,6 @@ function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, 
           {leads.length}
         </span>
       </div>
-
-      {/* Totalizador de valor */}
-      {totalValor != null && (
-        <div
-          className={`mx-0.5 mb-1.5 px-2.5 py-1 rounded-lg flex items-center justify-between text-[10px] font-bold tabular-nums ${
-            isFechado
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-          }`}
-        >
-          <span>{isFechado ? '✅ Realizados' : '⚡ Potencial'}</span>
-          <span>{formatarCompacto(totalValor)}</span>
-        </div>
-      )}
 
       {/* Botão "+" ou formulário inline — logo abaixo do header */}
       {adicionando ? (
@@ -564,7 +381,6 @@ export default function Kanban() {
   // Coluna com formulário inline ativo (null = nenhuma)
   const [colunaAdicionando, setColunaAdicionando] = useState(null);
   const [selectedIds, setSelectedIds]               = useState(new Set());
-  const [leadFechado, setLeadFechado]               = useState(null);
 
   function toggleSelect(id) {
     setSelectedIds((prev) => {
@@ -607,19 +423,6 @@ export default function Kanban() {
     });
     return mapa;
   }, [leads, etapas]);
-
-  // Soma valor_da_carta por etapa para totalizador nas colunas
-  const totalPorEtapa = useMemo(() => {
-    const mapa = {};
-    leads.forEach((lead) => {
-      if (!lead.valor_da_carta) return;
-      const etapa = lead.etapa_funil;
-      if (etapa === 'Fechado' || ETAPAS_POTENCIAL.has(etapa)) {
-        mapa[etapa] = (mapa[etapa] || 0) + Number(lead.valor_da_carta);
-      }
-    });
-    return mapa;
-  }, [leads]);
 
   // Criação inline (estilo Trello)
   async function handleAdicionarLead(nome, etapaNome) {
@@ -665,19 +468,6 @@ export default function Kanban() {
     setLeads((prev) =>
       prev.map((l) => l.id === leadId ? { ...l, etapa_funil: novaEtapa } : l)
     );
-
-    // 🏆 Gamificação: "Money in the Bank"
-    if (novaEtapa === 'Fechado') {
-      setLeadFechado({ ...lead, etapa_funil: novaEtapa });
-      const colors = ['#22C55E', '#FFD700', '#FF4500', '#F59E0B', '#ffffff'];
-      const end = Date.now() + 2800;
-      (function frame() {
-        confetti({ particleCount: 4, angle: 60,  spread: 60, origin: { x: 0, y: 0.65 }, colors, zIndex: 300 });
-        confetti({ particleCount: 4, angle: 120, spread: 60, origin: { x: 1, y: 0.65 }, colors, zIndex: 300 });
-        if (Date.now() < end) requestAnimationFrame(frame);
-      })();
-    }
-
     try {
       await api.moverEtapa(leadId, novaEtapa);
     } catch {
@@ -691,11 +481,24 @@ export default function Kanban() {
     <div className="h-full flex flex-col bg-zinc-950">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0 border-b border-white/5">
-        <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
-        <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
-          {leads.length} lead{leads.length !== 1 ? 's' : ''}
-        </span>
+      <div className="flex flex-col gap-3 px-6 pt-5 pb-4 flex-shrink-0 border-b border-white/5">
+        <div className="flex items-center justify-between">
+          <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
+          <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
+            {leads.length} lead{leads.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {etapas.map((etapa) => (
+            <span
+              key={etapa.id}
+              className="flex items-center gap-1 text-[10px] font-medium text-zinc-600"
+            >
+              <span className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style={{ background: etapa.color }} />
+              {etapa.name}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Board */}
@@ -722,7 +525,6 @@ export default function Kanban() {
                   onCancelarAdd={() => setColunaAdicionando(null)}
                   selectedIds={selectedIds}
                   onToggleSelect={toggleSelect}
-                  totalValor={totalPorEtapa[etapa.name] ?? null}
                 />
               ))}
             </div>
@@ -744,11 +546,6 @@ export default function Kanban() {
             onAtualizado={carregarLeads}
           />
         </Modal>
-      )}
-
-      {/* Modal: "Money in the Bank" 🏆 */}
-      {leadFechado && (
-        <ModalFechado lead={leadFechado} onFechar={() => setLeadFechado(null)} />
       )}
 
       {/* Bulk action bar */}

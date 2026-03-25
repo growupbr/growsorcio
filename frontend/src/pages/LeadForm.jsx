@@ -44,7 +44,7 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
     motivo_descarte:    lead?.motivo_descarte || '',
     data_proxima_acao:  lead?.data_proxima_acao || '',
     hora_proxima_acao:  lead?.hora_proxima_acao || '',
-    tipo_proxima_acao:  lead?.tipo_proxima_acao || '',
+    tipo_proxima_acao:  lead?.tipo_proxima_acao || '',,
     observacoes:        lead?.observacoes || '',
   });
   const [erro, setErro] = useState('');
