@@ -389,7 +389,14 @@ export default function Conversas() {
 
   const contatoAtivo = contatos.find((c) => c.id === ativoId) || null;
 
-  // Gate por plano
+  // Auto-scroll to latest message — hook sempre chamado, antes de qualquer return
+  useEffect(() => {
+    if (mensagensRef.current) {
+      mensagensRef.current.scrollTop = mensagensRef.current.scrollHeight;
+    }
+  }, [ativoId, contatoAtivo?.mensagens?.length]);
+
+  // Gate por plano — depois de todos os hooks
   if (!subLoading && !hasFeature('whatsapp')) {
     return (
       <div className="p-8">
@@ -404,13 +411,6 @@ export default function Conversas() {
       </div>
     );
   }
-
-  // Auto-scroll to latest message
-  useEffect(() => {
-    if (mensagensRef.current) {
-      mensagensRef.current.scrollTop = mensagensRef.current.scrollHeight;
-    }
-  }, [ativoId, contatoAtivo?.mensagens?.length]);
 
   const handleSelecionarConversa = useCallback((id) => {
     setAtivoId(id);
