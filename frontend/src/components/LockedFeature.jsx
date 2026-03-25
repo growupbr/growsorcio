@@ -4,9 +4,11 @@ import { Lock } from 'lucide-react';
  * Componente reutilizável para páginas bloqueadas por plano.
  * Props:
  *   title — título do recurso bloqueado
- *   plan  — nome do plano necessário (ex: "PRO", "ELITE AI")
+ *   plan  — nome do plano necessário (ex: "Pro", "Elite")
  */
 export default function LockedFeature({ title, plan }) {
+  const planSlug = plan?.toLowerCase(); // 'pro' | 'elite'
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 text-center px-6">
 
@@ -27,7 +29,7 @@ export default function LockedFeature({ title, plan }) {
 
       {/* Botão de upgrade */}
       <a
-        href="#precos"
+        href={`/checkout${planSlug ? `?plan=${planSlug}` : ''}`}
         className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white font-semibold px-6 py-3 rounded-lg text-sm transition-colors duration-150 shadow-glow-sm"
       >
         <Lock size={14} />
@@ -36,3 +38,4 @@ export default function LockedFeature({ title, plan }) {
     </div>
   );
 }
+
