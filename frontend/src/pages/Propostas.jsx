@@ -177,8 +177,8 @@ function DocumentoA4({ dados, innerRef }) {
         {/* ════════════════════════════════════════════════════════════════
             1. HEADER
             ════════════════════════════════════════════════════════════════ */}
-        <div className="flex items-start justify-between mb-10">
-          {/* Logo */}
+        <div className="flex items-start justify-between mb-10" style={{ pageBreakInside: 'avoid' }}>
+          {/* Logo */
           {dados.logoSrc ? (
             <img
               src={dados.logoSrc}
@@ -204,7 +204,7 @@ function DocumentoA4({ dados, innerRef }) {
         {/* ════════════════════════════════════════════════════════════════
             2. HEADLINE DO INVESTIDOR
             ════════════════════════════════════════════════════════════════ */}
-        <div className="mb-8">
+        <div className="mb-8" style={{ pageBreakInside: 'avoid' }}>
           <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: accent }}>
             Análise exclusiva preparada para
           </p>
@@ -227,7 +227,7 @@ function DocumentoA4({ dados, innerRef }) {
         {/* ════════════════════════════════════════════════════════════════
             3. ANÁLISE COMPARATIVA — XEQUE-MATE
             ════════════════════════════════════════════════════════════════ */}
-        <div className="mb-8">
+        <div className="mb-8" style={{ pageBreakInside: 'avoid' }}>
           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-5">
             Comparativo de Aquisição Patrimonial
           </p>
@@ -318,7 +318,7 @@ function DocumentoA4({ dados, innerRef }) {
         {/* ════════════════════════════════════════════════════════════════
             4. FUNDAMENTOS DO PLANO
             ════════════════════════════════════════════════════════════════ */}
-        <div className="mb-8">
+        <div className="mb-8" style={{ pageBreakInside: 'avoid' }}>
           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-4">
             Parâmetros do Plano Estruturado
           </p>
@@ -338,7 +338,7 @@ function DocumentoA4({ dados, innerRef }) {
             5. MENSAGEM PERSONALIZADA + CONDIÇÕES
             ════════════════════════════════════════════════════════════════ */}
         {dados.mensagemPersonalizada && (
-          <div className="mb-8">
+          <div className="mb-8" style={{ pageBreakInside: 'avoid' }}>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-3">
               Nota do Consultor
             </p>
@@ -350,7 +350,7 @@ function DocumentoA4({ dados, innerRef }) {
         )}
 
         {/* Condições gerais */}
-        <div className="mb-10">
+        <div className="mb-10" style={{ pageBreakInside: 'avoid' }}>
           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-2">
             Condições Gerais
           </p>
@@ -362,7 +362,7 @@ function DocumentoA4({ dados, innerRef }) {
         </div>
 
         {/* ── Assinaturas ─ */}
-        <div className="grid grid-cols-2 gap-10">
+        <div className="grid grid-cols-2 gap-10" style={{ pageBreakInside: 'avoid' }}>
           {['Cliente Investidor', 'Consultor GrowSorcio'].map((label) => (
             <div key={label}>
               <div className="border-b-2 border-zinc-800 mb-2 pb-6" />
@@ -439,8 +439,10 @@ export default function Propostas() {
           backgroundColor: '#ffffff',
           scrollX: 0,
           scrollY: 0,
+          windowWidth: 794,
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       };
 
       await html2pdf().set(opt).from(el).save();
