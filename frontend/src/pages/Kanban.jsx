@@ -4,6 +4,9 @@ import {
   useSensor, useSensors, useDroppable, useDraggable,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import confetti from 'canvas-confetti';
+import { Building2, Banknote, TrendingUp, Shield, Zap } from 'lucide-react';
+import logoGrow from '../assets/logogrowsorcio.webp';
 import { api } from '../api/client';
 import { useFunilStages } from '../hooks/useFunilStages';
 import TemperaturaBadge from '../components/TemperaturaBadge';
@@ -15,6 +18,17 @@ function formatarMoeda(val) {
   if (val == null || val === '') return null;
   return Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 }
+
+function formatarCompacto(val) {
+  if (!val || val === 0) return null;
+  if (val >= 1_000_000) return `R$ ${(val / 1_000_000).toFixed(1).replace('.', ',')}M`;
+  if (val >= 1_000) return `R$ ${Math.round(val / 1_000)}k`;
+  return formatarMoeda(val);
+}
+
+const ETAPAS_POTENCIAL = new Set([
+  'Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada', 'Follow-up Proposta',
+]);
 
 function formatarData(str) {
   if (!str) return null;
@@ -65,6 +79,108 @@ const InboxIcon = () => (
       d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z"/>
   </svg>
 );
+
+// ─── Modal "Money in the Bank" ──────────────────────────────────────────────
+
+function ModalFechado({ lead, onFechar }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onFechar(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onFechar]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      style={{ backdropFilter: 'blur(18px)', background: 'rgba(0,0,0,0.82)' }}
+      onClick={onFechar}
+    >
+      <div
+        className="relative max-w-sm w-full rounded-3xl overflow-hidden text-center select-none"
+        style={{
+          background: 'linear-gradient(160deg, #0f172a 0%, #1a0800 60%, #0f172a 100%)',
+          boxShadow: '0 0 0 1.5px rgba(255,69,0,0.50), 0 0 60px rgba(255,69,0,0.30), 0 0 120px rgba(34,197,94,0.12), 0 40px 80px rgba(0,0,0,0.9)',
+          animation: 'modalPop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #FF4500, #FFD700, #22C55E, #FF4500, transparent)' }} />
+        <div className="pt-8 pb-4 px-8">
+          <div className="flex justify-center mb-5">
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center p-2"
+              style={{ background: 'rgba(255,69,0,0.08)', boxShadow: '0 0 0 1px rgba(255,69,0,0.20), 0 0 32px rgba(255,69,0,0.18)' }}
+            >
+              <img src={logoGrow} alt="GrowSorcio" className="w-full h-full object-contain" />
+            </div>
+          </div>
+          <div className="text-5xl mb-4 leading-none" role="img" aria-label="Troféu">🏆</div>
+          <h2 className="text-white font-extrabold leading-tight mb-3" style={{ fontSize: '1.45rem', letterSpacing: '-0.02em' }}>
+            Mais um sonho realizado!
+          </h2>
+          {lead.valor_da_carta > 0 && (
+            <div
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl mb-4"
+              style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(255,215,0,0.10) 100%)', border: '1px solid rgba(34,197,94,0.30)', boxShadow: '0 0 20px rgba(34,197,94,0.12)' }}
+            >
+              <span className="text-2xl font-black text-emerald-400">{formatarMoeda(lead.valor_da_carta)}</span>
+            </div>
+          )}
+          <p className="text-zinc-400 text-base font-semibold mb-1">Carta na conta. Pra cima! 🚀</p>
+          <p className="text-zinc-600 text-xs mb-2">{lead.nome}</p>
+        </div>
+        <div className="px-8 pb-8" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <p className="text-[10px] text-zinc-700 mt-5 mb-4 uppercase tracking-widest font-semibold">
+            Tira o print e compartilha! 📸
+          </p>
+          <button
+            onClick={onFechar}
+            className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-150 active:scale-95 cursor-pointer"
+            style={{ background: 'linear-gradient(135deg, #FF4500 0%, #FF6A00 100%)', boxShadow: '0 0 20px rgba(255,69,0,0.30)' }}
+          >
+            Continuar fechando 🔥
+          </button>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #22C55E, #FF4500, transparent)' }} />
+      </div>
+      <style>{`
+        @keyframes modalPop {
+          0%   { opacity: 0; transform: scale(0.72) translateY(24px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── Blessed Badge ────────────────────────────────────────────────────────────
+
+const BLESSED_ITEMS = [
+  { Icon: Building2,  key: 'tipo_de_bem',       label: 'Bem',      check: (v) => !!v },
+  { Icon: Banknote,   key: 'valor_da_carta',     label: 'Valor',    check: (v) => v > 0 },
+  { Icon: TrendingUp, key: 'recurso_para_lance', label: 'Lance',    check: (v) => v > 0 },
+  { Icon: Shield,     key: 'restricao_cpf',      label: 'CPF ok',   check: (v) => v === false || v === 0 },
+  { Icon: Zap,        key: 'urgencia',           label: 'Urgência', check: (v) => !!v },
+];
+
+function BlessedBadge({ lead }) {
+  return (
+    <div className="flex items-center gap-2 pt-2 mt-1 border-t border-white/5">
+      {BLESSED_ITEMS.map(({ Icon, key, label, check }) => {
+        const lit = check(lead[key]);
+        return (
+          <div
+            key={key}
+            title={label}
+            className={`transition-transform duration-150 hover:scale-110 ${lit ? 'text-yellow-400' : 'text-zinc-700'}`}
+          >
+            <Icon size={11} strokeWidth={lit ? 2.5 : 1.5} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // ─── Formulário inline ───────────────────────────────────────────────────────
 
@@ -210,8 +326,8 @@ function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
       {/* Pills — valor do crédito + urgência */}
       <div className="flex flex-wrap gap-1.5 mb-2 pl-[18px]">
         {formatarMoeda(lead.valor_da_carta) && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold
-                           bg-orange-500/10 text-orange-400">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold
+                           bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-2.5 h-2.5 flex-shrink-0">
               <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
             </svg>
@@ -239,6 +355,9 @@ function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
           )}
         </div>
       )}
+
+      {/* Blessed Badge — Método Blessed */}
+      <BlessedBadge lead={lead} />
     </div>
   );
 }
@@ -266,56 +385,78 @@ function LeadCardOverlay({ lead }) {
 
 // ─── Coluna do Kanban ─────────────────────────────────────────────────────────
 
-function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect }) {
+function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect, totalValor }) {
   const { setNodeRef } = useDroppable({ id: etapa.name });
   const dotColor = etapa.color || '#52525b';
+  const isFechado = etapa.name === 'Fechado';
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 flex flex-col" style={{ width: 260 }}>
-      {/* Header — minimal Huly-style */}
-      <div className="flex items-center gap-2 px-1 py-2">
+    <div
+      ref={setNodeRef}
+      className="flex-shrink-0 flex flex-col rounded-xl transition-all duration-200"
+      style={{
+        width: 280,
+        ...(isOver ? { background: 'rgba(255,255,255,0.022)', outline: '1px solid rgba(255,255,255,0.08)' } : {}),
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 px-2 pt-2.5 pb-2 border-b border-white/5">
         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dotColor }} />
-        <span className="text-xs font-semibold text-zinc-300 truncate">
+        <span className="text-sm font-semibold text-zinc-200 truncate flex-1">
           {etapa.name}
         </span>
-        <span className="text-[10px] font-bold text-zinc-600 tabular-nums ml-auto">
+        <span className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-md bg-zinc-900 text-zinc-500 border border-white/5">
           {leads.length}
         </span>
       </div>
 
-      {/* Botão "+" ou formulário inline — logo abaixo do header */}
-      {adicionando ? (
-        <InlineAddForm
-          etapaNome={etapa.name}
-          onAdd={onAdd}
-          onCancel={onCancelarAdd}
-        />
-      ) : (
-        <button
-          onClick={onIniciarAdd}
-          className="w-full flex items-center gap-1.5 px-1 py-1.5 rounded-md text-xs font-medium
-                     text-zinc-500 hover:text-zinc-300
-                     transition-all duration-150 cursor-pointer"
+      {/* Totalizador */}
+      {totalValor != null && (
+        <div
+          className={`mx-1 mt-2 px-3 py-1.5 rounded-lg flex items-center justify-between text-xs font-bold tabular-nums ${
+            isFechado
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+          }`}
         >
-          <PlusIcon />
-          Adicionar lead
-        </button>
+          <span>{isFechado ? '✅ Realizados' : '⚡ Potencial'}</span>
+          <span>{formatarCompacto(totalValor)}</span>
+        </div>
       )}
 
-      {/* Área droppável — zero bordas, zero backgrounds, espaço negativo puro */}
+      {/* "+" ou formulário inline */}
+      <div className="px-1 pt-1.5">
+        {adicionando ? (
+          <InlineAddForm
+            etapaNome={etapa.name}
+            onAdd={onAdd}
+            onCancel={onCancelarAdd}
+          />
+        ) : (
+          <button
+            onClick={onIniciarAdd}
+            className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium
+                       text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.03]
+                       transition-all duration-150 cursor-pointer group"
+          >
+            <span className="text-orange-500/70 group-hover:text-orange-400 transition-colors"><PlusIcon /></span>
+            Adicionar lead
+          </button>
+        )}
+      </div>
+
+      {/* Área droppável */}
       <div
-        className="flex-1 flex flex-col gap-2 mt-2 px-0.5 transition-colors duration-150"
-        style={{
-          minHeight: 460,
-          ...(isOver ? { background: 'rgba(249,115,22,0.04)', borderRadius: 12 } : {}),
-        }}
+        className="flex-1 flex flex-col gap-2.5 mt-2 px-1 pb-2"
+        style={{ minHeight: 460 }}
       >
         {leads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 py-10 mt-1 text-center text-zinc-700">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700/40 py-10 mt-1 text-center">
             <InboxIcon />
-            <p className="text-[11px] leading-relaxed">
-              Sem leads aqui.<br />Arraste para mover.
-            </p>
+            <div>
+              <p className="text-[11px] font-medium text-zinc-600">Sem leads aqui</p>
+              <p className="text-[10px] text-zinc-700 mt-0.5">Arraste para mover</p>
+            </div>
           </div>
         ) : leads.map((lead) => (
           <LeadCard
@@ -347,7 +488,7 @@ function KanbanSkeleton() {
       <div className="flex-1 overflow-x-auto px-6 py-5">
         <div className="flex gap-4 items-start">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex-shrink-0 space-y-3" style={{ width: 260 }}>
+            <div key={i} className="flex-shrink-0 space-y-3" style={{ width: 280 }}>
               <div className="h-3 w-28 bg-zinc-800 rounded-full animate-pulse" />
               {Array.from({ length: 3 }).map((_, j) => (
                 <div
@@ -381,6 +522,7 @@ export default function Kanban() {
   // Coluna com formulário inline ativo (null = nenhuma)
   const [colunaAdicionando, setColunaAdicionando] = useState(null);
   const [selectedIds, setSelectedIds]               = useState(new Set());
+  const [leadFechado, setLeadFechado]               = useState(null);
 
   function toggleSelect(id) {
     setSelectedIds((prev) => {
@@ -423,6 +565,19 @@ export default function Kanban() {
     });
     return mapa;
   }, [leads, etapas]);
+
+  // Soma valor_da_carta por etapa para totalizador
+  const totalPorEtapa = useMemo(() => {
+    const mapa = {};
+    leads.forEach((lead) => {
+      if (!lead.valor_da_carta) return;
+      const etapa = lead.etapa_funil;
+      if (etapa === 'Fechado' || ETAPAS_POTENCIAL.has(etapa)) {
+        mapa[etapa] = (mapa[etapa] || 0) + Number(lead.valor_da_carta);
+      }
+    });
+    return mapa;
+  }, [leads]);
 
   // Criação inline (estilo Trello)
   async function handleAdicionarLead(nome, etapaNome) {
@@ -468,6 +623,17 @@ export default function Kanban() {
     setLeads((prev) =>
       prev.map((l) => l.id === leadId ? { ...l, etapa_funil: novaEtapa } : l)
     );
+    // 🏆 "Money in the Bank"
+    if (novaEtapa === 'Fechado') {
+      setLeadFechado({ ...lead, etapa_funil: novaEtapa });
+      const colors = ['#22C55E', '#FFD700', '#FF4500', '#F59E0B', '#ffffff'];
+      const end = Date.now() + 2800;
+      (function frame() {
+        confetti({ particleCount: 4, angle: 60,  spread: 60, origin: { x: 0, y: 0.65 }, colors, zIndex: 300 });
+        confetti({ particleCount: 4, angle: 120, spread: 60, origin: { x: 1, y: 0.65 }, colors, zIndex: 300 });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    }
     try {
       await api.moverEtapa(leadId, novaEtapa);
     } catch {
@@ -481,28 +647,15 @@ export default function Kanban() {
     <div className="h-full flex flex-col bg-zinc-950">
 
       {/* Header */}
-      <div className="flex flex-col gap-3 px-6 pt-5 pb-4 flex-shrink-0 border-b border-white/5">
-        <div className="flex items-center justify-between">
-          <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
-          <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
-            {leads.length} lead{leads.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {etapas.map((etapa) => (
-            <span
-              key={etapa.id}
-              className="flex items-center gap-1 text-[10px] font-medium text-zinc-600"
-            >
-              <span className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style={{ background: etapa.color }} />
-              {etapa.name}
-            </span>
-          ))}
-        </div>
+      <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0 border-b border-white/5">
+        <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
+        <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
+          {leads.length} lead{leads.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto" style={{ scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}>
+      <div className="flex-1 overflow-x-auto overflow-y-auto dot-grid" style={{ scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}>
         <div className="px-6 py-5" style={{ minWidth: 'max-content', minHeight: '100%' }}>
           <DndContext
             sensors={sensors}
@@ -525,6 +678,7 @@ export default function Kanban() {
                   onCancelarAdd={() => setColunaAdicionando(null)}
                   selectedIds={selectedIds}
                   onToggleSelect={toggleSelect}
+                  totalValor={totalPorEtapa[etapa.name] ?? null}
                 />
               ))}
             </div>
@@ -546,6 +700,11 @@ export default function Kanban() {
             onAtualizado={carregarLeads}
           />
         </Modal>
+      )}
+
+      {/* Modal: "Money in the Bank" 🏆 */}
+      {leadFechado && (
+        <ModalFechado lead={leadFechado} onFechar={() => setLeadFechado(null)} />
       )}
 
       {/* Bulk action bar */}

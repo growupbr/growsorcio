@@ -367,19 +367,19 @@
   /* ─── Kanban card ────────────────────────────────────────────────────────── */
 
   .kanban-card {
-    background: #18181b; /* zinc-900 */
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(160deg, #1c1c20 0%, #18181b 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 2px 16px rgba(0, 0, 0, 0.55);
     min-height: 72px;
     touch-action: none;
     @apply rounded-xl p-4 select-none cursor-grab;
-    transition: background 150ms ease-out, border-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out;
+    transition: background 150ms ease-out, border-color 150ms ease-out, box-shadow 200ms ease-out, transform 150ms ease-out;
   }
   .kanban-card:hover {
-    background: #27272a; /* zinc-800 */
-    border-color: rgba(249, 115, 22, 0.25);
-    box-shadow: 0 0 24px rgba(249, 115, 22, 0.06), 0 8px 24px rgba(0, 0, 0, 0.5);
-    transform: translateY(-1px);
+    background: linear-gradient(160deg, #232328 0%, #1f1f23 100%);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.65);
+    transform: translateY(-2px);
   }
   .kanban-card:active {
     cursor: grabbing;
