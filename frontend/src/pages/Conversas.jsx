@@ -389,28 +389,12 @@ export default function Conversas() {
 
   const contatoAtivo = contatos.find((c) => c.id === ativoId) || null;
 
-  // Auto-scroll to latest message — hook sempre chamado, antes de qualquer return
+  // Todos os hooks ANTES de qualquer early return
   useEffect(() => {
     if (mensagensRef.current) {
       mensagensRef.current.scrollTop = mensagensRef.current.scrollHeight;
     }
   }, [ativoId, contatoAtivo?.mensagens?.length]);
-
-  // Gate por plano — depois de todos os hooks
-  if (!subLoading && !hasFeature('whatsapp')) {
-    return (
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-text">Conversas WhatsApp</h1>
-          <p className="text-muted text-sm">Central de mensagens integrada ao seu WhatsApp</p>
-        </div>
-        <LockedFeature
-          title="Conversas WhatsApp"
-          plan="Pro"
-        />
-      </div>
-    );
-  }
 
   const handleSelecionarConversa = useCallback((id) => {
     setAtivoId(id);
@@ -431,6 +415,22 @@ export default function Conversas() {
       )
     );
   }, [ativoId]);
+
+  // Gate por plano — depois de TODOS os hooks
+  if (!subLoading && !hasFeature('whatsapp')) {
+    return (
+      <div className="p-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-text">Conversas WhatsApp</h1>
+          <p className="text-muted text-sm">Central de mensagens integrada ao seu WhatsApp</p>
+        </div>
+        <LockedFeature
+          title="Conversas WhatsApp"
+          plan="Pro"
+        />
+      </div>
+    );
+  }
 
   const contatosFiltrados = contatos.filter((c) =>
     c.nome.toLowerCase().includes(busca.toLowerCase()) ||
