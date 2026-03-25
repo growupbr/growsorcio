@@ -420,14 +420,33 @@ export default function Propostas() {
     try {
       const html2pdf = (await import('html2pdf.js')).default;
       const nomeCliente = (dados.nomeCliente || 'Cliente').replace(/\s+/g, '_');
+
+      // Antes da captura: zera arredondamento e sombra para evitar bordas escuras no PDF
+      const origStyle = el.style.cssText;
+      el.style.borderRadius = '0';
+      el.style.boxShadow = 'none';
+      el.style.maxWidth = 'none';
+      el.style.width = '794px'; // A4 a 96 dpi
+
       const opt = {
         margin: 0,
         filename: `Proposta_GrowSorcio_${nomeCliente}.pdf`,
         image: { type: 'jpeg', quality: 1.0 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       };
+
       await html2pdf().set(opt).from(el).save();
+
+      // Restaura estilos do preview
+      el.style.cssText = origStyle;
     } finally {
       setDownloading(false);
     }
