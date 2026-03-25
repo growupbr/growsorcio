@@ -231,21 +231,16 @@ export default function LeadForm({ lead, onSalvo, onCancelar }) {
       {/* Próxima ação */}
       <section>
         <SectionTitle>Próxima Ação</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div>
             <label className="label">Data</label>
-            <div className="flex gap-2">
-              <input type="date" className="input flex-1" value={form.data_proxima_acao} onChange={set('data_proxima_acao')} />
-              <input
-                type="time"
-                className="input"
-                style={{ width: '110px', flexShrink: 0 }}
-                value={form.hora_proxima_acao}
-                onChange={set('hora_proxima_acao')}
-              />
-            </div>
+            <input type="date" className="input" value={form.data_proxima_acao} onChange={set('data_proxima_acao')} />
           </div>
           <div>
+            <label className="label">Hora</label>
+            <input type="time" className="input" value={form.hora_proxima_acao} onChange={set('hora_proxima_acao')} />
+          </div>
+          <div className="col-span-2 sm:col-span-1">
             <label className="label">Tipo</label>
             <select className="input" value={form.tipo_proxima_acao} onChange={set('tipo_proxima_acao')}>
               <option value="">Selecione...</option>
