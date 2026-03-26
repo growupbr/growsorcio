@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -18,6 +18,7 @@ import {
 import GrowsorcioLogo from './GrowsorcioLogo';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
+import { api } from '../api/client';
 
 function getStoredSidebarState() {
   try {
@@ -83,8 +84,25 @@ function SidebarLink({ to, label, icon: Icon, locked = false, collapsed }) {
 
 export default function Sidebar() {
   const { logout } = useAuth();
-  const { hasFeature } = useSubscription();
+  const { hasFeature, plan } = useSubscription();
   const [collapsed, setCollapsed] = useState(getStoredSidebarState);
+  const [perfil, setPerfil] = useState(null);
+
+  useEffect(() => {
+    api.getProfile().then(setPerfil).catch(() => {});
+  }, []);
+
+  const iniciais = perfil
+    ? (perfil.full_name || perfil.email || '?')
+        .split(' ').map((w) => w[0]?.toUpperCase()).slice(0, 2).join('')
+    : '...';
+
+  const PLAN_BADGE = {
+    start: { label: 'Start',  cls: 'bg-zinc-700/80 text-zinc-300' },
+    pro:   { label: 'Pro',    cls: 'bg-orange-500/20 text-orange-400' },
+    elite: { label: 'Elite',  cls: 'bg-violet-500/20 text-violet-400' },
+  };
+  const badge = PLAN_BADGE[plan] ?? { label: '...', cls: 'bg-zinc-800 text-zinc-600' };
 
   const toggle = () => {
     setCollapsed((prev) => {
@@ -130,6 +148,44 @@ export default function Sidebar() {
 
       {/* Bottom nav */}
       <div className="p-2 border-t border-white/5 space-y-0.5">
+
+        {/* Avatar card */}
+        {!collapsed && (
+          <div className="flex items-center gap-2.5 px-3 py-2.5 mb-1">
+            <div
+              className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10"
+              style={{ background: perfil?.avatar_url ? 'transparent' : 'linear-gradient(135deg, #FF4500 0%, #f59e0b 100%)' }}
+            >
+              {perfil?.avatar_url
+                ? <img src={perfil.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                : <span>{iniciais}</span>
+              }
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-zinc-200 truncate leading-none mb-1">
+                {perfil?.full_name || perfil?.email || '...'}
+              </p>
+              <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${badge.cls}`}>
+                {badge.label}
+              </span>
+            </div>
+          </div>
+        )}
+        {collapsed && (
+          <div className="flex justify-center mb-1">
+            <div
+              className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10"
+              style={{ background: perfil?.avatar_url ? 'transparent' : 'linear-gradient(135deg, #FF4500 0%, #f59e0b 100%)' }}
+              title={perfil?.full_name || perfil?.email}
+            >
+              {perfil?.avatar_url
+                ? <img src={perfil.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                : <span>{iniciais}</span>
+              }
+            </div>
+          </div>
+        )}
+
         {BOTTOM_ITEMS.map((item) => (
           <SidebarLink key={item.to} {...item} collapsed={collapsed} />
         ))}

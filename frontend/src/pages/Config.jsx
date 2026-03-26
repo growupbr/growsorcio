@@ -3,6 +3,7 @@ import { api } from '../api/client';
 import { useFunilStages } from '../hooks/useFunilStages';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../api/supabaseClient';
+import { useSubscription } from '../hooks/useSubscription';
 
 // ─── Ícones inline ───────────────────────────────────────────────────────────
 
@@ -574,6 +575,7 @@ function ProfileSection() {
 
 export default function Config() {
   const { etapas, setEtapas, carregando, recarregar } = useFunilStages();
+  const { plan, loading: loadingPlan } = useSubscription();
   const [adicionando, setAdicionando] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
   const [dropIndex, setDropIndex] = useState(null);
@@ -660,6 +662,37 @@ export default function Config() {
       <div className="max-w-xl mx-auto space-y-6">
 
         <ProfileSection />
+
+        {/* ── Card de Plano ── */}
+        {!loadingPlan && (() => {
+          const PLAN_INFO = {
+            start: { label: 'Start',  badgeCls: 'bg-zinc-700/80 text-zinc-300',           nextLabel: 'Fazer upgrade para Pro',   nextHref: '/planos' },
+            pro:   { label: 'Pro',    badgeCls: 'bg-orange-500/20 text-orange-400',        nextLabel: 'Fazer upgrade para Elite', nextHref: '/planos' },
+            elite: { label: 'Elite',  badgeCls: 'bg-violet-500/20 text-violet-400',        nextLabel: null },
+          };
+          const info = PLAN_INFO[plan] ?? PLAN_INFO['start'];
+          return (
+            <div className="rounded-2xl bg-zinc-900 border border-white/5 px-5 py-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">Meu Plano</p>
+                <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${info.badgeCls}`}>
+                  {info.label}
+                </span>
+              </div>
+              {info.nextLabel && (
+                <a
+                  href={info.nextHref}
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-orange-500 hover:bg-orange-400 transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3.5 h-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                  </svg>
+                  {info.nextLabel}
+                </a>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Header */}
         <div className="flex items-center justify-between">
