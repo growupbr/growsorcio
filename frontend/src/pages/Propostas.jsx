@@ -332,13 +332,14 @@ function DocumentoA4({ dados, innerRef }) {
           </div>
         </div>
 
-        <Divisor />
+        {/* Quebra de página: Parâmetros encerra p.1, Nota do Consultor inicia p.2 */}
+        <div style={{ pageBreakAfter: 'always', breakAfter: 'page' }} />
 
         {/* ════════════════════════════════════════════════════════════════
             5. MENSAGEM PERSONALIZADA + CONDIÇÕES
             ════════════════════════════════════════════════════════════════ */}
         {dados.mensagemPersonalizada && (
-          <div className="mb-8">
+          <div className="mb-8" style={{ paddingTop: '4px' }}>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-3">
               Nota do Consultor
             </p>
@@ -440,7 +441,8 @@ export default function Propostas() {
           scrollX: 0,
           scrollY: 0,
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        jsPDF:     { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] },
       };
 
       await html2pdf().set(opt).from(el).save();
