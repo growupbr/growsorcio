@@ -5,7 +5,7 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import confetti from 'canvas-confetti';
-import { Building2, Banknote, TrendingUp, Shield, Zap } from 'lucide-react';
+import { Building2, Banknote, TrendingUp, Shield, Zap, Trophy } from 'lucide-react';
 import logoGrow from '../assets/logogrowsorcio.webp';
 import { api } from '../api/client';
 import { useFunilStages } from '../hooks/useFunilStages';
@@ -92,60 +92,68 @@ function ModalFechado({ lead, onFechar }) {
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ backdropFilter: 'blur(18px)', background: 'rgba(0,0,0,0.82)' }}
+      style={{ backdropFilter: 'blur(8px)', background: 'rgba(2,6,23,0.88)' }}
       onClick={onFechar}
     >
       <div
-        className="relative max-w-sm w-full rounded-3xl overflow-hidden text-center select-none"
+        className="relative max-w-sm w-full rounded-2xl overflow-hidden text-center select-none"
         style={{
-          background: 'linear-gradient(160deg, #0f172a 0%, #1a0800 60%, #0f172a 100%)',
-          boxShadow: '0 0 0 1.5px rgba(255,69,0,0.50), 0 0 60px rgba(255,69,0,0.30), 0 0 120px rgba(34,197,94,0.12), 0 40px 80px rgba(0,0,0,0.9)',
-          animation: 'modalPop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+          background: '#09090b',
+          border: '1px solid #27272a',
+          boxShadow: '0 0 0 1px rgba(255,69,0,0.12), 0 24px 80px rgba(0,0,0,0.8)',
+          animation: 'modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #FF4500, #FFD700, #22C55E, #FF4500, transparent)' }} />
-        <div className="pt-8 pb-4 px-8">
-          <div className="flex justify-center mb-5">
+        {/* Accent line — single, clean */}
+        <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #FF4500 30%, #22C55E 70%, transparent)' }} />
+
+        <div className="pt-10 pb-8 px-8">
+          {/* Trophy icon */}
+          <div className="flex justify-center mb-6">
             <div
-              className="w-20 h-20 rounded-2xl flex items-center justify-center p-2"
-              style={{ background: 'rgba(255,69,0,0.08)', boxShadow: '0 0 0 1px rgba(255,69,0,0.20), 0 0 32px rgba(255,69,0,0.18)' }}
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ background: 'rgba(255,69,0,0.08)', border: '1px solid rgba(255,69,0,0.18)' }}
             >
-              <img src={logoGrow} alt="GrowSorcio" className="w-full h-full object-contain" />
+              <Trophy className="w-8 h-8" style={{ color: '#FF4500' }} />
             </div>
           </div>
-          <div className="text-5xl mb-4 leading-none" role="img" aria-label="Troféu">🏆</div>
-          <h2 className="text-white font-extrabold leading-tight mb-3" style={{ fontSize: '1.45rem', letterSpacing: '-0.02em' }}>
-            Mais um sonho realizado!
+
+          <h2 className="text-white font-bold text-xl leading-tight mb-1" style={{ letterSpacing: '-0.02em' }}>
+            Negócio fechado!
           </h2>
+          <p className="text-sm mb-6" style={{ color: '#94A3B8' }}>{lead.nome}</p>
+
           {lead.valor_da_carta > 0 && (
             <div
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl mb-4"
-              style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(255,215,0,0.10) 100%)', border: '1px solid rgba(34,197,94,0.30)', boxShadow: '0 0 20px rgba(34,197,94,0.12)' }}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl mb-6 w-full"
+              style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.18)' }}
             >
-              <span className="text-2xl font-black text-emerald-400">{formatarMoeda(lead.valor_da_carta)}</span>
+              <span className="text-2xl font-black leading-none" style={{ color: '#22C55E' }}>
+                {formatarMoeda(lead.valor_da_carta)}
+              </span>
             </div>
           )}
-          <p className="text-zinc-400 text-base font-semibold mb-1">Carta na conta. Pra cima! 🚀</p>
-          <p className="text-zinc-600 text-xs mb-2">{lead.nome}</p>
-        </div>
-        <div className="px-8 pb-8" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="text-[10px] text-zinc-700 mt-5 mb-4 uppercase tracking-widest font-semibold">
-            Tira o print e compartilha! 📸
+
+          <p className="text-sm mb-8" style={{ color: '#94A3B8' }}>
+            Lead movido para <span className="font-semibold" style={{ color: '#F8FAFC' }}>Fechado</span>.{' '}
+            Continue convertendo.
           </p>
+
           <button
             onClick={onFechar}
-            className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-150 active:scale-95 cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #FF4500 0%, #FF6A00 100%)', boxShadow: '0 0 20px rgba(255,69,0,0.30)' }}
+            className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-150 active:scale-[0.98] cursor-pointer"
+            style={{ background: '#FF4500', boxShadow: '0 0 20px rgba(255,69,0,0.22)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#e03d00'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#FF4500'; }}
           >
-            Continuar fechando 🔥
+            Continuar
           </button>
         </div>
-        <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #22C55E, #FF4500, transparent)' }} />
       </div>
       <style>{`
         @keyframes modalPop {
-          0%   { opacity: 0; transform: scale(0.72) translateY(24px); }
+          0%   { opacity: 0; transform: scale(0.88) translateY(16px); }
           100% { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
