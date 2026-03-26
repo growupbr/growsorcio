@@ -28,3 +28,5 @@ Thumbs.db
 .idea/
 .vercel
 .env*.local
+
+/backend/node_modules
