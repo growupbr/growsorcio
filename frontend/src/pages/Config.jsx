@@ -540,33 +540,6 @@ function ProfileSection() {
         {salvando ? 'Salvando...' : 'Salvar perfil'}
       </button>
 
-      {/* Alterar e-mail */}
-      <div className="mt-8 pt-6 border-t border-white/5">
-        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Alterar E-mail</p>
-        <p className="text-[11px] text-zinc-600 mb-3">
-          Atual: <span className="text-zinc-400">{perfil.email}</span>
-        </p>
-        <div className="flex gap-2">
-          <input
-            id="novo-email"
-            type="email"
-            value={novoEmail}
-            onChange={(e) => setNovoEmail(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAlterarEmail()}
-            placeholder="Novo e-mail"
-            className="flex-1 bg-zinc-950 border border-white/8 text-white text-sm rounded-xl px-3.5 py-2.5 placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20 transition-all"
-          />
-          <button
-            onClick={handleAlterarEmail}
-            disabled={salvandoEmail || !novoEmail.trim()}
-            className="px-4 py-2.5 rounded-xl text-sm font-bold text-zinc-300 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 border border-white/8 transition-all cursor-pointer whitespace-nowrap"
-          >
-            {salvandoEmail ? '...' : 'Confirmar'}
-          </button>
-        </div>
-        {erroEmail    && <p className="text-xs text-red-400 mt-2">{erroEmail}</p>}
-        {sucessoEmail && <p className="text-xs text-emerald-400 mt-2">{sucessoEmail}</p>}
-      </div>
     </div>
   );
 }
