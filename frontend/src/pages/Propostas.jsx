@@ -339,7 +339,7 @@ function DocumentoA4({ dados, innerRef }) {
             5. MENSAGEM PERSONALIZADA + CONDIÇÕES
             ════════════════════════════════════════════════════════════════ */}
         {dados.mensagemPersonalizada && (
-          <div className="mb-8" style={{ paddingTop: '4px' }}>
+          <div className="mb-8" style={{ paddingTop: '80px' }}>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-3">
               Nota do Consultor
             </p>
