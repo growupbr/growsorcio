@@ -52,7 +52,40 @@ const PROFILE_TTL = 5 * 60 * 1000;
 let _profileCache = null;
 let _profileCacheTime = 0;
 
+// ─── GET cache + inflight dedupe ──────────────────────────────────────────
+const _getCache = new Map();
+const _inflight = new Map();
+
+function _buildCacheKey(path, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  if (method !== 'GET') return null;
+  return `${method}:${path}`;
+}
+
+function _invalidate(prefixes = []) {
+  if (!prefixes.length) return;
+  for (const key of Array.from(_getCache.keys())) {
+    if (prefixes.some((p) => key.includes(`:${p}`))) _getCache.delete(key);
+  }
+  for (const key of Array.from(_inflight.keys())) {
+    if (prefixes.some((p) => key.includes(`:${p}`))) _inflight.delete(key);
+  }
+}
+
 async function request(path, options = {}) {
+  const cacheTTL = options.cacheTTL ?? 0;
+  const cacheKey = options.cacheKey || _buildCacheKey(path, options);
+
+  if (cacheKey && cacheTTL > 0) {
+    const cached = _getCache.get(cacheKey);
+    if (cached && Date.now() - cached.time < cacheTTL) {
+      return cached.data;
+    }
+    const inflight = _inflight.get(cacheKey);
+    if (inflight) return inflight;
+  }
+
+  const doFetch = async () => {
   const authHeader = await getAuthHeader();
   let res;
   try {
@@ -74,7 +107,23 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) throw new Error(data.erro || `Erro ${res.status}`);
+
+    if (cacheKey && cacheTTL > 0) {
+      _getCache.set(cacheKey, { data, time: Date.now() });
+    }
+
   return data;
+  };
+
+  const promise = doFetch().finally(() => {
+    if (cacheKey) _inflight.delete(cacheKey);
+  });
+
+  if (cacheKey && cacheTTL > 0) {
+    _inflight.set(cacheKey, promise);
+  }
+
+  return promise;
 }
 
 export const api = {
@@ -83,18 +132,33 @@ export const api = {
     const params = new URLSearchParams(
       Object.fromEntries(Object.entries(filtros).filter(([, v]) => v))
     );
-    return request(`/leads?${params}`);
+    return request(`/leads?${params}`, { cacheTTL: 15 * 1000 });
   },
   buscarLead: (id) => request(`/leads/${id}`),
-  criarLead: (dados) => request('/leads', { method: 'POST', body: dados }),
-  atualizarLead: (id, dados) => request(`/leads/${id}`, { method: 'PUT', body: dados }),
+  criarLead: (dados) => request('/leads', { method: 'POST', body: dados }).then((data) => {
+    _invalidate(['/leads', '/leads/stats']);
+    return data;
+  }),
+  atualizarLead: (id, dados) => request(`/leads/${id}`, { method: 'PUT', body: dados }).then((data) => {
+    _invalidate(['/leads', '/leads/stats']);
+    return data;
+  }),
   moverEtapa: (id, etapa_funil, motivo_descarte) =>
-    request(`/leads/${id}/etapa`, { method: 'PATCH', body: { etapa_funil, motivo_descarte } }),
+    request(`/leads/${id}/etapa`, { method: 'PATCH', body: { etapa_funil, motivo_descarte } }).then((data) => {
+      _invalidate(['/leads', '/leads/stats']);
+      return data;
+    }),
   snooze: (id, snooze_ate) =>
-    request(`/leads/${id}/snooze`, { method: 'PATCH', body: { snooze_ate } }),
-  excluirLead: (id) => request(`/leads/${id}`, { method: 'DELETE' }),
-  resumoStats: (periodo = 'total') => request(`/leads/stats/resumo?periodo=${periodo}`),
-  evolucaoLeads: () => request('/leads/stats/evolucao'),
+    request(`/leads/${id}/snooze`, { method: 'PATCH', body: { snooze_ate } }).then((data) => {
+      _invalidate(['/leads']);
+      return data;
+    }),
+  excluirLead: (id) => request(`/leads/${id}`, { method: 'DELETE' }).then((data) => {
+    _invalidate(['/leads', '/leads/stats']);
+    return data;
+  }),
+  resumoStats: (periodo = 'total') => request(`/leads/stats/resumo?periodo=${periodo}`, { cacheTTL: 20 * 1000 }),
+  evolucaoLeads: () => request('/leads/stats/evolucao', { cacheTTL: 20 * 1000 }),
   motivosDescarte: () => request('/leads/motivos-descarte'),
 
   // Interações
@@ -123,14 +187,29 @@ export const api = {
   },
 
   // Funil de etapas
-  listarEtapas: () => request('/funil'),
-  criarEtapa: (dados) => request('/funil', { method: 'POST', body: dados }),
-  atualizarEtapa: (id, dados) => request(`/funil/${id}`, { method: 'PUT', body: dados }),
-  reordenarEtapas: (items) => request('/funil/reorder', { method: 'PATCH', body: items }),
-  excluirEtapa: (id) => request(`/funil/${id}`, { method: 'DELETE' }),
+  listarEtapas: () => request('/funil', { cacheTTL: 60 * 1000 }),
+  criarEtapa: (dados) => request('/funil', { method: 'POST', body: dados }).then((data) => {
+    _invalidate(['/funil']);
+    return data;
+  }),
+  atualizarEtapa: (id, dados) => request(`/funil/${id}`, { method: 'PUT', body: dados }).then((data) => {
+    _invalidate(['/funil']);
+    return data;
+  }),
+  reordenarEtapas: (items) => request('/funil/reorder', { method: 'PATCH', body: items }).then((data) => {
+    _invalidate(['/funil']);
+    return data;
+  }),
+  excluirEtapa: (id) => request(`/funil/${id}`, { method: 'DELETE' }).then((data) => {
+    _invalidate(['/funil']);
+    return data;
+  }),
 
   // Bulk actions
-  bulkUpdate: (payload) => request('/leads/bulk-update', { method: 'POST', body: payload }),
+  bulkUpdate: (payload) => request('/leads/bulk-update', { method: 'POST', body: payload }).then((data) => {
+    _invalidate(['/leads', '/leads/stats']);
+    return data;
+  }),
 
   // Perfil do usuário
   getProfile: () => {
@@ -150,5 +229,18 @@ export const api = {
   },
 
   // Assinatura / plano
-  getSubscription: () => request('/billing/subscription'),
+  getSubscription: () => request('/billing/subscription', { cacheTTL: 60 * 1000 }),
+
+  // Prefetch leve para melhorar troca entre páginas mais pesadas
+  prefetchRouteData: (route) => {
+    if (route === '/dashboard') {
+      request('/leads/stats/resumo?periodo=total', { cacheTTL: 20 * 1000 }).catch(() => {});
+      request('/leads/stats/evolucao', { cacheTTL: 20 * 1000 }).catch(() => {});
+      return;
+    }
+    if (route === '/kanban') {
+      request('/funil', { cacheTTL: 60 * 1000 }).catch(() => {});
+      request('/leads?', { cacheTTL: 15 * 1000 }).catch(() => {});
+    }
+  },
 };

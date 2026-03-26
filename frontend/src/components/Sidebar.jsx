@@ -51,11 +51,14 @@ const BOTTOM_ITEMS = [
   { to: '/config', label: 'Configurações', icon: Settings },
 ];
 
-function SidebarLink({ to, label, icon: Icon, locked = false, collapsed }) {
+function SidebarLink({ to, label, icon: Icon, locked = false, collapsed, onPrefetch }) {
   return (
     <NavLink
       to={to}
       title={collapsed ? label : undefined}
+      onMouseEnter={() => onPrefetch?.(to)}
+      onFocus={() => onPrefetch?.(to)}
+      onTouchStart={() => onPrefetch?.(to)}
       className={({ isActive }) =>
         `group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
           isActive
@@ -111,6 +114,10 @@ export default function Sidebar() {
     });
   };
 
+  function handlePrefetch(route) {
+    api.prefetchRouteData?.(route);
+  }
+
   return (
     <aside
       className={`flex flex-col h-screen bg-zinc-950 border-r border-white/5 flex-shrink-0 transition-all duration-300 ease-in-out ${
@@ -142,6 +149,7 @@ export default function Sidebar() {
             {...item}
             locked={item.feature ? !hasFeature(item.feature) : false}
             collapsed={collapsed}
+            onPrefetch={handlePrefetch}
           />
         ))}
       </nav>
@@ -189,7 +197,7 @@ export default function Sidebar() {
         )}
 
         {BOTTOM_ITEMS.map((item) => (
-          <SidebarLink key={item.to} {...item} collapsed={collapsed} />
+          <SidebarLink key={item.to} {...item} collapsed={collapsed} onPrefetch={handlePrefetch} />
         ))}
         <button
           onClick={logout}
