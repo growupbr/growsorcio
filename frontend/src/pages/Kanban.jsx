@@ -5,10 +5,12 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import confetti from 'canvas-confetti';
-import { Building2, Banknote, TrendingUp, Shield, Zap, Trophy } from 'lucide-react';
+import { Building2, Banknote, TrendingUp, Shield, Zap } from 'lucide-react';
 import logoGrow from '../assets/logogrowsorcio.webp';
+import mascoteFoguete from '../assets/file.svg';
 import { api } from '../api/client';
 import { useFunilStages } from '../hooks/useFunilStages';
+import { useAuth } from '../hooks/useAuth';
 import TemperaturaBadge from '../components/TemperaturaBadge';
 import BulkActionBar from '../components/BulkActionBar';
 import Modal from '../components/Modal';
@@ -80,10 +82,70 @@ const InboxIcon = () => (
   </svg>
 );
 
+// ─── Som de caixa registradora ──────────────────────────────────────────────
+
+function playRegisterSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Clique mecânico: burst de noise branco curto
+    const bufLen = ctx.sampleRate * 0.04;
+    const noiseBuffer = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufLen);
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.35, ctx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    noiseSource.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseSource.start(ctx.currentTime);
+
+    // Ding 1 — 880 Hz
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, ctx.currentTime + 0.02);
+    osc1.frequency.exponentialRampToValueAtTime(820, ctx.currentTime + 0.35);
+    gain1.gain.setValueAtTime(0, ctx.currentTime + 0.02);
+    gain1.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.04);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(ctx.currentTime + 0.02);
+    osc1.stop(ctx.currentTime + 0.6);
+
+    // Ding 2 — 1100 Hz (0.07s depois)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.09);
+    osc2.frequency.exponentialRampToValueAtTime(1040, ctx.currentTime + 0.4);
+    gain2.gain.setValueAtTime(0, ctx.currentTime + 0.09);
+    gain2.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.12);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.65);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(ctx.currentTime + 0.09);
+    osc2.stop(ctx.currentTime + 0.7);
+
+    // Fecha o contexto após o som terminar
+    setTimeout(() => ctx.close(), 900);
+  } catch (_) {
+    // Silently ignore: AudioContext not available
+  }
+}
+
 // ─── Modal "Money in the Bank" ──────────────────────────────────────────────
 
-function ModalFechado({ lead, onFechar }) {
+function ModalFechado({ lead, onFechar, user }) {
+  const nomeAssinante = user?.user_metadata?.full_name
+    || user?.email?.split('@')[0]
+    || 'Campeão';
+
   useEffect(() => {
+    playRegisterSound();
     const handler = (e) => { if (e.key === 'Escape') onFechar(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -92,7 +154,7 @@ function ModalFechado({ lead, onFechar }) {
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ backdropFilter: 'blur(8px)', background: 'rgba(2,6,23,0.88)' }}
+      style={{ backdropFilter: 'blur(14px)', background: 'rgba(2,6,23,0.70)' }}
       onClick={onFechar}
     >
       <div
@@ -105,49 +167,53 @@ function ModalFechado({ lead, onFechar }) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Accent line — single, clean */}
+        {/* Accent line */}
         <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #FF4500 30%, #22C55E 70%, transparent)' }} />
 
-        <div className="pt-10 pb-8 px-8">
-          {/* Trophy icon */}
-          <div className="flex justify-center mb-6">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ background: 'rgba(255,69,0,0.08)', border: '1px solid rgba(255,69,0,0.18)' }}
-            >
-              <Trophy className="w-8 h-8" style={{ color: '#FF4500' }} />
+        <div className="pt-8 pb-8 px-8">
+          {/* Mascote decolando */}
+          <div className="flex justify-center mb-5" style={{ animation: 'rocketLaunch 0.9s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
+            <div style={{ animation: 'rocketFloat 2s ease-in-out 0.9s infinite' }}>
+              <img
+                src={mascoteFoguete}
+                alt="Mascote decolando"
+                className="w-28 h-28 object-contain drop-shadow-lg"
+                style={{ filter: 'drop-shadow(0 0 18px rgba(255,99,0,0.55))' }}
+              />
             </div>
           </div>
 
           <h2 className="text-white font-bold text-xl leading-tight mb-1" style={{ letterSpacing: '-0.02em' }}>
             Negócio fechado!
           </h2>
-          <p className="text-sm mb-6" style={{ color: '#94A3B8' }}>{lead.nome}</p>
+          <p className="text-sm font-semibold mb-5" style={{ color: '#F59E0B' }}>
+            Parabéns, {nomeAssinante}!
+          </p>
 
           {lead.valor_da_carta > 0 && (
-            <div
-              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl mb-6 w-full"
-              style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.18)' }}
-            >
-              <span className="text-2xl font-black leading-none" style={{ color: '#22C55E' }}>
-                {formatarMoeda(lead.valor_da_carta)}
-              </span>
-            </div>
+            <>
+              <div
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl mb-2 w-full"
+                style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.18)' }}
+              >
+                <span className="text-2xl font-black leading-none" style={{ color: '#22C55E' }}>
+                  {formatarMoeda(lead.valor_da_carta)}
+                </span>
+              </div>
+              <p className="text-xs font-medium mb-5" style={{ color: '#71717a', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                em carta de crédito vendido
+              </p>
+            </>
           )}
-
-          <p className="text-sm mb-8" style={{ color: '#94A3B8' }}>
-            Lead movido para <span className="font-semibold" style={{ color: '#F8FAFC' }}>Fechado</span>.{' '}
-            Continue convertendo.
-          </p>
 
           <button
             onClick={onFechar}
             className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all duration-150 active:scale-[0.98] cursor-pointer"
-            style={{ background: '#FF4500', boxShadow: '0 0 20px rgba(255,69,0,0.22)' }}
+            style={{ background: '#FF4500', boxShadow: '0 0 20px rgba(255,69,0,0.28)' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#e03d00'; }}
             onMouseLeave={e => { e.currentTarget.style.background = '#FF4500'; }}
           >
-            Continuar
+            Continuar escalando 🚀
           </button>
         </div>
       </div>
@@ -155,6 +221,16 @@ function ModalFechado({ lead, onFechar }) {
         @keyframes modalPop {
           0%   { opacity: 0; transform: scale(0.88) translateY(16px); }
           100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes rocketLaunch {
+          0%   { opacity: 0; transform: translateY(30px) scale(0.7); }
+          60%  { opacity: 1; transform: translateY(-10px) scale(1.05); }
+          100% { opacity: 1; transform: translateY(0px) scale(1); }
+        }
+        @keyframes rocketFloat {
+          0%   { transform: translateY(0px); }
+          50%  { transform: translateY(-8px); }
+          100% { transform: translateY(0px); }
         }
       `}</style>
     </div>
@@ -521,6 +597,7 @@ function KanbanSkeleton() {
 // ─── Página Kanban ────────────────────────────────────────────────────────────
 
 export default function Kanban() {
+  const { user } = useAuth();
   const { etapas, carregando: carregandoEtapas } = useFunilStages();
   const [leads, setLeads] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -712,7 +789,7 @@ export default function Kanban() {
 
       {/* Modal: "Money in the Bank" 🏆 */}
       {leadFechado && (
-        <ModalFechado lead={leadFechado} onFechar={() => setLeadFechado(null)} />
+        <ModalFechado lead={leadFechado} onFechar={() => setLeadFechado(null)} user={user} />
       )}
 
       {/* Bulk action bar */}
