@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useSubscription } from '../hooks/useSubscription';
 import {
   Link2,
   MessageCircle,
@@ -410,6 +411,8 @@ const DEFAULT_DADOS = {
 };
 
 export default function Propostas() {
+  const { hasFeature } = useSubscription();
+  const podeTrocarLogo = hasFeature('logo_customizada');
   const [dados, setDados] = useState(DEFAULT_DADOS);
   const docRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -545,66 +548,93 @@ export default function Propostas() {
                 </div>
               </Field>
               <Field label="Logótipo da Proposta" id="logo">
-                {/* Grid de logos das administradoras */}
-                <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-2">Administradoras</p>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  {ADMIN_LOGOS.map((logo) => (
-                    <button
-                      key={logo.id}
-                      type="button"
-                      onClick={() => setDados(prev => ({
-                        ...prev,
-                        logoSrc: logo.src,
-                        logoLabel: logo.label,
-                      }))}
-                      className={`flex items-center justify-center p-2 h-12 rounded-lg border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${
-                        dados.logoSrc === logo.src
-                          ? 'border-orange-500/60 bg-orange-500/10'
-                          : 'border-white/8 bg-zinc-900 hover:border-white/20 hover:bg-zinc-800'
-                      }`}
-                      title={logo.label}
+                {podeTrocarLogo ? (
+                  <>
+                    {/* Grid de logos das administradoras */}
+                    <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-2">Administradoras</p>
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      {ADMIN_LOGOS.map((logo) => (
+                        <button
+                          key={logo.id}
+                          type="button"
+                          onClick={() => setDados(prev => ({
+                            ...prev,
+                            logoSrc: logo.src,
+                            logoLabel: logo.label,
+                          }))}
+                          className={`flex items-center justify-center p-2 h-12 rounded-lg border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${
+                            dados.logoSrc === logo.src
+                              ? 'border-orange-500/60 bg-orange-500/10'
+                              : 'border-white/8 bg-zinc-900 hover:border-white/20 hover:bg-zinc-800'
+                          }`}
+                          title={logo.label}
+                        >
+                          <img src={logo.src} alt={logo.label} className="h-7 w-full object-contain" />
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Upload de logo personalizada */}
+                    <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-2">Ou carregue a sua</p>
+                    <label
+                      htmlFor="logo-upload"
+                      className="w-full flex items-center justify-center gap-2 border border-dashed border-white/12 rounded-xl px-4 py-3.5 text-zinc-500 hover:text-zinc-300 hover:border-white/25 transition-all text-xs cursor-pointer focus-within:ring-2 focus-within:ring-orange-500"
                     >
-                      <img src={logo.src} alt={logo.label} className="h-7 w-full object-contain" />
-                    </button>
-                  ))}
-                </div>
+                      <Upload size={13} />
+                      <span>{dados.logoSrc && !ADMIN_LOGOS.some(l => l.src === dados.logoSrc) ? 'Logo carregada ✓' : 'Carregar logo própria'}</span>
+                      <input
+                        id="logo-upload"
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setDados(prev => ({
+                            ...prev,
+                            logoSrc: ev.target.result,
+                            logoLabel: file.name.replace(/\.[^.]+$/, ''),
+                          }));
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
 
-                {/* Upload de logo personalizada */}
-                <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-2">Ou carregue a sua</p>
-                <label
-                  htmlFor="logo-upload"
-                  className="w-full flex items-center justify-center gap-2 border border-dashed border-white/12 rounded-xl px-4 py-3.5 text-zinc-500 hover:text-zinc-300 hover:border-white/25 transition-all text-xs cursor-pointer focus-within:ring-2 focus-within:ring-orange-500"
-                >
-                  <Upload size={13} />
-                  <span>{dados.logoSrc && !ADMIN_LOGOS.some(l => l.src === dados.logoSrc) ? 'Logo carregada ✓' : 'Carregar logo própria'}</span>
-                  <input
-                    id="logo-upload"
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setDados(prev => ({
-                        ...prev,
-                        logoSrc: ev.target.result,
-                        logoLabel: file.name.replace(/\.[^.]+$/, ''),
-                      }));
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
-
-                {/* Botão de limpar logo */}
-                {dados.logoSrc && (
-                  <button
-                    type="button"
-                    onClick={() => setDados(prev => ({ ...prev, logoSrc: null, logoLabel: '' }))}
-                    className="mt-2 w-full flex items-center justify-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-                  >
-                    <X size={11} /> Remover logo
-                  </button>
+                    {/* Botão de limpar logo */}
+                    {dados.logoSrc && (
+                      <button
+                        type="button"
+                        onClick={() => setDados(prev => ({ ...prev, logoSrc: null, logoLabel: '' }))}
+                        className="mt-2 w-full flex items-center justify-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                      >
+                        <X size={11} /> Remover logo
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  /* ── Bloqueio plano Start ── */
+                  <div className="rounded-xl border border-white/6 bg-zinc-900/60 p-4 flex flex-col items-center text-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5 text-orange-400">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 11V7a5 5 0 0110 0v4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-zinc-200 mb-0.5">Exclusivo do Plano Pro</p>
+                      <p className="text-[11px] text-zinc-500 leading-relaxed">
+                        No plano Start a proposta usa a logo da GrowSorcio.<br />
+                        Faça upgrade para personalizar com a sua logo.
+                      </p>
+                    </div>
+                    <a
+                      href="/planos"
+                      className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-orange-500 hover:bg-orange-400 transition-colors"
+                    >
+                      Fazer upgrade para Pro
+                    </a>
+                  </div>
                 )}
               </Field>
               <Field label="Nota do Consultor" id="msg">

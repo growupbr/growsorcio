@@ -3,14 +3,16 @@
 // Mapa de features gated por plano.
 // Features NÃO listadas aqui estão disponíveis para todos os planos.
 export const FEATURE_PLANS = {
-  whatsapp: ['pro', 'elite'],
-  growia:   ['elite'],
+  whatsapp:         ['pro', 'elite'],
+  growia:           ['elite'],
+  logo_customizada: ['pro', 'elite'],
 };
 
 // Label amigável do plano mínimo necessário para cada feature
 export const FEATURE_PLAN_LABEL = {
-  whatsapp: 'Pro',
-  growia:   'Elite',
+  whatsapp:         'Pro',
+  growia:           'Elite',
+  logo_customizada: 'Pro',
 };
 
 export const PLAN_LABELS = {
