@@ -38,10 +38,8 @@ const isAppDomain =
   window.location.hostname === '127.0.0.1';
 
 function PrivateRoute({ children }) {
-  // TEMP: bypass auth for visual preview
-  return children;
-  // eslint-disable-next-line no-unreachable
   const { user, loading } = useAuth();
+
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/login" replace />;
   return children;

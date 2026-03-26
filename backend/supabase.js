@@ -10,7 +10,9 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error('Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no backend/.env');
 }
 if (!SUPABASE_ANON_KEY) {
-  throw new Error('Configure SUPABASE_ANON_KEY no backend/.env');
+  // ANON_KEY é opcional — as rotas usam service_role client.
+  // Sem ela, createUserClient() não funciona, mas auth e dados continuam operando.
+  console.warn('[supabase] SUPABASE_ANON_KEY não configurada — createUserClient() indisponível');
 }
 
 // service_role: bypassa RLS — usar APENAS para auth.getUser() e webhooks externos
