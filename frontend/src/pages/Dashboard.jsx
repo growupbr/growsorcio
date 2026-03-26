@@ -234,6 +234,106 @@ export default function Dashboard() {
     finally { setExportando(false); }
   }, []);
 
+  // ── Dados processados (todos os hooks ANTES de qualquer early return) ──
+  const totalPorEtapa = useMemo(() => {
+    if (!stats) return {};
+    return Object.fromEntries(
+      (stats.por_etapa_total || stats.por_etapa).map((e) => [e.etapa_funil, e.total])
+    );
+  }, [stats]);
+  const totalPorEtapaPeriodo = useMemo(() => {
+    if (!stats) return {};
+    return Object.fromEntries(stats.por_etapa.map((e) => [e.etapa_funil, e.total]));
+  }, [stats]);
+  const totalPorTemp = useMemo(() => {
+    if (!stats) return {};
+    return Object.fromEntries(
+      (stats.por_temperatura_total || stats.por_temperatura).map((t) => [t.temperatura, t.total])
+    );
+  }, [stats]);
+
+  const totalGeral = useMemo(() => Object.values(totalPorEtapa).reduce((s, v) => s + v, 0), [totalPorEtapa]);
+  const totalPeriodo = useMemo(() => Object.values(totalPorEtapaPeriodo).reduce((s, v) => s + v, 0), [totalPorEtapaPeriodo]);
+
+  const totalAtivos = totalGeral - (totalPorEtapa['Fechado'] || 0) - (totalPorEtapa['Perdido'] || 0);
+  const seguiu  = totalPorEtapa['Seguiu Perfil'] || 0;
+  const fechado = totalPorEtapa['Fechado'] || 0;
+  const taxaGlobal = seguiu > 0 ? ((fechado / seguiu) * 100).toFixed(1) : null;
+
+  // Métricas de origem
+  const totalAnuncio = stats?.total_anuncio || 0;
+  const totalProspeccao = (stats?.por_origem || []).find(o => o.origem === 'prospeccao')?.total || 0;
+  const taxaResposta = stats?.taxa_resposta_anuncio || 0;
+  const reunioesAnuncio = (stats?.reunioes_por_origem || []).find(o => o.origem === 'anuncio')?.total || 0;
+  const reunioesProspeccao = (stats?.reunioes_por_origem || []).find(o => o.origem === 'prospeccao')?.total || 0;
+
+  const metricasPeriodo = useMemo(() => {
+    const etapaAnterior = Object.fromEntries(
+      (stats?.por_etapa_anterior || []).map((e) => [e.etapa_funil, e.total])
+    );
+    const totalPeriodoAnterior = Object.values(etapaAnterior).reduce((s, v) => s + v, 0);
+    const fechadoAnterior = etapaAnterior['Fechado'] || 0;
+
+    function calcDelta(atual, anterior) {
+      if (!stats?.por_etapa_anterior || anterior === 0) return null;
+      return Math.round(((atual - anterior) / anterior) * 100);
+    }
+
+    return [
+      { label: 'Leads no período', valor: totalPeriodo, icon: Icons.Users, destaque: true, delta: calcDelta(totalPeriodo, totalPeriodoAnterior) },
+      { label: 'Reuniões agendadas', valor: totalPorEtapa['Reunião Agendada'] || 0, icon: Icons.Calendar, delta: calcDelta(totalPorEtapa['Reunião Agendada'] || 0, etapaAnterior['Reunião Agendada'] || 0) },
+      { label: 'Reuniões realizadas', valor: totalPorEtapa['Reunião Realizada'] || 0, icon: Icons.Calendar, delta: calcDelta(totalPorEtapa['Reunião Realizada'] || 0, etapaAnterior['Reunião Realizada'] || 0) },
+      { label: 'Propostas enviadas', valor: totalPorEtapa['Proposta Enviada'] || 0, icon: Icons.TrendUp, delta: calcDelta(totalPorEtapa['Proposta Enviada'] || 0, etapaAnterior['Proposta Enviada'] || 0) },
+      { label: 'Fechamentos', valor: fechado, icon: Icons.Check, delta: calcDelta(fechado, fechadoAnterior) },
+      { label: 'Total de leads', valor: totalGeral, sub: `${totalAtivos} ativos`, icon: Icons.Target },
+    ];
+  }, [totalPeriodo, totalPorEtapa, fechado, totalGeral, totalAtivos, stats]);
+
+  const dadosBarras = useMemo(() => ETAPAS_ORDEM
+    .filter((e) => e !== 'Fechado' && e !== 'Perdido')
+    .map((e) => ({
+      etapa: e,
+      total: totalPorEtapa[e] || 0,
+    })), [totalPorEtapa]);
+
+  const dadosPizza = useMemo(() => ['quente', 'morno', 'frio']
+    .map((t) => ({ name: TEMP_LABELS[t], value: totalPorTemp[t] || 0, color: TEMP_COLORS[t] }))
+    .filter((d) => d.value > 0), [totalPorTemp]);
+
+  const totalAlertas = (stats?.follow_ups_vencidos?.length || 0) + (stats?.cadencia_hoje?.length || 0) + (stats?.reunioes_hoje?.length || 0);
+
+  // ── Dados relatórios ──
+  const dadosEtapa = useMemo(() => (stats?.por_etapa || []).sort((a, b) => b.total - a.total), [stats]);
+  const dadosOrigem = useMemo(() => (stats?.por_origem || []).map((r) => ({
+    name: r.origem === 'anuncio' ? 'Anúncio' : r.origem === 'prospeccao' ? 'Prospecção' : r.origem,
+    value: r.total,
+  })), [stats]);
+  const dadosTipoBem = useMemo(() => (stats?.por_tipo_bem || []).sort((a, b) => b.total - a.total).slice(0, 8), [stats]);
+  const dadosMotivos = useMemo(() => leads
+    .filter((l) => l.motivo_descarte)
+    .reduce((acc, l) => {
+      const m = l.motivo_descarte;
+      const f = acc.find((x) => x.motivo === m);
+      if (f) f.total++; else acc.push({ motivo: m, total: 1 });
+      return acc;
+    }, [])
+    .sort((a, b) => b.total - a.total), [leads]);
+
+  const { totalLeadsRel, fechadosRel, perdidosRel, taxaConversaoRel, qtTemp } = useMemo(() => {
+    const total = leads.length;
+    const fechados = leads.filter((l) => l.etapa_funil === 'Fechado').length;
+    const perdidos = leads.filter((l) => l.etapa_funil === 'Perdido').length;
+    const qt = { quente: 0, morno: 0, frio: 0 };
+    leads.forEach((l) => { if (l.temperatura in qt) qt[l.temperatura]++; });
+    return {
+      totalLeadsRel: total,
+      fechadosRel: fechados,
+      perdidosRel: perdidos,
+      taxaConversaoRel: total > 0 ? Math.round((fechados / total) * 100) : 0,
+      qtTemp: qt,
+    };
+  }, [leads]);
+
   if (erro) {
     return (
       <div className="max-w-xl mx-auto px-6 py-24 text-center">
@@ -260,100 +360,6 @@ npm run dev`}
 
   if (carregando) return <DashboardSkeleton />;
   if (!stats) return null;
-
-  // ── Dados processados ──
-  const totalPorEtapa = useMemo(() => Object.fromEntries(
-    (stats.por_etapa_total || stats.por_etapa).map((e) => [e.etapa_funil, e.total])
-  ), [stats]);
-  const totalPorEtapaPeriodo = useMemo(() => Object.fromEntries(
-    stats.por_etapa.map((e) => [e.etapa_funil, e.total])
-  ), [stats]);
-  const totalPorTemp = useMemo(() => Object.fromEntries(
-    (stats.por_temperatura_total || stats.por_temperatura).map((t) => [t.temperatura, t.total])
-  ), [stats]);
-
-  const totalGeral = useMemo(() => Object.values(totalPorEtapa).reduce((s, v) => s + v, 0), [totalPorEtapa]);
-  const totalAtivos = totalGeral - (totalPorEtapa['Fechado'] || 0) - (totalPorEtapa['Perdido'] || 0);
-  const totalPeriodo = useMemo(() => Object.values(totalPorEtapaPeriodo).reduce((s, v) => s + v, 0), [totalPorEtapaPeriodo]);
-
-  const seguiu  = totalPorEtapa['Seguiu Perfil'] || 0;
-  const fechado = totalPorEtapa['Fechado'] || 0;
-  const taxaGlobal = seguiu > 0 ? ((fechado / seguiu) * 100).toFixed(1) : null;
-
-  // Métricas de origem
-  const totalAnuncio = stats.total_anuncio || 0;
-  const totalProspeccao = (stats.por_origem || []).find(o => o.origem === 'prospeccao')?.total || 0;
-  const taxaResposta = stats.taxa_resposta_anuncio || 0;
-  const reunioesAnuncio = (stats.reunioes_por_origem || []).find(o => o.origem === 'anuncio')?.total || 0;
-  const reunioesProspeccao = (stats.reunioes_por_origem || []).find(o => o.origem === 'prospeccao')?.total || 0;
-
-  const metricasPeriodo = useMemo(() => {
-    // Mapa do período anterior para calcular deltas
-    const etapaAnterior = Object.fromEntries(
-      (stats.por_etapa_anterior || []).map((e) => [e.etapa_funil, e.total])
-    );
-    const totalPeriodoAnterior = Object.values(etapaAnterior).reduce((s, v) => s + v, 0);
-    const fechadoAnterior = etapaAnterior['Fechado'] || 0;
-
-    function calcDelta(atual, anterior) {
-      if (!stats.por_etapa_anterior || anterior === 0) return null;
-      return Math.round(((atual - anterior) / anterior) * 100);
-    }
-
-    return [
-      { label: 'Leads no período', valor: totalPeriodo, icon: Icons.Users, destaque: true, delta: calcDelta(totalPeriodo, totalPeriodoAnterior) },
-      { label: 'Reuniões agendadas', valor: totalPorEtapa['Reunião Agendada'] || 0, icon: Icons.Calendar, delta: calcDelta(totalPorEtapa['Reunião Agendada'] || 0, etapaAnterior['Reunião Agendada'] || 0) },
-      { label: 'Reuniões realizadas', valor: totalPorEtapa['Reunião Realizada'] || 0, icon: Icons.Calendar, delta: calcDelta(totalPorEtapa['Reunião Realizada'] || 0, etapaAnterior['Reunião Realizada'] || 0) },
-      { label: 'Propostas enviadas', valor: totalPorEtapa['Proposta Enviada'] || 0, icon: Icons.TrendUp, delta: calcDelta(totalPorEtapa['Proposta Enviada'] || 0, etapaAnterior['Proposta Enviada'] || 0) },
-      { label: 'Fechamentos', valor: fechado, icon: Icons.Check, delta: calcDelta(fechado, fechadoAnterior) },
-      { label: 'Total de leads', valor: totalGeral, sub: `${totalAtivos} ativos`, icon: Icons.Target },
-    ];
-  }, [totalPeriodo, totalPorEtapa, fechado, totalGeral, totalAtivos, stats]);
-
-  const dadosBarras = useMemo(() => ETAPAS_ORDEM
-    .filter((e) => e !== 'Fechado' && e !== 'Perdido')
-    .map((e) => ({
-      etapa: e,
-      total: totalPorEtapa[e] || 0,
-    })), [totalPorEtapa]);
-
-  const dadosPizza = useMemo(() => ['quente', 'morno', 'frio']
-    .map((t) => ({ name: TEMP_LABELS[t], value: totalPorTemp[t] || 0, color: TEMP_COLORS[t] }))
-    .filter((d) => d.value > 0), [totalPorTemp]);
-
-  const totalAlertas = stats.follow_ups_vencidos.length + stats.cadencia_hoje.length + stats.reunioes_hoje.length;
-
-  // ── Dados relatórios ──
-  const dadosEtapa = useMemo(() => (stats.por_etapa || []).sort((a, b) => b.total - a.total), [stats]);
-  const dadosOrigem = useMemo(() => (stats.por_origem || []).map((r) => ({
-    name: r.origem === 'anuncio' ? 'Anúncio' : r.origem === 'prospeccao' ? 'Prospecção' : r.origem,
-    value: r.total,
-  })), [stats]);
-  const dadosTipoBem = useMemo(() => (stats.por_tipo_bem || []).sort((a, b) => b.total - a.total).slice(0, 8), [stats]);
-  const dadosMotivos = useMemo(() => leads
-    .filter((l) => l.motivo_descarte)
-    .reduce((acc, l) => {
-      const m = l.motivo_descarte;
-      const f = acc.find((x) => x.motivo === m);
-      if (f) f.total++; else acc.push({ motivo: m, total: 1 });
-      return acc;
-    }, [])
-    .sort((a, b) => b.total - a.total), [leads]);
-
-  const { totalLeadsRel, fechadosRel, perdidosRel, taxaConversaoRel, qtTemp } = useMemo(() => {
-    const total = leads.length;
-    const fechados = leads.filter((l) => l.etapa_funil === 'Fechado').length;
-    const perdidos = leads.filter((l) => l.etapa_funil === 'Perdido').length;
-    const qt = { quente: 0, morno: 0, frio: 0 };
-    leads.forEach((l) => { if (l.temperatura in qt) qt[l.temperatura]++; });
-    return {
-      totalLeadsRel: total,
-      fechadosRel: fechados,
-      perdidosRel: perdidos,
-      taxaConversaoRel: total > 0 ? Math.round((fechados / total) * 100) : 0,
-      qtTemp: qt,
-    };
-  }, [leads]);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
