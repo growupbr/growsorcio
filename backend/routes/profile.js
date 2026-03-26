@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
   try {
     const { data, error } = await req.supabase
       .from('profiles')
-      .select('full_name, phone_number, avatar_url, role')
+      .select('full_name, phone_number, avatar_url, role, meta_mensal')
       .eq('user_id', req.user.id)
       .maybeSingle();
 
@@ -19,6 +19,7 @@ router.get('/', async (req, res) => {
       phone_number: data?.phone_number || '',
       avatar_url:   data?.avatar_url   || null,
       role:         data?.role         || 'member',
+      meta_mensal:  data?.meta_mensal  ?? 0,
     });
   } catch (err) {
     res.status(500).json({ erro: err.message });
@@ -27,7 +28,7 @@ router.get('/', async (req, res) => {
 
 // PUT /api/profile — atualiza full_name, phone_number e/ou avatar_url
 router.put('/', async (req, res) => {
-  const { full_name, phone_number, avatar_url } = req.body;
+  const { full_name, phone_number, avatar_url, meta_mensal } = req.body;
 
   const updates = {};
 
@@ -54,6 +55,14 @@ router.put('/', async (req, res) => {
     } else {
       return res.status(400).json({ erro: 'Formato de avatar inválido' });
     }
+  }
+
+  if (meta_mensal !== undefined) {
+    const val = parseInt(meta_mensal, 10);
+    if (isNaN(val) || val < 0) {
+      return res.status(400).json({ erro: 'Meta mensal inválida' });
+    }
+    updates.meta_mensal = val;
   }
 
   if (Object.keys(updates).length === 0) {

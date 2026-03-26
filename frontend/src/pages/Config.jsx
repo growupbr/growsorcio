@@ -321,7 +321,7 @@ function NovaEtapaForm({ onCriar, onCancelar }) {
 
 function ProfileSection() {
   const { user } = useAuth();
-  const [perfil, setPerfil] = useState({ full_name: '', email: '', phone_number: '', avatar_url: null });
+  const [perfil, setPerfil] = useState({ full_name: '', email: '', phone_number: '', avatar_url: null, meta_mensal: 0 });
   const [carregandoPerfil, setCarregandoPerfil] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [sucesso, setSucesso] = useState('');
@@ -386,6 +386,7 @@ function ProfileSection() {
         full_name:    perfil.full_name,
         phone_number: perfil.phone_number,
         avatar_url:   perfil.avatar_url,
+        meta_mensal:  perfil.meta_mensal,
       });
       setSucesso('Perfil salvo!');
       setTimeout(() => setSucesso(''), 3000);
@@ -504,6 +505,25 @@ function ProfileSection() {
             maxLength={30}
             className="w-full bg-zinc-950 border border-white/8 text-white text-sm rounded-xl px-3.5 py-2.5 placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20 transition-all"
           />
+        </div>
+        <div>
+          <label htmlFor="perfil-meta" className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">
+            Meta mensal de vendas
+          </label>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-zinc-500 select-none">R$</span>
+            <input
+              id="perfil-meta"
+              type="number"
+              min="0"
+              step="100"
+              value={perfil.meta_mensal || ''}
+              onChange={(e) => setPerfil((p) => ({ ...p, meta_mensal: Math.max(0, parseInt(e.target.value) || 0) }))}
+              placeholder="0"
+              className="w-full bg-zinc-950 border border-white/8 text-white text-sm rounded-xl pl-9 pr-3.5 py-2.5 placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+          <p className="text-[10px] text-zinc-700 mt-1">Valor em reais que você quer faturar por mês</p>
         </div>
       </div>
 
