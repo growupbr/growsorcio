@@ -14,10 +14,10 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  BarChart2,
 } from 'lucide-react';
 import GrowsorcioLogo from './GrowsorcioLogo';
 import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
 
 function getStoredSidebarState() {
   try {
@@ -39,11 +39,10 @@ const NAV_ITEMS = [
   { to: '/dashboard',   label: 'Dashboard',           icon: LayoutDashboard },
   { to: '/kanban',      label: 'Kanban',              icon: KanbanIcon },
   { to: '/leads',       label: 'Leads',               icon: Users },
-  { to: '/relatorios',  label: 'Relatórios',          icon: BarChart2 },
   { to: '/calculadora', label: 'Calculadora',         icon: Calculator },
-  { to: '/propostas',   label: 'Propostas',           icon: FileText,       locked: true },
-  { to: '/conversas',   label: 'Conversas WhatsApp',  icon: MessageSquare,  locked: true },
-  { to: '/grow-ia',     label: 'GrowIA',              icon: Bot,            locked: true },
+  { to: '/propostas',   label: 'Propostas',           icon: FileText },
+  { to: '/conversas',   label: 'Conversas WhatsApp',  icon: MessageSquare,  feature: 'whatsapp' },
+  { to: '/grow-ia',     label: 'GrowIA',              icon: Bot,            feature: 'growia' },
   { to: '/treinamento', label: 'Treinamento TEC 2.0', icon: GraduationCap },
 ];
 
@@ -51,7 +50,7 @@ const BOTTOM_ITEMS = [
   { to: '/config', label: 'Configurações', icon: Settings },
 ];
 
-function SidebarLink({ to, label, icon: Icon, locked, collapsed }) {
+function SidebarLink({ to, label, icon: Icon, locked = false, collapsed }) {
   return (
     <NavLink
       to={to}
@@ -84,6 +83,7 @@ function SidebarLink({ to, label, icon: Icon, locked, collapsed }) {
 
 export default function Sidebar() {
   const { logout } = useAuth();
+  const { hasFeature } = useSubscription();
   const [collapsed, setCollapsed] = useState(getStoredSidebarState);
 
   const toggle = () => {
@@ -119,7 +119,12 @@ export default function Sidebar() {
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {NAV_ITEMS.map((item) => (
-          <SidebarLink key={item.to} {...item} collapsed={collapsed} />
+          <SidebarLink
+            key={item.to}
+            {...item}
+            locked={item.feature ? !hasFeature(item.feature) : false}
+            collapsed={collapsed}
+          />
         ))}
       </nav>
 

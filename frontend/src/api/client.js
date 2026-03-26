@@ -87,4 +87,7 @@ export const api = {
 
   // Bulk actions
   bulkUpdate: (payload) => request('/leads/bulk-update', { method: 'POST', body: payload }),
+
+  // Assinatura / plano
+  getSubscription: () => request('/billing/subscription'),
 };

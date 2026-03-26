@@ -128,6 +128,44 @@ router.get('/pix/:id', async (req, res) => {
   }
 });
 
+// ── GET /api/billing/subscription ───────────────────────────────────────────
+// Retorna a assinatura ativa do usuário autenticado
+router.get('/subscription', authMiddleware, async (req, res) => {
+  const { organizationId } = req;
+
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('plan, status, trial_ends_at, current_period_end, billing_period')
+    .eq('organization_id', organizationId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[billing/subscription]', error.message);
+    return res.status(500).json({ erro: error.message });
+  }
+
+  if (!data) {
+    // Usuário sem registro de assinatura — trata como trial sem plano definido
+    return res.json({ plan: null, status: 'trial', trial_ends_at: null, isActive: false });
+  }
+
+  const now = new Date();
+  const isActive =
+    data.status === 'active' ||
+    (data.status === 'trial' && data.trial_ends_at && new Date(data.trial_ends_at) > now);
+
+  return res.json({
+    plan:               data.plan,
+    status:             data.status,
+    trial_ends_at:      data.trial_ends_at,
+    current_period_end: data.current_period_end,
+    billing_period:     data.billing_period,
+    isActive,
+  });
+});
+
 // ── POST /api/billing/webhook ────────────────────────────────────────────────
 // Recebe eventos da AbacatePay (billing.paid, pix.paid, billing.expired)
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {

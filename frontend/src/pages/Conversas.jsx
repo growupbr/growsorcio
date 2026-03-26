@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import GrowsorcioLogo from '../components/GrowsorcioLogo';
+import LockedFeature from '../components/LockedFeature';
+import { useSubscription } from '../hooks/useSubscription';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -379,6 +381,7 @@ function InputArea({ onEnviar }) {
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export default function Conversas() {
+  const { hasFeature, loading: subLoading } = useSubscription();
   const [contatos, setContatos] = useState(MOCK_CONTATOS);
   const [ativoId, setAtivoId] = useState(null);
   const [busca, setBusca] = useState('');
@@ -386,7 +389,7 @@ export default function Conversas() {
 
   const contatoAtivo = contatos.find((c) => c.id === ativoId) || null;
 
-  // Auto-scroll to latest message
+  // Todos os hooks ANTES de qualquer early return
   useEffect(() => {
     if (mensagensRef.current) {
       mensagensRef.current.scrollTop = mensagensRef.current.scrollHeight;
@@ -412,6 +415,22 @@ export default function Conversas() {
       )
     );
   }, [ativoId]);
+
+  // Gate por plano — depois de TODOS os hooks
+  if (!subLoading && !hasFeature('whatsapp')) {
+    return (
+      <div className="p-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-text">Conversas WhatsApp</h1>
+          <p className="text-muted text-sm">Central de mensagens integrada ao seu WhatsApp</p>
+        </div>
+        <LockedFeature
+          title="Conversas WhatsApp"
+          plan="Pro"
+        />
+      </div>
+    );
+  }
 
   const contatosFiltrados = contatos.filter((c) =>
     c.nome.toLowerCase().includes(busca.toLowerCase()) ||
