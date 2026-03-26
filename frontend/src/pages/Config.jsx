@@ -661,38 +661,83 @@ export default function Config() {
     <div className="h-full overflow-y-auto bg-zinc-950 px-6 py-8">
       <div className="max-w-xl mx-auto space-y-6">
 
-        <ProfileSection />
-
-        {/* ── Card de Plano ── */}
+        {/* ── Card de Plano ── PRIMEIRO elemento ── */}
         {!loadingPlan && (() => {
-          const PLAN_INFO = {
-            start: { label: 'Start',  badgeCls: 'bg-zinc-700/80 text-zinc-300',           nextLabel: 'Fazer upgrade para Pro',   nextHref: '/planos' },
-            pro:   { label: 'Pro',    badgeCls: 'bg-orange-500/20 text-orange-400',        nextLabel: 'Fazer upgrade para Elite', nextHref: '/planos' },
-            elite: { label: 'Elite',  badgeCls: 'bg-violet-500/20 text-violet-400',        nextLabel: null },
+          const PLAN_CONFIG = {
+            start: {
+              emoji: '🚀', label: 'Start',
+              gradient: 'linear-gradient(135deg, rgba(255,69,0,0.14) 0%, rgba(24,24,27,0) 65%)',
+              borderColor: 'rgba(255,69,0,0.22)', glowColor: 'rgba(255,69,0,0.07)',
+              badgeCls: 'bg-zinc-800 text-zinc-400 border border-zinc-700/50',
+              desc: 'Faça upgrade para Pro e desbloqueie WhatsApp CRM, GrowIA, logo personalizada e muito mais.',
+              cta: { label: 'Fazer upgrade para Pro', href: '/planos', cls: 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 shadow-orange-500/30' },
+            },
+            pro: {
+              emoji: '⚡', label: 'Pro',
+              gradient: 'linear-gradient(135deg, rgba(249,115,22,0.10) 0%, rgba(124,58,237,0.07) 100%)',
+              borderColor: 'rgba(249,115,22,0.22)', glowColor: 'rgba(249,115,22,0.06)',
+              badgeCls: 'bg-orange-500/15 text-orange-400 border border-orange-500/25',
+              desc: 'Você está no plano Pro. Faça upgrade para Elite e desbloqueie todos os recursos ilimitados.',
+              cta: { label: 'Fazer upgrade para Elite', href: '/planos', cls: 'bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 shadow-violet-500/25' },
+            },
+            elite: {
+              emoji: '👑', label: 'Elite',
+              gradient: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(24,24,27,0) 65%)',
+              borderColor: 'rgba(124,58,237,0.22)', glowColor: 'rgba(124,58,237,0.07)',
+              badgeCls: 'bg-violet-500/15 text-violet-400 border border-violet-500/25',
+              desc: null, cta: null,
+            },
           };
-          const info = PLAN_INFO[plan] ?? PLAN_INFO['start'];
+          const cfg = PLAN_CONFIG[plan] ?? PLAN_CONFIG['start'];
           return (
-            <div className="rounded-2xl bg-zinc-900 border border-white/5 px-5 py-4 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">Meu Plano</p>
-                <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${info.badgeCls}`}>
-                  {info.label}
-                </span>
+            <div
+              className="relative rounded-2xl border overflow-hidden"
+              style={{ background: cfg.gradient, borderColor: cfg.borderColor, boxShadow: `0 12px 40px ${cfg.glowColor}` }}
+            >
+              {/* Glow blob */}
+              <div
+                className="absolute -top-14 -right-14 w-52 h-52 rounded-full blur-3xl pointer-events-none"
+                style={{ background: cfg.borderColor, opacity: 0.6 }}
+              />
+              <div className="relative px-6 py-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-3xl select-none">{cfg.emoji}</span>
+                  <div>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Meu Plano</p>
+                    <span className={`inline-flex items-center text-xs font-extrabold px-3 py-0.5 rounded-full ${cfg.badgeCls}`}>{cfg.label}</span>
+                  </div>
+                </div>
+                {cfg.desc && <p className="text-sm text-zinc-400 mb-4 leading-relaxed">{cfg.desc}</p>}
+                {cfg.cta && (
+                  <a
+                    href={cfg.cta.href}
+                    className={`inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold text-white transition-all shadow-lg ${cfg.cta.cls} cursor-pointer`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                    </svg>
+                    {cfg.cta.label} →
+                  </a>
+                )}
+                {!cfg.cta && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-9 h-9 rounded-full bg-violet-500/15 flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-violet-400">
+                        <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-violet-300">Você está no topo!</p>
+                      <p className="text-xs text-zinc-500">Todos os recursos estão desbloqueados.</p>
+                    </div>
+                  </div>
+                )}
               </div>
-              {info.nextLabel && (
-                <a
-                  href={info.nextHref}
-                  className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-orange-500 hover:bg-orange-400 transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3.5 h-3.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
-                  </svg>
-                  {info.nextLabel}
-                </a>
-              )}
             </div>
           );
         })()}
+
+        <ProfileSection />
 
         {/* Header */}
         <div className="flex items-center justify-between">

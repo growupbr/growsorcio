@@ -149,11 +149,14 @@ export default function Sidebar() {
       {/* Bottom nav */}
       <div className="p-2 border-t border-white/5 space-y-0.5">
 
-        {/* Avatar card */}
+        {/* Avatar + info */}
         {!collapsed && (
-          <div className="flex items-center gap-2.5 px-3 py-2.5 mb-1">
+          <NavLink
+            to="/config"
+            className="flex items-center gap-3 px-3 py-2.5 mb-1 rounded-xl hover:bg-zinc-800/60 transition-colors group"
+          >
             <div
-              className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10"
+              className="w-9 h-9 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-sm font-bold text-white ring-2 ring-white/8 group-hover:ring-orange-500/30 transition-all"
               style={{ background: perfil?.avatar_url ? 'transparent' : 'linear-gradient(135deg, #FF4500 0%, #f59e0b 100%)' }}
             >
               {perfil?.avatar_url
@@ -162,19 +165,23 @@ export default function Sidebar() {
               }
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-zinc-200 truncate leading-none mb-1">
+              <p
+                className="text-sm font-semibold text-zinc-100 truncate leading-tight"
+                title={perfil?.full_name || perfil?.email || '...'}
+              >
                 {perfil?.full_name || perfil?.email || '...'}
               </p>
-              <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${badge.cls}`}>
+              <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1 ${badge.cls}`}>
                 {badge.label}
               </span>
             </div>
-          </div>
+          </NavLink>
         )}
         {collapsed && (
           <div className="flex justify-center mb-1">
+            <NavLink to="/config">
             <div
-              className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10"
+              className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-white ring-2 ring-white/8 hover:ring-orange-500/30 transition-all"
               style={{ background: perfil?.avatar_url ? 'transparent' : 'linear-gradient(135deg, #FF4500 0%, #f59e0b 100%)' }}
               title={perfil?.full_name || perfil?.email}
             >
@@ -183,6 +190,7 @@ export default function Sidebar() {
                 : <span>{iniciais}</span>
               }
             </div>
+            </NavLink>
           </div>
         )}
 
