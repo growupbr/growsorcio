@@ -35,6 +35,7 @@ app.use('/api/leads', authMiddleware, require('./routes/leads'));
 app.use('/api/interacoes', authMiddleware, require('./routes/interacoes'));
 app.use('/api/cadencia', authMiddleware, require('./routes/cadencia'));
 app.use('/api/funil', authMiddleware, require('./routes/funil'));
+app.use('/api/profile', authMiddleware, require('./routes/profile'));
 app.use('/api/billing', require('./routes/billing')); // auth aplicado por rota interna
 
 // Diagnóstico — retorna userId e organizationId do token atual

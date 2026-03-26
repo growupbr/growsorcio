@@ -88,6 +88,10 @@ export const api = {
   // Bulk actions
   bulkUpdate: (payload) => request('/leads/bulk-update', { method: 'POST', body: payload }),
 
+  // Perfil do usuário
+  getProfile: () => request('/profile'),
+  updateProfile: (dados) => request('/profile', { method: 'PUT', body: dados }),
+
   // Assinatura / plano
   getSubscription: () => request('/billing/subscription'),
 };

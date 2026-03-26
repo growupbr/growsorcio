@@ -1,6 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api/client';
 import { useFunilStages } from '../hooks/useFunilStages';
+import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../api/supabaseClient';
 
 // ─── Ícones inline ───────────────────────────────────────────────────────────
 
@@ -315,6 +317,239 @@ function NovaEtapaForm({ onCriar, onCancelar }) {
   );
 }
 
+// ─── Seção de Perfil ─────────────────────────────────────────────────────────
+
+function ProfileSection() {
+  const { user } = useAuth();
+  const [perfil, setPerfil] = useState({ full_name: '', email: '', phone_number: '', avatar_url: null });
+  const [carregandoPerfil, setCarregandoPerfil] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [sucesso, setSucesso] = useState('');
+  const [erroMsg, setErroMsg] = useState('');
+  const [novoEmail, setNovoEmail] = useState('');
+  const [salvandoEmail, setSalvandoEmail] = useState(false);
+  const [erroEmail, setErroEmail] = useState('');
+  const [sucessoEmail, setSucessoEmail] = useState('');
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    api.getProfile()
+      .then(setPerfil)
+      .catch((e) => setErroMsg(e.message))
+      .finally(() => setCarregandoPerfil(false));
+  }, []);
+
+  function comprimirImagem(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 200;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Erro ao carregar imagem')); };
+      img.src = url;
+    });
+  }
+
+  async function handleFotoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setErroMsg('Selecione um arquivo de imagem válido.');
+      return;
+    }
+    try {
+      const dataUrl = await comprimirImagem(file);
+      setPerfil((p) => ({ ...p, avatar_url: dataUrl }));
+    } catch {
+      setErroMsg('Erro ao processar a imagem.');
+    }
+    e.target.value = '';
+  }
+
+  async function handleSalvar() {
+    if (salvando) return;
+    setSalvando(true);
+    setSucesso('');
+    setErroMsg('');
+    try {
+      await api.updateProfile({
+        full_name:    perfil.full_name,
+        phone_number: perfil.phone_number,
+        avatar_url:   perfil.avatar_url,
+      });
+      setSucesso('Perfil salvo!');
+      setTimeout(() => setSucesso(''), 3000);
+    } catch (e) {
+      setErroMsg(e.message);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function handleAlterarEmail() {
+    if (!novoEmail.trim() || salvandoEmail) return;
+    setSalvandoEmail(true);
+    setErroEmail('');
+    setSucessoEmail('');
+    try {
+      const { error } = await supabase.auth.updateUser({ email: novoEmail.trim() });
+      if (error) throw error;
+      setSucessoEmail('Confirmação enviada! Verifique seu e-mail.');
+      setNovoEmail('');
+    } catch (e) {
+      setErroEmail(e.message);
+    } finally {
+      setSalvandoEmail(false);
+    }
+  }
+
+  const iniciais = (perfil.full_name || perfil.email || '?')
+    .split(' ')
+    .map((w) => w[0]?.toUpperCase())
+    .slice(0, 2)
+    .join('');
+
+  if (carregandoPerfil) {
+    return (
+      <div className="rounded-2xl bg-zinc-900 border border-white/5 p-6 animate-pulse">
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-zinc-800 flex-shrink-0" />
+          <div className="space-y-2 flex-1">
+            <div className="h-3 bg-zinc-800 rounded w-36" />
+            <div className="h-3 bg-zinc-800 rounded w-24" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl bg-zinc-900 border border-white/5 p-6">
+      <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-6">Meu Perfil</h2>
+
+      {/* Avatar + nome */}
+      <div className="flex items-center gap-5 mb-7">
+        <div className="relative group flex-shrink-0">
+          <div
+            className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center text-xl font-bold cursor-pointer ring-2 ring-white/8 group-hover:ring-orange-500/40 transition-all"
+            style={{ background: perfil.avatar_url ? 'transparent' : 'linear-gradient(135deg, #FF4500 0%, #f59e0b 100%)' }}
+            onClick={() => fileRef.current?.click()}
+          >
+            {perfil.avatar_url
+              ? <img src={perfil.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              : <span className="text-white select-none">{iniciais}</span>
+            }
+          </div>
+          {/* Camera overlay */}
+          <div
+            className="absolute inset-0 rounded-full bg-black/55 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            onClick={() => fileRef.current?.click()}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+            </svg>
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFotoChange} aria-label="Selecionar foto de perfil" />
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-zinc-200 truncate">{perfil.full_name || 'Sem nome'}</p>
+          <p className="text-xs text-zinc-500 mt-0.5 truncate">{perfil.email}</p>
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="mt-2 text-[11px] text-orange-400 hover:text-orange-300 transition-colors cursor-pointer"
+          >
+            Alterar foto
+          </button>
+        </div>
+      </div>
+
+      {/* Campos */}
+      <div className="space-y-4 mb-5">
+        <div>
+          <label htmlFor="perfil-nome" className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">
+            Nome completo
+          </label>
+          <input
+            id="perfil-nome"
+            type="text"
+            value={perfil.full_name}
+            onChange={(e) => setPerfil((p) => ({ ...p, full_name: e.target.value }))}
+            placeholder="Seu nome"
+            maxLength={100}
+            className="w-full bg-zinc-950 border border-white/8 text-white text-sm rounded-xl px-3.5 py-2.5 placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20 transition-all"
+          />
+        </div>
+        <div>
+          <label htmlFor="perfil-telefone" className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1.5">
+            Telefone / WhatsApp
+          </label>
+          <input
+            id="perfil-telefone"
+            type="tel"
+            value={perfil.phone_number}
+            onChange={(e) => setPerfil((p) => ({ ...p, phone_number: e.target.value }))}
+            placeholder="(11) 9 8765-4321"
+            maxLength={30}
+            className="w-full bg-zinc-950 border border-white/8 text-white text-sm rounded-xl px-3.5 py-2.5 placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20 transition-all"
+          />
+        </div>
+      </div>
+
+      {/* Feedback */}
+      {erroMsg && <p className="text-xs text-red-400 mb-3">{erroMsg}</p>}
+      {sucesso  && <p className="text-xs text-emerald-400 mb-3">{sucesso}</p>}
+
+      <button
+        onClick={handleSalvar}
+        disabled={salvando}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+      >
+        {salvando ? 'Salvando...' : 'Salvar perfil'}
+      </button>
+
+      {/* Alterar e-mail */}
+      <div className="mt-8 pt-6 border-t border-white/5">
+        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Alterar E-mail</p>
+        <p className="text-[11px] text-zinc-600 mb-3">
+          Atual: <span className="text-zinc-400">{perfil.email}</span>
+        </p>
+        <div className="flex gap-2">
+          <input
+            id="novo-email"
+            type="email"
+            value={novoEmail}
+            onChange={(e) => setNovoEmail(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAlterarEmail()}
+            placeholder="Novo e-mail"
+            className="flex-1 bg-zinc-950 border border-white/8 text-white text-sm rounded-xl px-3.5 py-2.5 placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 focus:ring-1 focus:ring-orange-500/20 transition-all"
+          />
+          <button
+            onClick={handleAlterarEmail}
+            disabled={salvandoEmail || !novoEmail.trim()}
+            className="px-4 py-2.5 rounded-xl text-sm font-bold text-zinc-300 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 border border-white/8 transition-all cursor-pointer whitespace-nowrap"
+          >
+            {salvandoEmail ? '...' : 'Confirmar'}
+          </button>
+        </div>
+        {erroEmail    && <p className="text-xs text-red-400 mt-2">{erroEmail}</p>}
+        {sucessoEmail && <p className="text-xs text-emerald-400 mt-2">{sucessoEmail}</p>}
+      </div>
+    </div>
+  );
+}
+
 // ─── Página Config ────────────────────────────────────────────────────────────
 
 export default function Config() {
@@ -403,6 +638,8 @@ export default function Config() {
   return (
     <div className="h-full overflow-y-auto bg-zinc-950 px-6 py-8">
       <div className="max-w-xl mx-auto space-y-6">
+
+        <ProfileSection />
 
         {/* Header */}
         <div className="flex items-center justify-between">
