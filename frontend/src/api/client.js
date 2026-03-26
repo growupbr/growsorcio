@@ -3,10 +3,54 @@ import { supabase } from './supabaseClient';
 const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:3334');
 const BASE = `${BASE_URL}/api`;
 
-async function getAuthHeader() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+// ─── Auth token cache ──────────────────────────────────────────────────────
+// Lê o token do localStorage de forma síncrona na primeira linha para que
+// o PRIMEIRO request de cada página não precise aguardar getSession().
+// onAuthStateChange mantém o cache sempre atualizado.
+const _SUPA_KEY = (() => {
+  try {
+    const ref = supabase.supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+    return ref ? `sb-${ref}-auth-token` : null;
+  } catch { return null; }
+})();
+
+function _readTokenSync() {
+  try {
+    if (!_SUPA_KEY) return null;
+    const raw = localStorage.getItem(_SUPA_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.access_token || !parsed?.expires_at) return null;
+    // rejeita tokens que expiram em menos de 60 s
+    if (Date.now() / 1000 > parsed.expires_at - 60) return null;
+    return parsed.access_token;
+  } catch { return null; }
 }
+
+let _cachedToken = _readTokenSync();
+
+supabase.auth.onAuthStateChange((_evt, session) => {
+  _cachedToken = session?.access_token ?? null;
+  if (!session) { _profileCache = null; _profileCacheTime = 0; }
+});
+
+// Warmup: dispara uma requisição leve ao backend assim que o módulo carrega
+// para "acordar" o servidor Railway antes das páginas montarem.
+if (_cachedToken) {
+  fetch(`${BASE}/me`, { headers: { Authorization: `Bearer ${_cachedToken}` } }).catch(() => {});
+}
+
+async function getAuthHeader() {
+  if (_cachedToken) return { Authorization: `Bearer ${_cachedToken}` };
+  const { data: { session } } = await supabase.auth.getSession();
+  _cachedToken = session?.access_token ?? null;
+  return _cachedToken ? { Authorization: `Bearer ${_cachedToken}` } : {};
+}
+
+// ─── Profile cache ─────────────────────────────────────────────────────────
+const PROFILE_TTL = 5 * 60 * 1000;
+let _profileCache = null;
+let _profileCacheTime = 0;
 
 async function request(path, options = {}) {
   const authHeader = await getAuthHeader();
@@ -89,8 +133,21 @@ export const api = {
   bulkUpdate: (payload) => request('/leads/bulk-update', { method: 'POST', body: payload }),
 
   // Perfil do usuário
-  getProfile: () => request('/profile'),
-  updateProfile: (dados) => request('/profile', { method: 'PUT', body: dados }),
+  getProfile: () => {
+    if (_profileCache && Date.now() - _profileCacheTime < PROFILE_TTL) {
+      return Promise.resolve(_profileCache);
+    }
+    return request('/profile').then((data) => {
+      _profileCache = data;
+      _profileCacheTime = Date.now();
+      return data;
+    });
+  },
+  updateProfile: (dados) => {
+    _profileCache = null;
+    _profileCacheTime = 0;
+    return request('/profile', { method: 'PUT', body: dados });
+  },
 
   // Assinatura / plano
   getSubscription: () => request('/billing/subscription'),
