@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import QuickAddModal from '../components/QuickAddModal';
 import WelcomeModal, { shouldShowWelcome } from '../components/WelcomeModal';
 import { api } from '../api/client';
 import { ETAPAS_SEM_ANUNCIO as ETAPAS_ORDEM } from '../constants/etapas';
+import Icons from '../components/Icons';
+import MetricaCard from '../components/MetricaCard';
+import OrigemCard from '../components/OrigemCard';
 
 // Recharts isolado — baixado só quando o Dashboard renderizar
 const DashboardCharts = lazy(() => import('../components/DashboardCharts'));
@@ -20,6 +23,12 @@ const PERIODOS = [
 const TEMP_COLORS = { quente: '#ef4444', morno: '#f59e0b', frio: '#3b82f6' };
 const TEMP_LABELS  = { quente: 'Quente', morno: 'Morno', frio: 'Frio' };
 
+const LABEL_PERIODO = {
+  hoje:   'ontem',
+  semana: 'semana passada',
+  mes:    'mês passado',
+};
+
 // Orange-spectrum — mantido aqui apenas para ETAPAS_ORDEM (sem recharts)
 
 function formatarData(str) {
@@ -27,66 +36,6 @@ function formatarData(str) {
   const [a, m, d] = str.slice(0, 10).split('-');
   return `${d}/${m}/${a}`;
 }
-
-// ─── SVG Icons ───────────────────────────────────────────────────────────────
-
-const Icons = {
-  Alert: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-    </svg>
-  ),
-  Clock: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-    </svg>
-  ),
-  Calendar: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <rect x="3" y="4" width="18" height="18" rx="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  ),
-  TrendUp: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-      <polyline points="17 6 23 6 23 12"/>
-    </svg>
-  ),
-  Users: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-    </svg>
-  ),
-  Check: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
-  ),
-  Plus: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
-      <line x1="12" y1="5" x2="12" y2="19"/>
-      <line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-  ),
-  ChevronRight: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3">
-      <polyline points="9 18 15 12 9 6"/>
-    </svg>
-  ),
-  Target: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <circle cx="12" cy="12" r="10"/>
-      <circle cx="12" cy="12" r="6"/>
-      <circle cx="12" cy="12" r="2"/>
-    </svg>
-  ),
-};
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -110,8 +59,11 @@ function DashboardSkeleton() {
         <Sk className="h-9 w-32" />
       </div>
       <Sk className="h-11 w-72" />
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
         {[...Array(6)].map((_, i) => <Sk key={i} className="h-28" />)}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => <Sk key={i} className="h-24" />)}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => <Sk key={i} className="h-40" />)}
@@ -127,62 +79,6 @@ function DashboardSkeleton() {
 
 // ─── Tooltip dos gráficos ─────────────────────────────────────────────────────
 // (movido para DashboardCharts.jsx)
-
-// ─── Card de Métrica KPI ──────────────────────────────────────────────────────
-
-function MetricaCard({ label, valor, sub, destaque, icon: Icon }) {
-  return (
-    <div
-      className="rounded-2xl p-5 relative overflow-hidden transition-all duration-150 cursor-default"
-      style={{
-        background: destaque
-          ? 'linear-gradient(135deg, rgba(255,69,0,0.12) 0%, #18181b 70%)'
-          : '#18181b',
-        border: `1px solid ${destaque ? 'rgba(255,69,0,0.32)' : '#3f3f46'}`,
-      }}
-    >
-      {/* Label */}
-      <p style={{ fontSize: 11, letterSpacing: '0.1em', color: '#a1a1aa', fontWeight: 600 }}
-         className="uppercase mb-4">
-        {label}
-      </p>
-
-      {/* Valor */}
-      <p
-        className="tabular-nums leading-none"
-        style={{ fontSize: 36, fontWeight: 800, color: destaque ? '#FF4500' : '#f4f4f5' }}
-      >
-        {valor}
-      </p>
-
-      {/* Sub */}
-      {sub && (
-        <p className="mt-2 text-xs font-medium" style={{ color: '#a1a1aa' }}>{sub}</p>
-      )}
-
-      {/* Ícone */}
-      {Icon && (
-        <div
-          className="absolute top-5 right-5 p-2.5 rounded-lg"
-          style={{
-            background: destaque ? 'rgba(255,69,0,0.15)' : 'rgba(255,69,0,0.08)',
-            color: '#FF4500',
-          }}
-        >
-          <Icon />
-        </div>
-      )}
-
-      {/* Glow sutil no destaque */}
-      {destaque && (
-        <div
-          className="absolute inset-0 rounded-xl pointer-events-none"
-          style={{ boxShadow: 'inset 0 0 40px rgba(255,69,0,0.04)' }}
-        />
-      )}
-    </div>
-  );
-}
 
 // ─── Alertas do dia ───────────────────────────────────────────────────────────
 
@@ -366,19 +262,19 @@ npm run dev`}
   if (!stats) return null;
 
   // ── Dados processados ──
-  const totalPorEtapa = Object.fromEntries(
+  const totalPorEtapa = useMemo(() => Object.fromEntries(
     (stats.por_etapa_total || stats.por_etapa).map((e) => [e.etapa_funil, e.total])
-  );
-  const totalPorEtapaPeriodo = Object.fromEntries(
+  ), [stats]);
+  const totalPorEtapaPeriodo = useMemo(() => Object.fromEntries(
     stats.por_etapa.map((e) => [e.etapa_funil, e.total])
-  );
-  const totalPorTemp = Object.fromEntries(
+  ), [stats]);
+  const totalPorTemp = useMemo(() => Object.fromEntries(
     (stats.por_temperatura_total || stats.por_temperatura).map((t) => [t.temperatura, t.total])
-  );
+  ), [stats]);
 
-  const totalGeral = Object.values(totalPorEtapa).reduce((s, v) => s + v, 0);
+  const totalGeral = useMemo(() => Object.values(totalPorEtapa).reduce((s, v) => s + v, 0), [totalPorEtapa]);
   const totalAtivos = totalGeral - (totalPorEtapa['Fechado'] || 0) - (totalPorEtapa['Perdido'] || 0);
-  const totalPeriodo = Object.values(totalPorEtapaPeriodo).reduce((s, v) => s + v, 0);
+  const totalPeriodo = useMemo(() => Object.values(totalPorEtapaPeriodo).reduce((s, v) => s + v, 0), [totalPorEtapaPeriodo]);
 
   const seguiu  = totalPorEtapa['Seguiu Perfil'] || 0;
   const fechado = totalPorEtapa['Fechado'] || 0;
@@ -391,36 +287,50 @@ npm run dev`}
   const reunioesAnuncio = (stats.reunioes_por_origem || []).find(o => o.origem === 'anuncio')?.total || 0;
   const reunioesProspeccao = (stats.reunioes_por_origem || []).find(o => o.origem === 'prospeccao')?.total || 0;
 
-  const metricasPeriodo = [
-    { label: 'Leads no período', valor: totalPeriodo, icon: Icons.Users, destaque: true },
-    { label: 'Reuniões agendadas', valor: totalPorEtapa['Reunião Agendada'] || 0, icon: Icons.Calendar },
-    { label: 'Reuniões realizadas', valor: totalPorEtapa['Reunião Realizada'] || 0, icon: Icons.Calendar },
-    { label: 'Propostas enviadas', valor: totalPorEtapa['Proposta Enviada'] || 0, icon: Icons.TrendUp },
-    { label: 'Fechamentos', valor: fechado, icon: Icons.Check },
-    { label: 'Total de leads', valor: totalGeral, sub: `${totalAtivos} ativos`, icon: Icons.Target },
-  ];
+  const metricasPeriodo = useMemo(() => {
+    // Mapa do período anterior para calcular deltas
+    const etapaAnterior = Object.fromEntries(
+      (stats.por_etapa_anterior || []).map((e) => [e.etapa_funil, e.total])
+    );
+    const totalPeriodoAnterior = Object.values(etapaAnterior).reduce((s, v) => s + v, 0);
+    const fechadoAnterior = etapaAnterior['Fechado'] || 0;
 
-  const dadosBarras = ETAPAS_ORDEM
+    function calcDelta(atual, anterior) {
+      if (!stats.por_etapa_anterior || anterior === 0) return null;
+      return Math.round(((atual - anterior) / anterior) * 100);
+    }
+
+    return [
+      { label: 'Leads no período', valor: totalPeriodo, icon: Icons.Users, destaque: true, delta: calcDelta(totalPeriodo, totalPeriodoAnterior) },
+      { label: 'Reuniões agendadas', valor: totalPorEtapa['Reunião Agendada'] || 0, icon: Icons.Calendar, delta: calcDelta(totalPorEtapa['Reunião Agendada'] || 0, etapaAnterior['Reunião Agendada'] || 0) },
+      { label: 'Reuniões realizadas', valor: totalPorEtapa['Reunião Realizada'] || 0, icon: Icons.Calendar, delta: calcDelta(totalPorEtapa['Reunião Realizada'] || 0, etapaAnterior['Reunião Realizada'] || 0) },
+      { label: 'Propostas enviadas', valor: totalPorEtapa['Proposta Enviada'] || 0, icon: Icons.TrendUp, delta: calcDelta(totalPorEtapa['Proposta Enviada'] || 0, etapaAnterior['Proposta Enviada'] || 0) },
+      { label: 'Fechamentos', valor: fechado, icon: Icons.Check, delta: calcDelta(fechado, fechadoAnterior) },
+      { label: 'Total de leads', valor: totalGeral, sub: `${totalAtivos} ativos`, icon: Icons.Target },
+    ];
+  }, [totalPeriodo, totalPorEtapa, fechado, totalGeral, totalAtivos, stats]);
+
+  const dadosBarras = useMemo(() => ETAPAS_ORDEM
     .filter((e) => e !== 'Fechado' && e !== 'Perdido')
     .map((e) => ({
-      etapa: e.length > 13 ? e.slice(0, 12) + '…' : e,
+      etapa: e,
       total: totalPorEtapa[e] || 0,
-    }));
+    })), [totalPorEtapa]);
 
-  const dadosPizza = ['quente', 'morno', 'frio']
+  const dadosPizza = useMemo(() => ['quente', 'morno', 'frio']
     .map((t) => ({ name: TEMP_LABELS[t], value: totalPorTemp[t] || 0, color: TEMP_COLORS[t] }))
-    .filter((d) => d.value > 0);
+    .filter((d) => d.value > 0), [totalPorTemp]);
 
   const totalAlertas = stats.follow_ups_vencidos.length + stats.cadencia_hoje.length + stats.reunioes_hoje.length;
 
   // ── Dados relatórios ──
-  const dadosEtapa = (stats.por_etapa || []).sort((a, b) => b.total - a.total);
-  const dadosOrigem = (stats.por_origem || []).map((r) => ({
+  const dadosEtapa = useMemo(() => (stats.por_etapa || []).sort((a, b) => b.total - a.total), [stats]);
+  const dadosOrigem = useMemo(() => (stats.por_origem || []).map((r) => ({
     name: r.origem === 'anuncio' ? 'Anúncio' : r.origem === 'prospeccao' ? 'Prospecção' : r.origem,
     value: r.total,
-  }));
-  const dadosTipoBem = (stats.por_tipo_bem || []).sort((a, b) => b.total - a.total).slice(0, 8);
-  const dadosMotivos = leads
+  })), [stats]);
+  const dadosTipoBem = useMemo(() => (stats.por_tipo_bem || []).sort((a, b) => b.total - a.total).slice(0, 8), [stats]);
+  const dadosMotivos = useMemo(() => leads
     .filter((l) => l.motivo_descarte)
     .reduce((acc, l) => {
       const m = l.motivo_descarte;
@@ -428,14 +338,22 @@ npm run dev`}
       if (f) f.total++; else acc.push({ motivo: m, total: 1 });
       return acc;
     }, [])
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => b.total - a.total), [leads]);
 
-  const totalLeadsRel = leads.length;
-  const fechadosRel = leads.filter((l) => l.etapa_funil === 'Fechado').length;
-  const perdidosRel = leads.filter((l) => l.etapa_funil === 'Perdido').length;
-  const taxaConversaoRel = totalLeadsRel > 0 ? Math.round((fechadosRel / totalLeadsRel) * 100) : 0;
-  const qtTemp = { quente: 0, morno: 0, frio: 0 };
-  leads.forEach((l) => { if (l.temperatura in qtTemp) qtTemp[l.temperatura]++; });
+  const { totalLeadsRel, fechadosRel, perdidosRel, taxaConversaoRel, qtTemp } = useMemo(() => {
+    const total = leads.length;
+    const fechados = leads.filter((l) => l.etapa_funil === 'Fechado').length;
+    const perdidos = leads.filter((l) => l.etapa_funil === 'Perdido').length;
+    const qt = { quente: 0, morno: 0, frio: 0 };
+    leads.forEach((l) => { if (l.temperatura in qt) qt[l.temperatura]++; });
+    return {
+      totalLeadsRel: total,
+      fechadosRel: fechados,
+      perdidosRel: perdidos,
+      taxaConversaoRel: total > 0 ? Math.round((fechados / total) * 100) : 0,
+      qtTemp: qt,
+    };
+  }, [leads]);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
@@ -545,7 +463,16 @@ npm run dev`}
       {tab === 'visao' && (
         <div className="space-y-8">
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Nota comparativa do período */}
+          {periodo !== 'total' && stats?.por_etapa_anterior && (
+            <p className="-mb-4 text-xs flex items-center gap-1.5" style={{ color: '#52525b' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3">
+                <polyline points="17 11 12 6 7 11" /><polyline points="17 18 12 13 7 18" />
+              </svg>
+              Badges % comparados com {LABEL_PERIODO[periodo]}
+            </p>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
             {metricasPeriodo.map((m) => (
               <MetricaCard key={m.label} {...m} />
             ))}
@@ -553,26 +480,10 @@ npm run dev`}
 
           {/* Origem dos Leads */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="card p-5">
-              <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#a1a1aa'}}>Leads Anúncio</p>
-              <p className="text-3xl font-extrabold tabular-nums" style={{color:'#8B5CF6'}}>{totalAnuncio}</p>
-              <p className="text-xs mt-1" style={{color:'#a1a1aa'}}>{totalAnuncio > 0 ? `${taxaResposta}% responderam` : '—'}</p>
-            </div>
-            <div className="card p-5">
-              <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#a1a1aa'}}>Prospecção</p>
-              <p className="text-3xl font-extrabold tabular-nums" style={{color:'#FF4500'}}>{totalProspeccao}</p>
-              <p className="text-xs mt-1" style={{color:'#a1a1aa'}}>orgânico + indicação</p>
-            </div>
-            <div className="card p-5">
-              <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#a1a1aa'}}>Reuniões Anúncio</p>
-              <p className="text-3xl font-extrabold tabular-nums" style={{color:'#8B5CF6'}}>{reunioesAnuncio}</p>
-              <p className="text-xs mt-1" style={{color:'#a1a1aa'}}>{totalAnuncio > 0 ? `${Math.round((reunioesAnuncio/totalAnuncio)*100)}% de conv.` : '—'}</p>
-            </div>
-            <div className="card p-5">
-              <p className="uppercase text-xs font-semibold tracking-widest mb-3" style={{color:'#a1a1aa'}}>Reuniões Prospecção</p>
-              <p className="text-3xl font-extrabold tabular-nums" style={{color:'#FF4500'}}>{reunioesProspeccao}</p>
-              <p className="text-xs mt-1" style={{color:'#a1a1aa'}}>{totalProspeccao > 0 ? `${Math.round((reunioesProspeccao/totalProspeccao)*100)}% de conv.` : '—'}</p>
-            </div>
+            <OrigemCard label="Leads Anúncio" valor={totalAnuncio} sub={totalAnuncio > 0 ? `${taxaResposta}% responderam` : '—'} cor="#8B5CF6" icon={Icons.Megaphone} />
+            <OrigemCard label="Prospecção" valor={totalProspeccao} sub="orgânico + indicação" cor="#FF4500" icon={Icons.UserPlus} />
+            <OrigemCard label="Reuniões Anúncio" valor={reunioesAnuncio} sub={totalAnuncio > 0 ? `${Math.round((reunioesAnuncio/totalAnuncio)*100)}% de conv.` : '—'} cor="#8B5CF6" icon={Icons.Calendar} />
+            <OrigemCard label="Reuniões Prospecção" valor={reunioesProspeccao} sub={totalProspeccao > 0 ? `${Math.round((reunioesProspeccao/totalProspeccao)*100)}% de conv.` : '—'} cor="#FF4500" icon={Icons.Calendar} />
           </div>
 
           {/* Alertas do dia */}

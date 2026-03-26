@@ -6,7 +6,6 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import confetti from 'canvas-confetti';
 import { Building2, Banknote, TrendingUp, Shield, Zap } from 'lucide-react';
-import logoGrow from '../assets/logogrowsorcio.webp';
 import mascoteFoguete from '../assets/file.svg';
 import { api } from '../api/client';
 import { useFunilStages } from '../hooks/useFunilStages';
@@ -82,58 +81,16 @@ const InboxIcon = () => (
   </svg>
 );
 
-// ─── Som de caixa registradora ──────────────────────────────────────────────
+// ─── Som de venda de consórcio ──────────────────────────────────────────────
+
+import vendaConsorcioSfx from '../assets/vendaconsorcio.MP3';
 
 function playRegisterSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Clique mecânico: burst de noise branco curto
-    const bufLen = ctx.sampleRate * 0.04;
-    const noiseBuffer = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-    const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufLen);
-    const noiseSource = ctx.createBufferSource();
-    noiseSource.buffer = noiseBuffer;
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.35, ctx.currentTime);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
-    noiseSource.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
-    noiseSource.start(ctx.currentTime);
-
-    // Ding 1 — 880 Hz
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(880, ctx.currentTime + 0.02);
-    osc1.frequency.exponentialRampToValueAtTime(820, ctx.currentTime + 0.35);
-    gain1.gain.setValueAtTime(0, ctx.currentTime + 0.02);
-    gain1.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.04);
-    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.start(ctx.currentTime + 0.02);
-    osc1.stop(ctx.currentTime + 0.6);
-
-    // Ding 2 — 1100 Hz (0.07s depois)
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.09);
-    osc2.frequency.exponentialRampToValueAtTime(1040, ctx.currentTime + 0.4);
-    gain2.gain.setValueAtTime(0, ctx.currentTime + 0.09);
-    gain2.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.12);
-    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.65);
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(ctx.currentTime + 0.09);
-    osc2.stop(ctx.currentTime + 0.7);
-
-    // Fecha o contexto após o som terminar
-    setTimeout(() => ctx.close(), 900);
+    const audio = new Audio(vendaConsorcioSfx);
+    audio.play();
   } catch (_) {
-    // Silently ignore: AudioContext not available
+    // Silently ignore: audio not available
   }
 }
 

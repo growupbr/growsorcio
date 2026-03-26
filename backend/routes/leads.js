@@ -197,6 +197,41 @@ function dataInicioPeriodo(periodo) {
   }
 }
 
+// Retorna { inicio, fim } do período ANTERIOR (fim é exclusivo = início do período atual)
+function limitesPeriodoAnterior(periodo) {
+  const hoje = new Date();
+  switch (periodo) {
+    case 'hoje': {
+      const ontem = new Date(hoje);
+      ontem.setDate(hoje.getDate() - 1);
+      return {
+        inicio: ontem.toISOString().slice(0, 10),
+        fim: hoje.toISOString().slice(0, 10),
+      };
+    }
+    case 'semana': {
+      const inicioAtual = new Date(hoje);
+      inicioAtual.setDate(hoje.getDate() - hoje.getDay());
+      const inicioAnterior = new Date(inicioAtual);
+      inicioAnterior.setDate(inicioAtual.getDate() - 7);
+      return {
+        inicio: inicioAnterior.toISOString().slice(0, 10),
+        fim: inicioAtual.toISOString().slice(0, 10),
+      };
+    }
+    case 'mes': {
+      const inicioMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const inicioMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+      return {
+        inicio: inicioMesAnterior.toISOString().slice(0, 10),
+        fim: inicioMesAtual.toISOString().slice(0, 10),
+      };
+    }
+    default:
+      return null; // 'total' não tem período anterior comparável
+  }
+}
+
 // ─── ROTAS FIXAS ANTES DE /:id ────────────────────────────────────────────────
 
 // GET /api/leads/stats/resumo
@@ -217,6 +252,16 @@ router.get('/stats/resumo', async (req, res) => {
     const recorte = dataInicio
       ? leadList.filter((l) => toDateOnly(l.criado_em) >= dataInicio)
       : leadList;
+
+    // ── Período anterior (para delta nos KPIs) ────────────────────────────────
+    const limAnterior = limitesPeriodoAnterior(periodo);
+    const recorteAnterior = limAnterior
+      ? leadList.filter((l) => {
+          const d = toDateOnly(l.criado_em);
+          return d >= limAnterior.inicio && d < limAnterior.fim;
+        })
+      : null;
+    const porEtapaAnterior = recorteAnterior ? groupCount(recorteAnterior, 'etapa_funil') : null;
 
     const porEtapa = groupCount(recorte, 'etapa_funil');
     const porTemperatura = groupCount(recorte, 'temperatura');
@@ -289,6 +334,7 @@ router.get('/stats/resumo', async (req, res) => {
     return res.json({
       por_etapa: porEtapa,
       por_etapa_total: totaisGerais,
+      por_etapa_anterior: porEtapaAnterior,
       por_temperatura: porTemperatura,
       por_temperatura_total: totaisTemp,
       follow_ups_vencidos: followUpVencidos,

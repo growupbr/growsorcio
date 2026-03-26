@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
-import logoSrc from '../assets/logogrowsorcio.webp';
+import GrowsorcioLogo from '../components/GrowsorcioLogo';
 import {
   Calculator, CheckCircle, MessageCircle, DollarSign,
   ImageDown, TrendingDown, Trophy, User,
@@ -184,11 +184,7 @@ function ExportCard({ exportRef, res, valorCreditoStr, prazoC, prazoF, taxaAdm, 
     >
       {/* ── Branding ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-        <img
-          src={logoSrc}
-          alt="Growsorcio"
-          style={{ height: 36, width: 'auto', display: 'block' }}
-        />
+        <GrowsorcioLogo height={36} theme="dark" />
       </div>
 
       {/* ── Título central ── */}

@@ -23,7 +23,7 @@ import logoMagalu    from '../assets/magaluconsorcio.webp';
 import logoMaggi     from '../assets/maggiconsorcio.webp';
 import logoPorto     from '../assets/portoseguroconsorcio.webp';
 import logoRodobens  from '../assets/rodobens.webp';
-import logoGrow      from '../assets/logogrowsorcio.webp';
+import logoGrow      from '../assets/logogrowsorcio.svg';
 
 const ADMIN_LOGOS = [
   { id: 'grow',     label: 'GrowSorcio',      src: logoGrow },
