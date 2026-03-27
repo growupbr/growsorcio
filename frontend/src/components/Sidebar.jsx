@@ -126,11 +126,11 @@ export default function Sidebar() {
     >
       {/* Logo + toggle */}
       <div
-        className={`flex items-center h-20 border-b border-white/5 flex-shrink-0 ${
+        className={`flex items-center h-32 border-b border-white/5 flex-shrink-0 ${
           collapsed ? 'justify-center px-2' : 'justify-between px-4'
         }`}
       >
-        {!collapsed && <GrowsorcioLogo height={36} />}
+        {!collapsed && <GrowsorcioLogo height={108} />}
         <button
           onClick={toggle}
           title={collapsed ? 'Expandir menu' : 'Recolher menu'}

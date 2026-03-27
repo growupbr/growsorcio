@@ -184,7 +184,7 @@ function ExportCard({ exportRef, res, valorCreditoStr, prazoC, prazoF, taxaAdm, 
     >
       {/* ── Branding ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-        <GrowsorcioLogo height={36} theme="dark" />
+        <GrowsorcioLogo height={108} theme="dark" />
       </div>
 
       {/* ── Título central ── */}

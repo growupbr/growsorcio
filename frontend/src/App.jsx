@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import Sidebar from './components/Sidebar';
+import TopBar from './components/TopBar';
 import { useNotificacoes } from './hooks/useNotificacoes';
 import { useAuth } from './hooks/useAuth';
 
@@ -50,9 +51,12 @@ function AppLayout() {
   return (
     <div className="flex h-screen bg-zinc-950 overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-zinc-950">
-        <Outlet />
-      </main>
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <TopBar />
+        <main className="flex-1 overflow-y-auto bg-zinc-950">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

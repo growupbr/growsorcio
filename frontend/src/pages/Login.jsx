@@ -65,7 +65,7 @@ export default function Login() {
           <div className="flex flex-col items-center gap-5">
             {/* Badge da logo */}
             <div className="p-3 rounded-2xl" style={{ background: 'rgba(255,69,0,0.08)', border: '1px solid rgba(255,69,0,0.15)' }}>
-              <GrowsorcioLogo height={40} />
+              <GrowsorcioLogo height={120} />
             </div>
             <div className="text-center">
               <h1 className="text-[22px] font-bold tracking-tight" style={{ color: '#f1f1f1' }}>

@@ -239,7 +239,7 @@ function EstadoVazio() {
         <MessageSquareIcon />
       </div>
       <div className="flex flex-col items-center gap-3">
-        <GrowsorcioLogo height={26} />
+        <GrowsorcioLogo height={78} />
         <p className="text-sm text-zinc-600 text-center leading-relaxed">
           Selecione uma conversa para<br />iniciar o atendimento
         </p>

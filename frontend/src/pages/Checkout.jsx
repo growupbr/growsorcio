@@ -193,7 +193,7 @@ export default function Checkout() {
           <ArrowLeft size={16} />
           Voltar
         </button>
-        <GrowsorcioLogo height={32} />
+        <GrowsorcioLogo height={96} />
         <div className="flex items-center gap-1.5 text-xs" style={{ color: '#555' }}>
           <Lock size={13} />
           <span>Pagamento seguro</span>
