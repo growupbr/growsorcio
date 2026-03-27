@@ -1,6 +1,7 @@
 // /frontend/src/pages/LandingPage.jsx
 import { useState, useEffect, lazy, Suspense } from 'react';
 import logoAdemicon from '../assets/ademicon.webp';
+import printKanban from '../assets/printkanban.svg';
 import logoEmbracon from '../assets/embracon.webp';
 import logoHonda from '../assets/hondaconsorcio.webp';
 import logoHS from '../assets/hsconsorcio.webp';
@@ -144,7 +145,7 @@ export default function LandingPage() {
 
           {/* Logo */}
           <a href="#hero" className="flex items-center">
-            <GrowsorcioLogo height={36} />
+            <GrowsorcioLogo height={79} />
           </a>
 
           {/* Links centro — desktop */}
@@ -204,7 +205,7 @@ export default function LandingPage() {
       <HeroSection />
 
       {/* ── O PODER DA PRECISÃO ─────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-4 py-20">
+      <section className="max-w-6xl mx-auto px-4 pt-10 pb-20">
         <div className="section-reveal text-center mb-12">
           <p className="text-[#FF4500] text-xs font-semibold uppercase tracking-widest mb-3">O Poder da Precisão</p>
           <h2 className="font-['Space_Grotesk',sans-serif] font-bold text-2xl md:text-4xl text-white leading-tight">
@@ -213,6 +214,14 @@ export default function LandingPage() {
           <p className="text-zinc-400 text-base leading-relaxed mt-4 max-w-2xl mx-auto">
             O GrowSorcio fala a sua língua. Grupo, Cota, Lance e Calculadora de Investimentos. Tudo a um clique de distância, em um layout moderno e intuitivo que funciona no computador e no celular.
           </p>
+          <div className="mt-8 rounded-2xl overflow-hidden border border-white/8 shadow-2xl">
+            <img
+              src={printKanban}
+              alt="Kanban do GrowSorcio — visão do funil de leads em layout moderno"
+              className="w-full h-auto"
+              loading="lazy"
+            />
+          </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 section-reveal">
           {[

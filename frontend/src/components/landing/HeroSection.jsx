@@ -36,8 +36,8 @@ export default function HeroSection() {
   });
 
   return (
-    // Container 150vh: cria o espaço de scroll que mantém o hero pinado (2× mais rápido)
-    <div ref={containerRef} style={{ height: '150vh' }}>
+    // Container 120vh: vídeo percorre em apenas 20vh de scroll (rápido)
+    <div ref={containerRef} style={{ height: '120vh' }}>
       <section
         id="hero"
         className="sticky top-0 h-screen relative flex items-center justify-center pt-20 overflow-hidden"
