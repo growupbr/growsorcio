@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
-import heroVideo from '../../assets/animacaoastro-scrub.mp4';
+import heroVideo from '../../assets/astroanima-scrub.mp4';
 import TextReveal from './TextReveal';
 import GradientBlobs from './GradientBlobs';
 
