@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { useSubscription } from '../hooks/useSubscription';
 import {
   Link2,
@@ -149,17 +149,22 @@ function ParamCard({ label, value, sub }) {
 // ─── Documento Principal (A4 Premium) ────────────────────────────────────────
 
 function DocumentoA4({ dados, innerRef }) {
-  // Cálculos
-  const credito       = parseFloat(dados.valorCredito) || 80000;
-  const prazoConsorc  = parseInt(dados.prazo)          || 180;
-  const parcelaConsorc = parseFloat(dados.parcela)     || 516;
-  const taxaAdm       = parseFloat(dados.taxaAdm)      || 16;
-  const totalConsorc  = parcelaConsorc * prazoConsorc;
+  // Cálculos memoizados — só recalculam quando os campos financeiros mudam
+  const calc = useMemo(() => {
+    const credito        = parseFloat(dados.valorCredito)  || 80000;
+    const prazoConsorc   = parseInt(dados.prazo)           || 180;
+    const parcelaConsorc = parseFloat(dados.parcela)       || 516;
+    const taxaAdm        = parseFloat(dados.taxaAdm)       || 16;
+    const totalConsorc   = parcelaConsorc * prazoConsorc;
+    const PRAZO_FIN      = 360;
+    const parcelaFin     = pmt(credito, 0.015, PRAZO_FIN);
+    const totalFin       = parcelaFin * PRAZO_FIN;
+    const economia       = totalFin - totalConsorc;
+    return { credito, prazoConsorc, parcelaConsorc, taxaAdm, totalConsorc, parcelaFin, totalFin, economia };
+  }, [dados.valorCredito, dados.prazo, dados.parcela, dados.taxaAdm]);
 
-  const PRAZO_FIN     = 360;
-  const parcelaFin    = pmt(credito, 0.015, PRAZO_FIN);
-  const totalFin      = parcelaFin * PRAZO_FIN;
-  const economia      = totalFin - totalConsorc;
+  const { credito, prazoConsorc, parcelaConsorc, taxaAdm, totalConsorc, parcelaFin, totalFin, economia } = calc;
+  const PRAZO_FIN = 360;
 
   const accent = dados.corPrimaria || '#f97316';
 
@@ -393,6 +398,9 @@ function DocumentoA4({ dados, innerRef }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+// ─── Cache de sessão (persiste dados ao navegar entre páginas) ──────────────
+const _PROPOSTAS_KEY = 'growsorcio:propostas:dados';
+
 const DEFAULT_DADOS = {
   nomeCliente: 'Maria Silva',
   telefone: '(11) 9 8765-4321',
@@ -410,10 +418,18 @@ const DEFAULT_DADOS = {
     'disposição para esclarecer cada detalhe desta proposta.',
 };
 
+function _loadDados() {
+  try {
+    const raw = sessionStorage.getItem(_PROPOSTAS_KEY);
+    if (raw) return { ...DEFAULT_DADOS, ...JSON.parse(raw) };
+  } catch { /* storage indisponível — usa padrão */ }
+  return DEFAULT_DADOS;
+}
+
 export default function Propostas() {
   const { hasFeature } = useSubscription();
   const podeTrocarLogo = hasFeature('logo_customizada');
-  const [dados, setDados] = useState(DEFAULT_DADOS);
+  const [dados, setDados] = useState(_loadDados);
   const docRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -459,10 +475,14 @@ export default function Propostas() {
 
   const set = useCallback(
     (field) => (e) =>
-      setDados(prev => ({
-        ...prev,
-        [field]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
-      })),
+      setDados(prev => {
+        const next = {
+          ...prev,
+          [field]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
+        };
+        try { sessionStorage.setItem(_PROPOSTAS_KEY, JSON.stringify(next)); } catch { }
+        return next;
+      }),
     []
   );
 

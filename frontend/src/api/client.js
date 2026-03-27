@@ -132,9 +132,9 @@ export const api = {
     const params = new URLSearchParams(
       Object.fromEntries(Object.entries(filtros).filter(([, v]) => v))
     );
-    return request(`/leads?${params}`, { cacheTTL: 15 * 1000 });
+    return request(`/leads?${params}`, { cacheTTL: 30 * 1000 });
   },
-  buscarLead: (id) => request(`/leads/${id}`),
+  buscarLead: (id) => request(`/leads/${id}`, { cacheTTL: 30 * 1000 }),
   criarLead: (dados) => request('/leads', { method: 'POST', body: dados }).then((data) => {
     _invalidate(['/leads', '/leads/stats']);
     return data;
@@ -157,8 +157,8 @@ export const api = {
     _invalidate(['/leads', '/leads/stats']);
     return data;
   }),
-  resumoStats: (periodo = 'total') => request(`/leads/stats/resumo?periodo=${periodo}`, { cacheTTL: 20 * 1000 }),
-  evolucaoLeads: () => request('/leads/stats/evolucao', { cacheTTL: 20 * 1000 }),
+  resumoStats: (periodo = 'total') => request(`/leads/stats/resumo?periodo=${periodo}`, { cacheTTL: 2 * 60 * 1000 }),
+  evolucaoLeads: () => request('/leads/stats/evolucao', { cacheTTL: 5 * 60 * 1000 }),
   motivosDescarte: () => request('/leads/motivos-descarte'),
 
   // Interações

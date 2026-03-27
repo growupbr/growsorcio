@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Flame, CheckCircle, ShieldCheck, Target, Lightbulb,
   Zap, Gem, TrendingUp, Crown,
@@ -57,14 +56,22 @@ const LEVEL_INICIANTE = {
   neonBorder: false,
 };
 
-// ─── Formatação monetária ─────────────────────────────────────────────────────
-const formatBRL = (value) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+// ─── Formatação compacta (R$ 12,5M / R$ 1,2B) ────────────────────────────────
+function formatCompact(value) {
+  if (value >= 1_000_000_000) {
+    const n = value / 1_000_000_000;
+    return `R$ ${n % 1 === 0 ? n : n.toFixed(1).replace('.', ',')}B`;
+  }
+  if (value >= 1_000_000) {
+    const n = value / 1_000_000;
+    return `R$ ${n % 1 === 0 ? n : n.toFixed(1).replace('.', ',')}M`;
+  }
+  if (value >= 1_000) {
+    const n = value / 1_000;
+    return `R$ ${n % 1 === 0 ? n : n.toFixed(1).replace('.', ',')}K`;
+  }
+  return `R$ ${value}`;
+}
 
 // ─── Lógica de nível/progresso ────────────────────────────────────────────────
 function getLevelInfo(volume) {
@@ -80,7 +87,6 @@ function getLevelInfo(volume) {
       currentLevel: null,
       nextLevel: next,
       progress: (volume / next.threshold) * 100,
-      remaining: next.threshold - volume,
     };
   }
 
@@ -89,52 +95,35 @@ function getLevelInfo(volume) {
 
   // Nível máximo
   if (!next) {
-    return { currentLevel: current, nextLevel: null, progress: 100, remaining: 0 };
+    return { currentLevel: current, nextLevel: null, progress: 100 };
   }
 
   const range = next.threshold - current.threshold;
   const progress = ((volume - current.threshold) / range) * 100;
 
-  return {
-    currentLevel: current,
-    nextLevel: next,
-    progress,
-    remaining: next.threshold - volume,
-  };
+  return { currentLevel: current, nextLevel: next, progress };
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 /**
  * GamificationBadge
- * Mostra o nível atual do usuário com base no volume total de vendas (R$),
- * barra de progresso para o próximo nível e tooltip com valor restante.
+ * Mostra o nível atual, o volume vendido e a próxima meta sempre visíveis.
  *
  * Props:
  *   volume {number} — faturamento total em reais (padrão: MOCK_VOLUME)
  */
 export default function GamificationBadge({ volume = MOCK_VOLUME }) {
-  const [hovered, setHovered] = useState(false);
-
-  const { currentLevel, nextLevel, progress, remaining } = getLevelInfo(volume);
+  const { currentLevel, nextLevel, progress } = getLevelInfo(volume);
 
   const level = currentLevel ?? LEVEL_INICIANTE;
   const { color, glow, neonBorder } = level;
   const LevelIcon = level.Icon;
 
   const nextColor = nextLevel?.color ?? color;
-  const NextIcon = nextLevel?.Icon ?? LevelIcon;
   const progressCapped = Math.min(Math.max(progress, 0), 100);
 
-  const tooltipText = nextLevel
-    ? `Faltam ${formatBRL(remaining)} para ${nextLevel.name}`
-    : 'Nível máximo atingido!';
-
   return (
-    <div
-      className="relative flex-shrink-0"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div className="flex-shrink-0">
       {/* ── Badge principal ─────────────────────────────────────────────────── */}
       <div
         className="flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-default select-none"
@@ -161,10 +150,11 @@ export default function GamificationBadge({ volume = MOCK_VOLUME }) {
           <LevelIcon size={14} color={color} strokeWidth={2.5} />
         </div>
 
-        {/* Coluna: nome + barra */}
-        <div className="flex flex-col gap-[5px]" style={{ minWidth: 132 }}>
-          {/* Nome + porcentagem */}
-          <div className="flex items-center justify-between gap-2">
+        {/* Coluna: linha 1 (nível + volume) / linha 2 (barra + próxima meta) */}
+        <div className="flex flex-col gap-[6px]" style={{ minWidth: 180 }}>
+
+          {/* Linha 1: nome do nível + volume vendido */}
+          <div className="flex items-center justify-between gap-3">
             <span
               className="text-[11px] font-semibold leading-none truncate"
               style={{ color }}
@@ -172,79 +162,54 @@ export default function GamificationBadge({ volume = MOCK_VOLUME }) {
               {level.name}
             </span>
             <span
-              className="text-[10px] leading-none tabular-nums flex-shrink-0"
-              style={{ color: '#52525b' }}
+              className="text-[11px] font-semibold leading-none tabular-nums flex-shrink-0"
+              style={{ color: '#e4e4e7' }}
             >
-              {progressCapped.toFixed(0)}%
+              {formatCompact(volume)}
             </span>
           </div>
 
-          {/* Barra de progresso */}
-          <div
-            className="w-full rounded-full overflow-hidden"
-            style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}
-            role="progressbar"
-            aria-valuenow={Math.round(progressCapped)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Progresso para o próximo nível: ${Math.round(progressCapped)}%`}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${progressCapped}%`,
-                background: `linear-gradient(90deg, ${color}99 0%, ${nextColor} 100%)`,
-                boxShadow: `0 0 5px ${nextColor}77`,
-                transition: 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Tooltip ──────────────────────────────────────────────────────────── */}
-      <div
-        className="absolute right-0 top-full mt-2.5 z-50 pointer-events-none"
-        role="tooltip"
-        style={{
-          opacity: hovered ? 1 : 0,
-          transform: hovered ? 'translateY(0px)' : 'translateY(-4px)',
-          transition: 'opacity 0.15s ease, transform 0.15s ease',
-        }}
-      >
-        {/* Seta */}
-        <div
-          className="absolute right-4 -top-[5px] w-2.5 h-2.5 rotate-45"
-          style={{
-            background: '#111117',
-            borderLeft: '1px solid rgba(255,255,255,0.08)',
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-          }}
-          aria-hidden="true"
-        />
-        {/* Caixa */}
-        <div
-          className="rounded-xl px-3.5 py-2.5 whitespace-nowrap"
-          style={{
-            background: '#111117',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 8px 28px rgba(0,0,0,0.55)',
-          }}
-        >
+          {/* Linha 2: barra de progresso + próxima meta */}
           <div className="flex items-center gap-2">
             <div
-              style={{ filter: `drop-shadow(0 0 3px ${nextColor}99)` }}
-              aria-hidden="true"
+              className="flex-1 rounded-full overflow-hidden"
+              style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}
+              role="progressbar"
+              aria-valuenow={Math.round(progressCapped)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Progresso para o próximo nível: ${Math.round(progressCapped)}%`}
             >
-              <NextIcon size={11} color={nextColor} strokeWidth={2.5} />
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${progressCapped}%`,
+                  background: `linear-gradient(90deg, ${color}99 0%, ${nextColor} 100%)`,
+                  boxShadow: `0 0 5px ${nextColor}77`,
+                  transition: 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
+              />
             </div>
-            <span
-              className="text-[11px] font-medium"
-              style={{ color: '#d4d4d8' }}
-            >
-              {tooltipText}
-            </span>
+
+            {/* Próxima meta */}
+            {nextLevel ? (
+              <span
+                className="text-[10px] leading-none whitespace-nowrap flex-shrink-0 tabular-nums"
+                style={{ color: '#52525b' }}
+              >
+                → {formatCompact(nextLevel.threshold)}{' '}
+                <span style={{ color: nextColor }}>{nextLevel.name}</span>
+              </span>
+            ) : (
+              <span
+                className="text-[10px] leading-none whitespace-nowrap flex-shrink-0"
+                style={{ color: '#52525b' }}
+              >
+                Nível máximo
+              </span>
+            )}
           </div>
+
         </div>
       </div>
     </div>

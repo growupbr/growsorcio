@@ -383,7 +383,7 @@ export default function Calculadora() {
     setTimeout(() => setToast({ show: false, message: '' }), 3000);
   }, []);
 
-  const handleCopiarTexto = async () => {
+  const handleCopiarTexto = useCallback(async () => {
     const texto =
       `Olá! Fiz a simulação que combinamos. 🏠\n\n` +
       `Para um crédito de ${fmtBRL(toNum(valorCreditoStr))}, no consórcio sua parcela fica em torno de ${fmtBRL(res.parcelaC)}/mês, sem juros.\n\n` +
@@ -394,9 +394,9 @@ export default function Calculadora() {
       await navigator.clipboard.writeText(texto);
       showToast('Resumo copiado! Cole no WhatsApp do cliente.');
     } catch { /* fallback */ }
-  };
+  }, [res, valorCreditoStr, showToast]);
 
-  const handleBaixarImagem = async () => {
+  const handleBaixarImagem = useCallback(async () => {
     if (!exportRef.current || exporting) return;
     setExporting(true);
     try {
@@ -436,7 +436,7 @@ export default function Calculadora() {
     } finally {
       setExporting(false);
     }
-  };
+  }, [exportRef, exporting, gerarNomeArquivo, showToast]);
 
   return (
     <div className="p-6 md:p-8 min-h-screen">
