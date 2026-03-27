@@ -1,7 +1,7 @@
 // /frontend/src/pages/LandingPage.jsx
 import { useState, useEffect, lazy, Suspense } from 'react';
 import logoAdemicon from '../assets/ademicon.webp';
-import printKanban from '../assets/printkanban.svg';
+import printKanban from '../assets/kanban.webp';
 import logoEmbracon from '../assets/embracon.webp';
 import logoHonda from '../assets/hondaconsorcio.webp';
 import logoHS from '../assets/hsconsorcio.webp';
@@ -21,6 +21,7 @@ import AnimatedCounter from '../components/landing/AnimatedCounter';
 import GlowCard from '../components/landing/GlowCard';
 import ParallaxSection from '../components/landing/ParallaxSection';
 import StaggerContainer, { staggerItemVariants } from '../components/landing/StaggerContainer';
+import GlowBorderShowcase from '../components/landing/GlowBorderShowcase';
 
 const FEATURES = [
   {
@@ -214,12 +215,10 @@ export default function LandingPage() {
           <p className="text-zinc-400 text-base leading-relaxed mt-4 max-w-2xl mx-auto">
             O GrowSorcio fala a sua língua. Grupo, Cota, Lance e Calculadora de Investimentos. Tudo a um clique de distância, em um layout moderno e intuitivo que funciona no computador e no celular.
           </p>
-          <div className="mt-8 rounded-2xl overflow-hidden border border-white/8 shadow-2xl">
-            <img
+          <div className="mt-8">
+            <GlowBorderShowcase
               src={printKanban}
               alt="Kanban do GrowSorcio — visão do funil de leads em layout moderno"
-              className="w-full h-auto"
-              loading="lazy"
             />
           </div>
         </div>
