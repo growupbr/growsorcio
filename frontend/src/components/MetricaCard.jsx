@@ -22,7 +22,7 @@ export default function MetricaCard({ label, valor, sub, destaque, icon: Icon, d
     >
       {/* Label */}
       <p style={{ fontSize: 11, letterSpacing: '0.1em', color: '#a1a1aa', fontWeight: 600 }}
-         className="uppercase mb-4">
+         className="uppercase mb-4 pr-12">
         {label}
       </p>
 
