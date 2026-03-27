@@ -47,7 +47,9 @@ export default function HeroSection() {
           ref={videoRef}
           src={heroVideo}
           muted
+          autoPlay
           playsInline
+          loop
           preload="auto"
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover z-0"

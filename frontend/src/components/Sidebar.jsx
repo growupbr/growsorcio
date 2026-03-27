@@ -120,7 +120,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`flex flex-col h-screen bg-zinc-950 border-r border-white/5 flex-shrink-0 transition-all duration-300 ease-in-out ${
+      className={`hidden md:flex flex-col h-screen bg-zinc-950 border-r border-white/5 flex-shrink-0 transition-all duration-300 ease-in-out ${
         collapsed ? 'w-16' : 'w-60'
       }`}
     >

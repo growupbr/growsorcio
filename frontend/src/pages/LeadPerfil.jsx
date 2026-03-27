@@ -99,7 +99,7 @@ function EditarInteracaoForm({ interacao, onSalvo, onCancelar }) {
     <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-3"
       style={{ background: '#27272a', border: '1px solid rgba(255,69,0,0.32)' }}>
       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF4500' }}>Editar interação</p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="label">Data</label>
           <input type="date" className="input" value={form.data} onChange={set('data')} />
@@ -158,7 +158,7 @@ function NovaInteracaoForm({ leadId, onSalvo }) {
     <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-3"
       style={{ background: '#18181b', border: '1px solid #3f3f46' }}>
       <p className="text-sm font-semibold" style={{ color: '#f4f4f5' }}>Registrar interação</p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="label">Data</label>
           <input type="date" className="input" value={form.data} onChange={set('data')} />
@@ -661,7 +661,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
             <p className="text-[11px] uppercase tracking-widest font-medium mb-3" style={{ color: '#71717a' }}>
               Filtro Blessed 4.0
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { label: 'Tipo de bem',      valor: lead.tipo_de_bem || '—',                   icon: '🏠' },
                 { label: 'Valor da carta',   valor: formatarMoeda(lead.valor_da_carta),         icon: '💰' },
@@ -693,7 +693,7 @@ export default function LeadPerfil({ leadId, onFechar, onAtualizado }) {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { label: 'Origem',        valor: lead.origem || '—' },
               { label: 'Criado em',     valor: formatarData(lead.criado_em) },

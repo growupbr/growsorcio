@@ -14,7 +14,7 @@ export default function Modal({ title, onClose, children, wide = false }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className={`w-full ${wide ? 'max-w-3xl' : 'max-w-xl'} max-h-[90vh] flex flex-col rounded-xl`}
+        className={`w-full ${wide ? 'max-w-3xl' : 'max-w-xl'} max-h-[90vh] flex flex-col rounded-xl mx-2`}
         style={{
           background: '#09090b',
           border: '1px solid #27272a',
@@ -50,7 +50,7 @@ export default function Modal({ title, onClose, children, wide = false }) {
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5">
+        <div className="overflow-y-auto flex-1 px-4 md:px-6 py-4 md:py-5">
           {children}
         </div>
       </div>

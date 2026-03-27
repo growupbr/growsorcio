@@ -152,6 +152,20 @@
   opacity: 1;
 }
 
+/* ── iOS safe-area-inset para dispositivos com entalhe (notch / Dynamic Island) ── */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── Oculta scrollbar mantendo funcionalidade de scroll (ex: tabs mobile) ── */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Opera */
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

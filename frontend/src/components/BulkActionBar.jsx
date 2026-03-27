@@ -209,7 +209,7 @@ export default function BulkActionBar({ selectedIds, onDeselect, onSuccess }) {
 
   return (
     <div
-      className="fixed bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-4 pointer-events-none"
+      className="fixed bottom-16 md:bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-4 pointer-events-none"
       style={{ animation: 'slideUp 0.2s ease' }}
     >
       <style>{`@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>

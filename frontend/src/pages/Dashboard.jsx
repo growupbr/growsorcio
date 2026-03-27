@@ -50,7 +50,7 @@ function Sk({ className }) {
 
 function DashboardSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-8">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Sk className="h-8 w-44" />
@@ -362,10 +362,10 @@ npm run dev`}
   if (!stats) return null;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-6">
 
       {/* ══════════ HEADER ══════════ */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:flex-wrap">
         <div>
           <h1 className="font-extrabold leading-tight" style={{ fontSize: 28, color: '#f4f4f5' }}>
             Dashboard

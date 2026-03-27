@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
-  DndContext, DragOverlay, PointerSensor, closestCenter,
+  DndContext, DragOverlay, PointerSensor, TouchSensor, closestCenter,
   useSensor, useSensors, useDroppable, useDraggable,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -426,19 +426,19 @@ function LeadCardOverlay({ lead }) {
 
 // ─── Coluna do Kanban ─────────────────────────────────────────────────────────
 
-function Coluna({ etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect, totalValor }) {
+function Coluna({ id, etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect, totalValor }) {
   const { setNodeRef } = useDroppable({ id: etapa.name });
   const dotColor = etapa.color || '#52525b';
   const isFechado = etapa.name === 'Fechado';
 
   return (
     <div
+      id={id}
       ref={setNodeRef}
-      className="flex-shrink-0 flex flex-col rounded-xl transition-all duration-200"
-      style={{
-        width: 280,
-        ...(isOver ? { background: 'rgba(255,255,255,0.022)', outline: '1px solid rgba(255,255,255,0.08)' } : {}),
-      }}
+      // Mobile: 85vw mostra coluna atual + hint da próxima; snap-start encaixa no scroll
+      // Desktop: largura fixa 280px
+      className="snap-start flex-shrink-0 flex flex-col rounded-xl transition-all duration-200 w-[85vw] md:w-[280px]"
+      style={isOver ? { background: 'rgba(255,255,255,0.022)', outline: '1px solid rgba(255,255,255,0.08)' } : {}}
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-2 pt-2.5 pb-2 border-b border-white/5">
@@ -595,7 +595,10 @@ export default function Kanban() {
   useEffect(() => { carregarLeads(); }, [carregarLeads]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    // Mouse/trackpad — ativa após 8px de movimento
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // Touch mobile — ativa após 250ms de toque longo (sem conflitar com scroll)
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
   );
 
   // Agrupa leads por etapa — memoizado para não reprocessar em cada drag/hover
@@ -689,16 +692,50 @@ export default function Kanban() {
     <div className="h-full flex flex-col bg-zinc-950">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0 border-b border-white/5">
+      <div className="flex items-center justify-between px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4 flex-shrink-0 border-b border-white/5">
         <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
         <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
           {leads.length} lead{leads.length !== 1 ? 's' : ''}
         </span>
       </div>
 
+      {/* Tabs de etapa — mobile only: permite navegar direto para uma coluna */}
+      <div className="flex md:hidden overflow-x-auto scrollbar-hide border-b border-white/5 flex-shrink-0">
+        <div className="flex gap-0 px-2 py-1.5 min-w-max">
+          {etapas.map((etapa) => {
+            const count = leadsPorEtapa[etapa.name]?.length || 0;
+            return (
+              <button
+                key={etapa.id}
+                onClick={() => {
+                  const el = document.getElementById(`kanban-col-${etapa.id}`);
+                  el?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-zinc-400 hover:text-zinc-200 transition-colors"
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: etapa.color || '#52525b' }}
+                />
+                {etapa.name.split(' ')[0]}
+                {count > 0 && (
+                  <span className="text-[10px] font-bold tabular-nums bg-zinc-800 text-zinc-500 px-1 rounded">
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto dot-grid" style={{ scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}>
-        <div className="px-6 py-5" style={{ minWidth: 'max-content', minHeight: '100%' }}>
+      {/* Mobile: snap-x para encaixar em coluna; Desktop: scroll livre */}
+      <div
+        className="flex-1 overflow-x-auto overflow-y-auto dot-grid snap-x snap-mandatory md:snap-none"
+        style={{ scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}
+      >
+        <div className="px-3 md:px-6 py-4 md:py-5" style={{ minHeight: '100%' }}>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -706,10 +743,11 @@ export default function Kanban() {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex gap-4 items-start">
+            <div className="flex gap-3 md:gap-4 items-start">
               {etapas.map((etapa) => (
                 <Coluna
                   key={etapa.id}
+                  id={`kanban-col-${etapa.id}`}
                   etapa={etapa}
                   leads={leadsPorEtapa[etapa.name] || []}
                   onCardClick={setLeadAberto}
@@ -731,7 +769,6 @@ export default function Kanban() {
           </DndContext>
         </div>
       </div>
-
 
       {/* Modal: perfil do lead */}
       {leadAberto && (

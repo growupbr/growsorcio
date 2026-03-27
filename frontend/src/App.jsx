@@ -1,9 +1,11 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import BottomNavBar from './components/BottomNavBar';
 import { useNotificacoes } from './hooks/useNotificacoes';
 import { useAuth } from './hooks/useAuth';
+import { getActiveBreakpoint } from './constants/breakpoints';
 
 // Lazy-loaded para reduzir bundle inicial (páginas pesadas)
 const LandingPage  = lazy(() => import('./pages/LandingPage'));
@@ -46,6 +48,21 @@ function PrivateRoute({ children }) {
   return children;
 }
 
+/** Badge de breakpoint ativo — visível apenas em desenvolvimento */
+function BreakpointBadge() {
+  const [bp, setBp] = useState(() => getActiveBreakpoint());
+  useEffect(() => {
+    const handler = () => setBp(getActiveBreakpoint());
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return (
+    <div className="fixed top-2 right-2 z-[9999] px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-500 text-white select-none pointer-events-none">
+      {bp}
+    </div>
+  );
+}
+
 function AppLayout() {
   useNotificacoes();
   return (
@@ -53,10 +70,13 @@ function AppLayout() {
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto bg-zinc-950">
+        {/* pb-16 reserva espaço para a BottomNavBar em mobile; md:pb-0 remove em desktop */}
+        <main className="flex-1 overflow-y-auto bg-zinc-950 pb-16 md:pb-0">
           <Outlet />
         </main>
       </div>
+      <BottomNavBar />
+      {import.meta.env.DEV && <BreakpointBadge />}
     </div>
   );
 }
