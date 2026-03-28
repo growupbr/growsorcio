@@ -3,6 +3,7 @@ import WelcomeModal, { shouldShowWelcome } from '../components/WelcomeModal';
 import { api } from '../api/client';
 import { ETAPAS_SEM_ANUNCIO as ETAPAS_ORDEM } from '../constants/etapas';
 import Icons from '../components/Icons';
+import { useFunilStages } from '../hooks/useFunilStages';
 import MetricaCard from '../components/MetricaCard';
 import OrigemCard from '../components/OrigemCard';
 import Modal from '../components/Modal';
@@ -263,6 +264,7 @@ export default function Dashboard() {
   const [tab, setTab] = useState('visao'); // 'visao' | 'relatorios'
   const [leads, setLeads] = useState([]);
   const [loadingLeads, setLoadingLeads] = useState(false);
+  const { etapas, carregando: carregandoEtapas } = useFunilStages();
   const [exportando, setExportando] = useState(false);
   const [erroExport, setErroExport] = useState('');
   const [relTab, setRelTab] = useState('charts'); // 'charts' | 'tabela'
@@ -584,6 +586,8 @@ npm run dev`}
               dadosPizza={dadosPizza}
               evolucao={evolucao}
               totalPorEtapa={totalPorEtapa}
+              etapas={etapas}
+              carregandoEtapas={carregandoEtapas}
             />
           </Suspense>
         </div>

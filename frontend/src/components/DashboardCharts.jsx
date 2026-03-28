@@ -80,17 +80,56 @@ function PieTooltip({ active, payload }) {
 
 // ─── Funil de conversão visual (pirâmide) + tooltip customizado ────────────────
 
-function FunilConversao({ totalPorEtapa }) {
+function FunilConversao({ etapas, carregandoEtapas, totalPorEtapa }) {
   const [hoveredIdx, setHoveredIdx] = React.useState(null);
-  const dados = ETAPAS_FUNIL.map((etapa) => ({
-    etapa,
-    total: totalPorEtapa[etapa] || 0,
-  }));
-  const max = Math.max(...dados.map((d) => d.total), 1);
 
-  // Larguras decrescentes: 100% → 28% (step uniforme)
+  // ── Skeleton enquanto etapas carregam ──
+  if (carregandoEtapas) {
+    return (
+      <div className="card p-5 h-full">
+        <div className="flex items-center justify-between mb-5">
+          <div className="animate-pulse rounded" style={{ height: 16, width: 140, background: '#27272a' }} />
+        </div>
+        <div className="flex flex-col items-center gap-0.5">
+          {[100, 88, 76, 64, 52, 40].map((w, i) => (
+            <div
+              key={i}
+              className="animate-pulse rounded-lg"
+              style={{ width: `${w}%`, height: 36, background: 'rgba(255,255,255,0.05)' }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Separar etapas de perda das etapas do funil ──
+  const etapasFunil = (etapas || [])
+    .filter((e) => !e.is_lost)
+    .sort((a, b) => a.display_order - b.display_order);
+  const etapasLoss = (etapas || []).filter((e) => e.is_lost);
+
+  // ── Contagem bruta por etapa ──
+  const dadosBrutos = etapasFunil.map((e) => ({
+    nome: e.name,
+    bruto: totalPorEtapa[e.name] || 0,
+  }));
+
+  // ── Contagem cumulativa: sufixo da soma (cada etapa = ela + todas as posteriores) ──
+  const n = dadosBrutos.length;
+  const cumulativo = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    cumulativo[i] = dadosBrutos[i].bruto + (i < n - 1 ? cumulativo[i + 1] : 0);
+  }
+
+  // ── Total descartados e total que entrou no funil ──
+  const totalDescartados = etapasLoss.reduce((s, e) => s + (totalPorEtapa[e.name] || 0), 0);
+  const totalEntrou = cumulativo[0] || 0;
+
+  const max = Math.max(...cumulativo, 1);
   const minWidth = 28;
-  const step = (100 - minWidth) / Math.max(dados.length - 1, 1);
+  const step = (100 - minWidth) / Math.max(n - 1, 1);
+  const isEmpty = cumulativo.every((v) => v === 0);
 
   return (
     <div className="card p-5 h-full">
@@ -108,101 +147,133 @@ function FunilConversao({ totalPorEtapa }) {
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-0.5">
-        {dados.map((item, idx) => {
-          const anterior = idx > 0 ? dados[idx - 1].total : null;
-          const pctConversao = anterior != null && anterior > 0
-            ? Math.round((item.total / anterior) * 100) : null;
-          const cor = pctConversao == null ? '#FF4500' :
-            pctConversao >= 70 ? '#22c55e' :
-            pctConversao >= 40 ? '#f59e0b' : '#ef4444';
+      {isEmpty ? (
+        <div className="flex flex-col items-center justify-center gap-2 py-8">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8" style={{ color: '#3f3f46' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7l9-4 9 4v10l-9 4-9-4V7z" />
+          </svg>
+          <p className="text-sm" style={{ color: '#52525b' }}>Nenhum lead no funil ainda</p>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col items-center gap-0.5">
+            {dadosBrutos.map((item, idx) => {
+              const cum = cumulativo[idx];
+              const cumAnterior = idx > 0 ? cumulativo[idx - 1] : null;
+              const pctConversao = cumAnterior != null && cumAnterior > 0
+                ? Math.round((cum / cumAnterior) * 100) : null;
+              const cor = pctConversao == null ? '#FF4500' :
+                pctConversao >= 70 ? '#22c55e' :
+                pctConversao >= 40 ? '#f59e0b' : '#ef4444';
 
-          // Largura do trapézio: decresce linearmente
-          const widthPct = 100 - idx * step;
-          // Intensidade de cor proporcional ao volume
-          const fillOpacity = max > 0 ? 0.12 + (item.total / max) * 0.28 : 0.12;
+              const widthPct = 100 - idx * step;
+              const fillOpacity = max > 0 ? 0.12 + (cum / max) * 0.28 : 0.12;
+              const isUltimaAtiva = idx === n - 1;
+              const accentColor = isUltimaAtiva ? '#22c55e' : '#FF4500';
+              const isHovered = hoveredIdx === idx;
 
-          const isFechado = item.etapa === 'Fechado';
-          const accentColor = isFechado ? '#22c55e' : '#FF4500';
-          const isHovered = hoveredIdx === idx;
+              return (
+                <div
+                  key={item.nome}
+                  className="relative flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 cursor-default"
+                  style={{
+                    width: `${widthPct}%`,
+                    background: isHovered
+                      ? `rgba(${isUltimaAtiva ? '34,197,94' : '255,69,0'}, ${fillOpacity + 0.1})`
+                      : `rgba(${isUltimaAtiva ? '34,197,94' : '255,69,0'}, ${fillOpacity})`,
+                    border: `1px solid rgba(${isUltimaAtiva ? '34,197,94' : '255,69,0'}, ${isHovered ? 0.35 : 0.18})`,
+                    minHeight: 36,
+                  }}
+                  onMouseEnter={() => setHoveredIdx(idx)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                >
+                  {/* Label esquerda */}
+                  <span
+                    className="text-xs font-medium truncate flex-1 min-w-0"
+                    style={{ color: isHovered ? '#f4f4f5' : '#a1a1aa' }}
+                  >
+                    {item.nome}
+                  </span>
 
-          return (
+                  {/* Valor cumulativo + badge de conversão */}
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                    <span className="text-sm font-bold tabular-nums" style={{ color: '#f4f4f5' }}>
+                      {cum}
+                    </span>
+                    {pctConversao != null && (
+                      <span
+                        className="text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums"
+                        style={{ background: `rgba(${cor === '#22c55e' ? '34,197,94' : cor === '#f59e0b' ? '245,158,11' : '239,68,68'}, 0.15)`, color: cor }}
+                      >
+                        {pctConversao}%
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Tooltip ao hover */}
+                  {isHovered && (
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 -top-9 z-20 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap pointer-events-none"
+                      style={{ background: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}
+                    >
+                      <span className="font-semibold" style={{ color: accentColor }}>{item.nome}</span>
+                      <span className="ml-2" style={{ color: '#71717a' }}>{item.bruto} aqui agora</span>
+                      <span className="ml-2" style={{ color: '#a1a1aa' }}>· {cum} já passaram</span>
+                      {/* Seta */}
+                      <div
+                        className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0"
+                        style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #3f3f46' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Barra de volume interna (baseada no cumulativo) */}
+                  <div
+                    className="absolute bottom-0 left-0 h-[2px] rounded-b-lg transition-all duration-700"
+                    style={{
+                      width: max > 0 ? `${(cum / max) * 100}%` : '0%',
+                      background: `linear-gradient(90deg, ${accentColor}, transparent)`,
+                      opacity: 0.6,
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Card de descartados — separado abaixo do funil */}
+          {etapasLoss.length > 0 && (
             <div
-              key={item.etapa}
-              className="relative flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 cursor-default"
-              style={{
-                width: `${widthPct}%`,
-                background: isHovered
-                  ? `rgba(${isFechado ? '34,197,94' : '255,69,0'}, ${fillOpacity + 0.1})`
-                  : `rgba(${isFechado ? '34,197,94' : '255,69,0'}, ${fillOpacity})`,
-                border: `1px solid rgba(${isFechado ? '34,197,94' : '255,69,0'}, ${isHovered ? 0.35 : 0.18})`,
-                minHeight: 36,
-              }}
-              onMouseEnter={() => setHoveredIdx(idx)}
-              onMouseLeave={() => setHoveredIdx(null)}
+              className="mt-3 flex items-center justify-between px-4 py-2.5 rounded-lg"
+              style={{ background: 'rgba(82,82,91,0.1)', border: '1px solid rgba(82,82,91,0.2)' }}
             >
-              {/* Label esquerda */}
-              <span
-                className="text-xs font-medium truncate flex-1 min-w-0"
-                style={{ color: isHovered ? '#f4f4f5' : '#a1a1aa' }}
-              >
-                {item.etapa}
+              <span className="text-xs font-medium" style={{ color: '#71717a' }}>
+                {etapasLoss.map((e) => e.name).join(' / ')}
               </span>
-
-              {/* Valor + badge de conversão */}
               <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                <span className="text-sm font-bold tabular-nums" style={{ color: '#f4f4f5' }}>
-                  {item.total}
+                <span className="text-sm font-bold tabular-nums" style={{ color: '#71717a' }}>
+                  {totalDescartados}
                 </span>
-                {pctConversao != null && (
+                {totalEntrou > 0 && (
                   <span
                     className="text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums"
-                    style={{ background: `rgba(${cor === '#22c55e' ? '34,197,94' : cor === '#f59e0b' ? '245,158,11' : '239,68,68'}, 0.15)`, color: cor }}
+                    style={{ background: 'rgba(82,82,91,0.2)', color: '#71717a' }}
                   >
-                    {pctConversao}%
+                    {Math.round((totalDescartados / totalEntrou) * 100)}%
                   </span>
                 )}
               </div>
-
-              {/* Tooltip ao hover */}
-              {isHovered && (
-                <div
-                  className="absolute left-1/2 -translate-x-1/2 -top-9 z-20 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap pointer-events-none"
-                  style={{ background: '#18181b', border: '1px solid #3f3f46', color: '#f4f4f5', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}
-                >
-                  <span className="font-semibold" style={{ color: accentColor }}>{item.etapa}</span>
-                  <span className="ml-2" style={{ color: '#71717a' }}>{item.total} leads</span>
-                  {pctConversao != null && (
-                    <span className="ml-2" style={{ color: cor }}>{pctConversao}% conv.</span>
-                  )}
-                  {/* Seta */}
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0"
-                    style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #3f3f46' }}
-                  />
-                </div>
-              )}
-
-              {/* Barra de volume interna */}
-              <div
-                className="absolute bottom-0 left-0 h-[2px] rounded-b-lg transition-all duration-700"
-                style={{
-                  width: max > 0 ? `${(item.total / max) * 100}%` : '0%',
-                  background: `linear-gradient(90deg, ${accentColor}, transparent)`,
-                  opacity: 0.6,
-                }}
-              />
             </div>
-          );
-        })}
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
 // ─── Componente exportado ─────────────────────────────────────────────────────
 
-export default function DashboardCharts({ dadosBarras, dadosPizza, evolucao, totalPorEtapa }) {
+export default function DashboardCharts({ dadosBarras, dadosPizza, evolucao, totalPorEtapa, etapas, carregandoEtapas }) {
   return (
     <>
       {/* ── Barras (leads por etapa) + Pizza (temperatura) ── */}
@@ -305,7 +376,7 @@ export default function DashboardCharts({ dadosBarras, dadosPizza, evolucao, tot
 
       {/* ── Funil de conversão + Evolução semanal ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <FunilConversao totalPorEtapa={totalPorEtapa} />
+        <FunilConversao etapas={etapas} carregandoEtapas={carregandoEtapas} totalPorEtapa={totalPorEtapa} />
 
         <div className="card p-5">
           <div className="flex items-center justify-between mb-5">

@@ -81,6 +81,18 @@
 
 ---
 
+## [FEAT] Funil de Conversão — Lógica Cumulativa + Etapas Dinâmicas
+
+**Responsável:** Matheus  
+**Data de abertura:** 2026-03-28  
+**Prioridade:** MÉDIA
+
+- [x] Etapa 1: Refatorar `FunilConversao` em `DashboardCharts.jsx` — aceitar `etapas` (do `useFunilStages`), calcular contagem cumulativa, exibir card de descartados separado, skeleton, estado vazio e tooltip corrigido
+- [x] Etapa 2: Atualizar `Dashboard.jsx` — importar `useFunilStages`, passar `etapas` e `carregandoEtapas` para `<DashboardCharts>`
+- [x] Etapa 3: Validar build sem erros (`npm run build`)
+
+---
+
 ---
 
 ## [SEC] A3 — Rate limiting e idempotência no webhook AbacatePay
