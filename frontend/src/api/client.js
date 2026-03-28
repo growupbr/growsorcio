@@ -159,6 +159,7 @@ export const api = {
   }),
   resumoStats: (periodo = 'total') => request(`/leads/stats/resumo?periodo=${periodo}`, { cacheTTL: 2 * 60 * 1000 }),
   evolucaoLeads: () => request('/leads/stats/evolucao', { cacheTTL: 5 * 60 * 1000 }),
+  faturamentoAcumulado: () => request('/leads/stats/faturamento', { cacheTTL: 5 * 60 * 1000 }),
   motivosDescarte: () => request('/leads/motivos-descarte'),
 
   // Interações
@@ -240,6 +241,13 @@ export const api = {
 
   // Assinatura / plano
   getSubscription: () => request('/billing/subscription', { cacheTTL: 60 * 1000 }),
+
+  // Configurações da organização (closing_message, org_name)
+  getOrgSettings: () => request('/funil/org-settings', { cacheTTL: 5 * 60 * 1000, cacheKey: 'GET:/funil/org-settings' }),
+  updateOrgSettings: (dados) => request('/funil/org-settings', { method: 'PATCH', body: dados }).then((data) => {
+    _invalidate(['/funil/org-settings']);
+    return data;
+  }),
 
   // Prefetch leve para melhorar troca entre páginas mais pesadas
   prefetchRouteData: (route) => {

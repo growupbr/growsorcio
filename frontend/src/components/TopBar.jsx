@@ -6,7 +6,7 @@ import GrowsorcioLogo from './GrowsorcioLogo';
  * Mobile: exibe logo à esquerda (Sidebar está hidden em mobile).
  * Desktop: logo fica na Sidebar; TopBar só mostra o badge de gamificação.
  */
-export default function TopBar({ volume }) {
+export default function TopBar() {
   return (
     <header
       className="flex items-center justify-between px-4 md:px-5 h-14 flex-shrink-0 border-b border-white/5"
@@ -21,7 +21,7 @@ export default function TopBar({ volume }) {
       <div className="hidden md:block" />
 
       {/* Badge de gamificação — sempre visível no canto superior direito */}
-      <GamificationBadge volume={volume} />
+      <GamificationBadge />
     </header>
   );
 }

@@ -16,6 +16,7 @@ import Modal from '../components/Modal';
 import LeadPerfil from './LeadPerfil';
 import AtividadesPendentes from '../components/AtividadesPendentes';
 import { useAtividades } from '../hooks/useAtividades';
+import { buildWhatsappMessage, buildWhatsappLink, getEffectiveTemplate, getDefaultClosingMessage } from '../utils/whatsapp';
 
 function formatarMoeda(val) {
   if (val == null || val === '') return null;
@@ -95,6 +96,19 @@ const InboxIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
     <path strokeLinecap="round" strokeLinejoin="round"
       d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z"/>
+  </svg>
+);
+
+const WhatsAppIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
+
+const XSmallIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3 h-3">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
 
@@ -304,7 +318,7 @@ function InlineAddForm({ etapaNome, onAdd, onCancel }) {
 
 // ─── Lead Card (draggável) ────────────────────────────────────────────────────
 
-const LeadCard = React.memo(function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
+const LeadCard = React.memo(function LeadCard({ lead, onClick, isSelected, onToggleSelect, etapa, nomeCorretor, orgNome, closingMessage, onZapInteraction }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: String(lead.id),
     data: { lead },
@@ -312,6 +326,41 @@ const LeadCard = React.memo(function LeadCard({ lead, onClick, isSelected, onTog
   const { countByLead } = useAtividades();
   const [showAtividades, setShowAtividades] = useState(false);
   const pendentesCount = countByLead(lead.id);
+
+  const temTelefone = !!lead.whatsapp;
+
+  function handleZap(e, tipo) {
+    e.stopPropagation();
+    if (!temTelefone) return;
+
+    let template;
+    if (tipo === 'closing') {
+      template = closingMessage || getDefaultClosingMessage();
+    } else {
+      template = getEffectiveTemplate(etapa);
+    }
+
+    const userLike = { user_metadata: { full_name: nomeCorretor }, email: nomeCorretor };
+    const mensagem = buildWhatsappMessage(template, lead, userLike, orgNome);
+    const link = buildWhatsappLink(lead.whatsapp, mensagem);
+    if (!link) return;
+
+    window.open(link, '_blank', 'noopener,noreferrer');
+
+    // Registra interação no histórico do lead (fire-and-forget)
+    const descricao = tipo === 'closing'
+      ? `Mensagem de encerramento enviada via WhatsApp — etapa: ${etapa?.name || ''}`
+      : `Contato iniciado via WhatsApp — etapa: ${etapa?.name || ''}`;
+
+    api.criarInteracao({
+      lead_id: lead.id,
+      data: new Date().toISOString().slice(0, 10),
+      tipo: 'WhatsApp',
+      descricao,
+    }).catch(() => {});
+
+    onZapInteraction && onZapInteraction(lead.id);
+  }
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -463,6 +512,47 @@ const LeadCard = React.memo(function LeadCard({ lead, onClick, isSelected, onTog
 
       {/* Blessed Badge — Método Blessed */}
       <BlessedBadge lead={lead} />
+
+      {/* Botões de WhatsApp — sempre visíveis no mobile, hover no desktop */}
+      <div
+        className="flex items-center gap-1.5 mt-2 pt-1.5"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        {/* Botão principal: mensagem da etapa */}
+        <button
+          title={temTelefone ? 'Enviar mensagem via WhatsApp' : 'Telefone não cadastrado'}
+          disabled={!temTelefone}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => handleZap(e, 'etapa')}
+          className={[
+            'flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded-lg text-[10px] font-semibold transition-all duration-150 cursor-pointer',
+            temTelefone
+              ? 'text-emerald-400 hover:bg-emerald-500/12 active:scale-95'
+              : 'text-zinc-700 cursor-not-allowed opacity-40',
+          ].join(' ')}
+          style={temTelefone ? { border: '1px solid rgba(34,197,94,0.15)' } : { border: '1px solid rgba(255,255,255,0.04)' }}
+        >
+          <WhatsAppIcon />
+          <span>WhatsApp</span>
+        </button>
+
+        {/* Botão discreto: mensagem de encerramento */}
+        <button
+          title={temTelefone ? 'Enviar mensagem de encerramento' : 'Telefone não cadastrado'}
+          disabled={!temTelefone}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => handleZap(e, 'closing')}
+          className={[
+            'p-1.5 rounded-lg transition-all duration-150',
+            temTelefone
+              ? 'text-zinc-600 hover:text-red-400 hover:bg-red-500/10 active:scale-95 cursor-pointer'
+              : 'text-zinc-800 cursor-not-allowed',
+          ].join(' ')}
+          style={{ border: '1px solid rgba(255,255,255,0.04)' }}
+        >
+          <XSmallIcon />
+        </button>
+      </div>
     </div>
   );
 });
@@ -490,7 +580,7 @@ function LeadCardOverlay({ lead }) {
 
 // ─── Coluna do Kanban ─────────────────────────────────────────────────────────
 
-const Coluna = React.memo(function Coluna({ id, etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect, totalValor, recolhida }) {
+const Coluna = React.memo(function Coluna({ id, etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect, totalValor, recolhida, nomeCorretor, orgNome, closingMessage, onZapInteraction }) {
   const { setNodeRef } = useDroppable({ id: etapa.name });
   const dotColor = etapa.color || '#52525b';
   const isFechado = etapa.name === 'Fechado';
@@ -603,6 +693,11 @@ const Coluna = React.memo(function Coluna({ id, etapa, leads, onCardClick, isOve
             onClick={onCardClick}
             isSelected={selectedIds?.has(lead.id)}
             onToggleSelect={onToggleSelect}
+            etapa={etapa}
+            nomeCorretor={nomeCorretor}
+            orgNome={orgNome}
+            closingMessage={closingMessage}
+            onZapInteraction={onZapInteraction}
           />
         ))}
       </div>
@@ -658,11 +753,20 @@ export default function Kanban() {
   const [leadAberto, setLeadAberto] = useState(null);
   const [ativo, setAtivo] = useState(null);
   const [sobreColuna, setSobreColuna] = useState(null);
-  // Coluna com formulário inline ativo (null = nenhuma)
   const [colunaAdicionando, setColunaAdicionando] = useState(null);
   const [selectedIds, setSelectedIds]               = useState(new Set());
   const [leadFechado, setLeadFechado]               = useState(null);
   const [colunasRecolhidas, setColunasRecolhidas]   = useState(false);
+  const [orgSettings, setOrgSettings]               = useState({ org_name: '', closing_message: null });
+
+  // Dados do corretor para mensagens WhatsApp
+  const nomeCorretor = user?.user_metadata?.full_name?.split(' ')[0]
+    || user?.email?.split('@')[0]
+    || '';
+
+  useEffect(() => {
+    api.getOrgSettings().then(setOrgSettings).catch(() => {});
+  }, []);
 
   const handleToggleSelect = useCallback((id) => {
     setSelectedIds((prev) => {
@@ -924,6 +1028,10 @@ export default function Kanban() {
                   onToggleSelect={handleToggleSelect}
                   totalValor={totalPorEtapa[etapa.name] ?? null}
                   recolhida={colunasRecolhidas}
+                  nomeCorretor={nomeCorretor}
+                  orgNome={orgSettings.org_name}
+                  closingMessage={orgSettings.closing_message}
+                  onZapInteraction={null}
                 />
               ))}
             </div>

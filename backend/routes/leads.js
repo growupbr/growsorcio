@@ -361,6 +361,35 @@ router.get('/stats/resumo', async (req, res) => {
   }
 });
 
+// GET /api/leads/stats/faturamento
+// Retorna o faturamento acumulado histórico (soma de valor_da_carta de leads fechados)
+router.get('/stats/faturamento', async (req, res) => {
+  try {
+    const { supabase: db, organizationId } = req;
+
+    let query = db
+      .from('leads')
+      .select('valor_da_carta')
+      .eq('organization_id', organizationId)
+      .eq('etapa_funil', 'Fechado')
+      .not('valor_da_carta', 'is', null);
+
+    if (req.userScopeEnabled) {
+      query = query.eq('owner_user_id', req.userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao calcular faturamento');
+
+    const faturamento_acumulado = (data || []).reduce((acc, row) => acc + (Number(row.valor_da_carta) || 0), 0);
+
+    return res.json({ faturamento_acumulado });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao calcular faturamento');
+  }
+});
+
 // GET /api/leads/stats/evolucao
 router.get('/stats/evolucao', async (req, res) => {
   try {

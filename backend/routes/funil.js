@@ -85,9 +85,42 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/funil/:id — atualiza nome, cor ou is_lost
+// GET /api/funil/org-settings — retorna closing_message e org_name da organização
+router.get('/org-settings', async (req, res) => {
+  try {
+    const { data, error } = await serviceDb
+      .from('organizations')
+      .select('name, closing_message')
+      .eq('id', req.organizationId)
+      .maybeSingle();
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao buscar configurações da org');
+    return res.json({ org_name: data?.name || '', closing_message: data?.closing_message || null });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao buscar configurações da org');
+  }
+});
+
+// PATCH /api/funil/org-settings — salva closing_message da organização
+router.patch('/org-settings', async (req, res) => {
+  const { closing_message } = req.body;
+
+  try {
+    const { error } = await serviceDb
+      .from('organizations')
+      .update({ closing_message: closing_message ?? null })
+      .eq('id', req.organizationId);
+
+    if (error) return handleSupabaseError(res, error, 'Erro ao atualizar configurações da org');
+    return res.json({ ok: true });
+  } catch (error) {
+    return handleSupabaseError(res, error, 'Erro ao atualizar configurações da org');
+  }
+});
+
+// PUT /api/funil/:id — atualiza nome, cor, is_lost ou message_template
 router.put('/:id', async (req, res) => {
-  const { name, color, is_lost } = req.body;
+  const { name, color, is_lost, message_template } = req.body;
 
   try {
     const { supabase: db, organizationId } = req;
@@ -95,6 +128,7 @@ router.put('/:id', async (req, res) => {
     if (name !== undefined) updates.name = name.trim();
     if (color !== undefined) updates.color = color;
     if (is_lost !== undefined) updates.is_lost = Boolean(is_lost);
+    if (message_template !== undefined) updates.message_template = message_template || null;
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ erro: 'Nenhum campo para atualizar' });

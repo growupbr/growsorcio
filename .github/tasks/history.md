@@ -28,6 +28,32 @@
 - [x] Página `/cookies` — tabela de 7 armazenamentos com nome, local, tipo, duração e finalidade
 - [x] Rota backend `GET /api/minha-conta/meus-dados` — portabilidade: conta + perfil + consentimentos + estatísticas
 - [x] Rota backend `DELETE /api/minha-conta/excluir-conta` — anonimização + assinatura global revogada + registro de auditoria
+
+---
+
+## [x] [FEAT] Redesenho Gamificação — Insígnias por Nível de Faturamento + Popup
+
+**Responsável:** Matheus  
+**Data de conclusão:** 2026-03-28
+
+- [x] Backend `GET /api/leads/stats/faturamento` (SUM valor_da_carta WHERE etapa_funil = 'Fechado', escopado por organization_id)
+- [x] Frontend API `faturamentoAcumulado()` em `client.js` (cache 5 min)
+- [x] Hook `useFaturamento.js` — fetch com cancelamento e estado loading/erro
+- [x] `GamificationBadge.jsx` redesenhado — 10 níveis, SVG badges inline, barra #FF4500
+- [x] `LevelModal` inline — overlay blur, lista dos 10 níveis, "Você está aqui" com borda #FF4500
+- [x] `TopBar.jsx` atualizado — removida prop `volume` (agora auto-fetching interno)
+- [x] Níveis oficiais aplicados (Iniciando Jornada → Legado Eterno)
+
+---
+
+## [x] [FEAT] Funil de Conversão — Lógica Cumulativa + Etapas Dinâmicas
+
+**Responsável:** Matheus  
+**Data de conclusão:** 2026-03-28
+
+- [x] Etapa 1: Refatorar `FunilConversao` em `DashboardCharts.jsx` — aceitar `etapas` (do `useFunilStages`), calcular contagem cumulativa, exibir card de descartados separado, skeleton, estado vazio e tooltip corrigido
+- [x] Etapa 2: Atualizar `Dashboard.jsx` — importar `useFunilStages`, passar `etapas` e `carregandoEtapas` para `<DashboardCharts>`
+- [x] Etapa 3: Validar build sem erros (`npm run build`)
 - [x] `server.js` — linha `app.use('/api/minha-conta', authMiddleware, require('./routes/minha-conta'))`
 - [x] `Checkout.jsx` — checkbox aceite + botão desabilitado sem aceite
 - [x] `App.jsx` — `CookieController`, lazy Privacidade + PoliticaCookies, rotas `/privacidade` e `/cookies` (app + landing)
