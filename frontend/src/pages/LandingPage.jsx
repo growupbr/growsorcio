@@ -450,8 +450,8 @@ export default function LandingPage() {
               </a>
             </div>
             <div className="flex items-center gap-6">
-              <a href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">Termos</a>
-              <a href="#" className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">Privacidade</a>
+              <a href="/privacidade" className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">Privacidade</a>
+              <a href="/cookies" className="text-zinc-500 hover:text-zinc-300 transition-colors duration-150">Cookies</a>
             </div>
           </div>
         </div>

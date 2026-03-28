@@ -6,6 +6,10 @@ import BottomNavBar from './components/BottomNavBar';
 import { useNotificacoes } from './hooks/useNotificacoes';
 import { useAuth } from './hooks/useAuth';
 import { getActiveBreakpoint } from './constants/breakpoints';
+import { AtividadesProvider } from './hooks/useAtividades';
+import CookieBanner from './components/CookieBanner';
+import CookieModal from './components/CookieModal';
+import { useCookieConsent } from './hooks/useCookieConsent';
 
 // Lazy-loaded para reduzir bundle inicial (páginas pesadas)
 const LandingPage  = lazy(() => import('./pages/LandingPage'));
@@ -25,6 +29,8 @@ const LandingPageTEC = lazy(() => import('./pages/LandingPageTEC'));
 const Login        = lazy(() => import('./pages/Login'));
 const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'));
 const Checkout     = lazy(() => import('./pages/Checkout'));
+const Privacidade      = lazy(() => import('./pages/Privacidade'));
+const PoliticaCookies  = lazy(() => import('./pages/PoliticaCookies'));
 
 function PageLoader() {
   return (
@@ -67,18 +73,42 @@ function BreakpointBadge() {
 function AppLayout() {
   useNotificacoes();
   return (
-    <div className="flex h-screen bg-zinc-950 overflow-hidden">
-      <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <TopBar />
-        {/* pb-16 reserva espaço para a BottomNavBar em mobile; md:pb-0 remove em desktop */}
-        <main className="flex-1 overflow-y-auto bg-zinc-950 pb-16 md:pb-0">
-          <Outlet />
-        </main>
+    <AtividadesProvider>
+      <div className="flex h-screen bg-zinc-950 overflow-hidden">
+        <Sidebar />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <TopBar />
+          {/* pb-16 reserva espaço para a BottomNavBar em mobile; md:pb-0 remove em desktop */}
+          <main className="flex-1 overflow-y-auto bg-zinc-950 pb-16 md:pb-0">
+            <Outlet />
+          </main>
+        </div>
+        <BottomNavBar />
+        {import.meta.env.DEV && <BreakpointBadge />}
       </div>
-      <BottomNavBar />
-      {import.meta.env.DEV && <BreakpointBadge />}
-    </div>
+    </AtividadesProvider>
+  );
+}
+
+function CookieController() {
+  const { hasConsented, showModal, acceptAll, acceptEssential, savePreferences, openModal, closeModal, consent } = useCookieConsent();
+  return (
+    <>
+      {!hasConsented && (
+        <CookieBanner
+          onAcceptAll={acceptAll}
+          onEssentialOnly={acceptEssential}
+          onConfigure={openModal}
+        />
+      )}
+      {showModal && (
+        <CookieModal
+          initialConsent={consent}
+          onSave={savePreferences}
+          onClose={closeModal}
+        />
+      )}
+    </>
   );
 }
 
@@ -86,12 +116,15 @@ export default function App() {
   if (isAppDomain) {
     return (
       <Suspense fallback={<PageLoader />}>
+        <CookieController />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           <Route path="/landing" element={<LandingPage />} />
           <Route path="/tec" element={<LandingPageTEC />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/cookies" element={<PoliticaCookies />} />
           <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
@@ -116,11 +149,14 @@ export default function App() {
   // Domínio principal (growsorcio.com.br) → landing em URL oculta
   return (
     <Suspense fallback={<PageLoader />}>
+      <CookieController />
       <Routes>
         <Route path="/v1-preview" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/esqueci-senha" element={<EsqueciSenha />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/cookies" element={<PoliticaCookies />} />
         <Route path="/*" element={<Navigate to="/v1-preview" replace />} />
       </Routes>
     </Suspense>

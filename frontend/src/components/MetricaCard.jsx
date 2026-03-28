@@ -12,17 +12,15 @@ export default function MetricaCard({ label, valor, sub, destaque, icon: Icon, d
 
   return (
     <div
-      className="rounded-2xl p-5 relative overflow-hidden transition-all duration-150 cursor-default"
+      className="rounded-2xl p-5 relative overflow-hidden cursor-default"
       style={{
-        background: destaque
-          ? 'linear-gradient(135deg, rgba(255,69,0,0.12) 0%, #18181b 70%)'
-          : '#18181b',
-        border: `1px solid ${destaque ? 'rgba(255,69,0,0.32)' : '#3f3f46'}`,
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.1)',
       }}
     >
       {/* Label */}
-      <p style={{ fontSize: 11, letterSpacing: '0.1em', color: '#a1a1aa', fontWeight: 600 }}
-         className="uppercase mb-4 pr-12">
+      <p style={{ fontSize: 11, letterSpacing: '0.08em', color: '#71717a', fontWeight: 600 }}
+         className="uppercase mb-3 pr-8 leading-snug tracking-wider">
         {label}
       </p>
 
@@ -30,7 +28,7 @@ export default function MetricaCard({ label, valor, sub, destaque, icon: Icon, d
       <NumberFlow
         value={typeof valor === 'number' ? valor : 0}
         className="tabular-nums leading-none"
-        style={{ fontSize: 36, fontWeight: 800, color: destaque ? '#FF4500' : '#f4f4f5' }}
+        style={{ fontSize: 24, fontWeight: 700, color: destaque ? '#FF4500' : '#f4f4f5' }}
         format={{ useGrouping: false }}
         willChange
       />
@@ -38,7 +36,7 @@ export default function MetricaCard({ label, valor, sub, destaque, icon: Icon, d
       {/* Sub + Delta */}
       <div className="mt-2 flex items-center gap-2">
         {sub && (
-          <p className="text-xs font-medium" style={{ color: '#a1a1aa' }}>{sub}</p>
+          <p className="text-xs" style={{ color: '#71717a' }}>{sub}</p>
         )}
         {deltaLabel && (
           <span
@@ -56,22 +54,14 @@ export default function MetricaCard({ label, valor, sub, destaque, icon: Icon, d
       {/* Ícone */}
       {Icon && (
         <div
-          className="absolute top-5 right-5 p-2.5 rounded-lg"
+          className="absolute top-4 right-4 p-2 rounded-lg flex-shrink-0"
           style={{
-            background: destaque ? 'rgba(255,69,0,0.15)' : 'rgba(255,69,0,0.08)',
-            color: '#FF4500',
+            background: 'rgba(255,255,255,0.06)',
+            color: destaque ? '#FF4500' : '#52525b',
           }}
         >
           <Icon />
         </div>
-      )}
-
-      {/* Glow sutil no destaque */}
-      {destaque && (
-        <div
-          className="absolute inset-0 rounded-xl pointer-events-none"
-          style={{ boxShadow: 'inset 0 0 40px rgba(255,69,0,0.04)' }}
-        />
       )}
     </div>
   );

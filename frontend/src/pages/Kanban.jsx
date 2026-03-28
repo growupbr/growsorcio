@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, closestCenter,
   useSensor, useSensors, useDroppable, useDraggable,
@@ -14,6 +14,8 @@ import TemperaturaBadge from '../components/TemperaturaBadge';
 import BulkActionBar from '../components/BulkActionBar';
 import Modal from '../components/Modal';
 import LeadPerfil from './LeadPerfil';
+import AtividadesPendentes from '../components/AtividadesPendentes';
+import { useAtividades } from '../hooks/useAtividades';
 
 function formatarMoeda(val) {
   if (val == null || val === '') return null;
@@ -55,6 +57,21 @@ const XIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
     <line x1="18" y1="6" x2="6" y2="18"/>
     <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
+const CollapseIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+    <rect x="3" y="3" width="4" height="18" rx="1"/>
+    <rect x="10" y="3" width="4" height="18" rx="1"/>
+    <rect x="17" y="3" width="4" height="18" rx="1"/>
+  </svg>
+);
+
+const ExpandIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+    <rect x="3" y="3" width="7" height="18" rx="1"/>
+    <rect x="14" y="3" width="7" height="18" rx="1"/>
   </svg>
 );
 
@@ -204,7 +221,7 @@ const BLESSED_ITEMS = [
   { Icon: Zap,        key: 'urgencia',           label: 'Urgência', check: (v) => !!v },
 ];
 
-function BlessedBadge({ lead }) {
+const BlessedBadge = React.memo(function BlessedBadge({ lead }) {
   return (
     <div className="flex items-center gap-2 pt-2 mt-1 border-t border-white/5">
       {BLESSED_ITEMS.map(({ Icon, key, label, check }) => {
@@ -221,7 +238,7 @@ function BlessedBadge({ lead }) {
       })}
     </div>
   );
-}
+});
 
 // ─── Formulário inline ───────────────────────────────────────────────────────
 
@@ -287,11 +304,14 @@ function InlineAddForm({ etapaNome, onAdd, onCancel }) {
 
 // ─── Lead Card (draggável) ────────────────────────────────────────────────────
 
-function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
+const LeadCard = React.memo(function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: String(lead.id),
     data: { lead },
   });
+  const { countByLead } = useAtividades();
+  const [showAtividades, setShowAtividades] = useState(false);
+  const pendentesCount = countByLead(lead.id);
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -307,6 +327,7 @@ function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
       {...listeners}
       {...attributes}
       onClick={() => {
+        if (showAtividades) return;
         if (!transform || (Math.abs(transform.x) < 4 && Math.abs(transform.y) < 4)) {
           onClick(lead.id);
         }
@@ -397,11 +418,54 @@ function LeadCard({ lead, onClick, isSelected, onToggleSelect }) {
         </div>
       )}
 
+      {/* Badge de atividades pendentes */}
+      {pendentesCount > 0 && (
+        <div
+          className="mt-2 pt-2"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowAtividades((v) => !v);
+            }}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-colors cursor-pointer w-full"
+            style={{
+              background: showAtividades ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.06)',
+              border: `1px solid ${showAtividades ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.15)'}`,
+              color: '#fbbf24',
+            }}
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="w-3 h-3 flex-shrink-0">
+              <rect x="2" y="2" width="12" height="12" rx="2"/>
+              <polyline points="5,8 7,10 11,6"/>
+            </svg>
+            {pendentesCount} {pendentesCount === 1 ? 'pendente' : 'pendentes'}
+            <svg
+              viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2}
+              className="w-2.5 h-2.5 ml-auto transition-transform duration-150"
+              style={{ transform: showAtividades ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            >
+              <polyline points="4,6 8,10 12,6"/>
+            </svg>
+          </button>
+
+          {/* Dropdown inline */}
+          {showAtividades && (
+            <AtividadesPendentes
+              leadId={lead.id}
+              onClose={() => setShowAtividades(false)}
+            />
+          )}
+        </div>
+      )}
+
       {/* Blessed Badge — Método Blessed */}
       <BlessedBadge lead={lead} />
     </div>
   );
-}
+});
 
 // ─── Card estático para DragOverlay ──────────────────────────────────────────
 
@@ -426,11 +490,44 @@ function LeadCardOverlay({ lead }) {
 
 // ─── Coluna do Kanban ─────────────────────────────────────────────────────────
 
-function Coluna({ id, etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect, totalValor }) {
+const Coluna = React.memo(function Coluna({ id, etapa, leads, onCardClick, isOver, adicionando, onIniciarAdd, onAdd, onCancelarAdd, selectedIds, onToggleSelect, totalValor, recolhida }) {
   const { setNodeRef } = useDroppable({ id: etapa.name });
   const dotColor = etapa.color || '#52525b';
   const isFechado = etapa.name === 'Fechado';
 
+  // ── Modo recolhido: coluna estreita com nome vertical ──────────────────────
+  if (recolhida) {
+    return (
+      <div
+        id={id}
+        ref={setNodeRef}
+        className="snap-start flex-shrink-0 flex flex-col items-center rounded-xl transition-all duration-200 cursor-default"
+        style={{
+          width: 52,
+          minHeight: 200,
+          background: isOver ? 'rgba(255,255,255,0.022)' : 'rgba(255,255,255,0.01)',
+          border: '1px solid rgba(255,255,255,0.05)',
+          outline: isOver ? '1px solid rgba(255,255,255,0.08)' : 'none',
+        }}
+      >
+        {/* Dot de cor */}
+        <div className="w-2 h-2 rounded-full mt-3 flex-shrink-0" style={{ background: dotColor }} />
+        {/* Contador */}
+        <span className="text-[10px] font-bold tabular-nums mt-1.5 text-zinc-500">
+          {leads.length}
+        </span>
+        {/* Nome vertical */}
+        <span
+          className="text-[11px] font-semibold text-zinc-500 mt-3 flex-1 select-none"
+          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '0.04em' }}
+        >
+          {etapa.name}
+        </span>
+      </div>
+    );
+  }
+
+  // ── Modo expandido (padrão) ────────────────────────────────────────────────
   return (
     <div
       id={id}
@@ -475,7 +572,7 @@ function Coluna({ id, etapa, leads, onCardClick, isOver, adicionando, onIniciarA
           />
         ) : (
           <button
-            onClick={onIniciarAdd}
+            onClick={() => onIniciarAdd(etapa.name)}
             className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium
                        text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.03]
                        transition-all duration-150 cursor-pointer group"
@@ -511,7 +608,7 @@ function Coluna({ id, etapa, leads, onCardClick, isOver, adicionando, onIniciarA
       </div>
     </div>
   );
-}
+});
 
 // ─── Skeleton de carregamento ────────────────────────────────────────────────
 
@@ -565,14 +662,18 @@ export default function Kanban() {
   const [colunaAdicionando, setColunaAdicionando] = useState(null);
   const [selectedIds, setSelectedIds]               = useState(new Set());
   const [leadFechado, setLeadFechado]               = useState(null);
+  const [colunasRecolhidas, setColunasRecolhidas]   = useState(false);
 
-  function toggleSelect(id) {
+  const handleToggleSelect = useCallback((id) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  }
+  }, []);
+
+  const handleIniciarAdd = useCallback((etapaNome) => setColunaAdicionando(etapaNome), []);
+  const handleCancelarAdd = useCallback(() => setColunaAdicionando(null), []);
 
   function handleBulkSuccess(diffs) {
     setLeads((prev) =>
@@ -597,9 +698,54 @@ export default function Kanban() {
   const sensors = useSensors(
     // Mouse/trackpad — ativa após 8px de movimento
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    // Touch mobile — ativa após 250ms de toque longo (sem conflitar com scroll)
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+    // Touch mobile — long press 1s para não conflitar com scroll nativo
+    useSensor(TouchSensor, { activationConstraint: { delay: 1000, tolerance: 5 } })
   );
+
+  // ─── Auto-scroll horizontal durante drag ────────────────────────────────
+  const boardRef       = useRef(null);
+  const pointerXRef    = useRef(0);
+  const isDraggingRef  = useRef(false);
+
+  // Rastreia posição X do ponteiro/toque globalmente
+  useEffect(() => {
+    function onMove(e) {
+      pointerXRef.current = e.touches ? e.touches[0].clientX : e.clientX;
+    }
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('touchmove',   onMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('touchmove',   onMove);
+    };
+  }, []);
+
+  function startAutoScroll() {
+    isDraggingRef.current = true;
+    const EDGE  = 100;  // px da borda que ativa o scroll
+    const SPEED = 14;   // px máximo por frame
+    function loop() {
+      if (!isDraggingRef.current) return;
+      const board = boardRef.current;
+      if (board) {
+        const { left, right } = board.getBoundingClientRect();
+        const x = pointerXRef.current;
+        if (x < left + EDGE) {
+          const ratio = 1 - (x - left) / EDGE;
+          board.scrollLeft -= Math.round(SPEED * Math.max(0, Math.min(ratio, 1)));
+        } else if (x > right - EDGE) {
+          const ratio = 1 - (right - x) / EDGE;
+          board.scrollLeft += Math.round(SPEED * Math.max(0, Math.min(ratio, 1)));
+        }
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function stopAutoScroll() {
+    isDraggingRef.current = false;
+  }
 
   // Agrupa leads por etapa — memoizado para não reprocessar em cada drag/hover
   const leadsPorEtapa = useMemo(() => {
@@ -625,7 +771,7 @@ export default function Kanban() {
   }, [leads]);
 
   // Criação inline (estilo Trello)
-  async function handleAdicionarLead(nome, etapaNome) {
+  const handleAdicionarLead = useCallback(async function handleAdicionarLead(nome, etapaNome) {
     // Detecta @instagram → usa como instagram, deriva nome sem @
     const isInstagram = nome.startsWith('@');
     const dadosLead = {
@@ -644,13 +790,14 @@ export default function Kanban() {
     } catch (err) {
       console.error('Erro ao criar lead:', err);
     }
-  }
+  }, []);
 
   // DnD handlers
   function handleDragStart({ active }) {
     setAtivo(leads.find((l) => String(l.id) === active.id) || null);
     // Fecha formulário inline ao iniciar drag
     setColunaAdicionando(null);
+    startAutoScroll();
   }
 
   function handleDragOver({ over }) {
@@ -658,6 +805,7 @@ export default function Kanban() {
   }
 
   async function handleDragEnd({ active, over }) {
+    stopAutoScroll();
     setAtivo(null);
     setSobreColuna(null);
     if (!over) return;
@@ -694,9 +842,24 @@ export default function Kanban() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4 flex-shrink-0 border-b border-white/5">
         <h1 className="text-base font-bold tracking-tight text-zinc-100">Kanban</h1>
-        <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
-          {leads.length} lead{leads.length !== 1 ? 's' : ''}
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setColunasRecolhidas((v) => !v)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 cursor-pointer"
+            style={{
+              background: colunasRecolhidas ? 'rgba(255,69,0,0.12)' : 'rgba(255,255,255,0.04)',
+              color:      colunasRecolhidas ? '#FF4500' : '#71717a',
+              border:     `1px solid ${colunasRecolhidas ? 'rgba(255,69,0,0.28)' : 'rgba(255,255,255,0.06)'}`,
+            }}
+            title={colunasRecolhidas ? 'Expandir colunas' : 'Recolher colunas'}
+          >
+            {colunasRecolhidas ? <ExpandIcon /> : <CollapseIcon />}
+            <span className="hidden md:inline">{colunasRecolhidas ? 'Expandir' : 'Recolher'}</span>
+          </button>
+          <span className="text-[11px] font-medium text-zinc-600 tabular-nums">
+            {leads.length} lead{leads.length !== 1 ? 's' : ''}
+          </span>
+        </div>
       </div>
 
       {/* Tabs de etapa — mobile only: permite navegar direto para uma coluna */}
@@ -732,6 +895,7 @@ export default function Kanban() {
       {/* Board */}
       {/* Mobile: snap-x para encaixar em coluna; Desktop: scroll livre */}
       <div
+        ref={boardRef}
         className="flex-1 overflow-x-auto overflow-y-auto dot-grid snap-x snap-mandatory md:snap-none"
         style={{ scrollBehavior: 'smooth', overscrollBehavior: 'contain' }}
       >
@@ -753,12 +917,13 @@ export default function Kanban() {
                   onCardClick={setLeadAberto}
                   isOver={sobreColuna === etapa.name}
                   adicionando={colunaAdicionando === etapa.name}
-                  onIniciarAdd={() => setColunaAdicionando(etapa.name)}
+                  onIniciarAdd={handleIniciarAdd}
                   onAdd={handleAdicionarLead}
-                  onCancelarAdd={() => setColunaAdicionando(null)}
+                  onCancelarAdd={handleCancelarAdd}
                   selectedIds={selectedIds}
-                  onToggleSelect={toggleSelect}
+                  onToggleSelect={handleToggleSelect}
                   totalValor={totalPorEtapa[etapa.name] ?? null}
+                  recolhida={colunasRecolhidas}
                 />
               ))}
             </div>

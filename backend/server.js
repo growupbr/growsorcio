@@ -37,6 +37,7 @@ app.use('/api/cadencia', authMiddleware, require('./routes/cadencia'));
 app.use('/api/funil', authMiddleware, require('./routes/funil'));
 app.use('/api/profile', authMiddleware, require('./routes/profile'));
 app.use('/api/billing', require('./routes/billing')); // auth aplicado por rota interna
+app.use('/api/minha-conta', authMiddleware, require('./routes/minha-conta')); // LGPD: portabilidade e exclusão
 
 // Diagnóstico — retorna userId e organizationId do token atual
 app.get('/api/me', authMiddleware, (req, res) => {

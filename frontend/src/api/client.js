@@ -167,8 +167,18 @@ export const api = {
   excluirInteracao: (id) => request(`/interacoes/${id}`, { method: 'DELETE' }),
 
   // Cadência
-  concluirCadencia: (id) => request(`/cadencia/${id}/concluir`, { method: 'PATCH' }),
-  reabrirCadencia: (id) => request(`/cadencia/${id}/reabrir`, { method: 'PATCH' }),
+  listarCadenciaPendentes: (lead_id) => {
+    const qs = lead_id ? `?lead_id=${lead_id}` : '';
+    return request(`/cadencia/pendentes${qs}`, { cacheTTL: 0 });
+  },
+  concluirCadencia: (id) => request(`/cadencia/${id}/concluir`, { method: 'PATCH' }).then((data) => {
+    _invalidate(['/cadencia']);
+    return data;
+  }),
+  reabrirCadencia: (id) => request(`/cadencia/${id}/reabrir`, { method: 'PATCH' }).then((data) => {
+    _invalidate(['/cadencia']);
+    return data;
+  }),
 
   // Exportar
   exportarCSV: async () => {

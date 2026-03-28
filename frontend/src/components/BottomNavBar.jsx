@@ -3,21 +3,26 @@ import {
   LayoutDashboard,
   Kanban as KanbanIcon,
   Users,
-  Bot,
+  FileText,
+  Calculator,
+  MessageCircle,
   Settings,
 } from 'lucide-react';
 
 /**
  * BottomNavBar — Navegação inferior para mobile (< md / 768px).
  * Visível apenas em telas pequenas. Em md+ a Sidebar lateral assume.
+ * GrowIA é desktop-only — disponível apenas na Sidebar lateral.
  */
 
 const BOTTOM_NAV_ITEMS = [
-  { to: '/dashboard',   label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/kanban',      label: 'Kanban',    icon: KanbanIcon },
-  { to: '/leads',       label: 'Leads',     icon: Users },
-  { to: '/grow-ia',     label: 'GrowIA',    icon: Bot },
-  { to: '/config',      label: 'Config',    icon: Settings },
+  { to: '/dashboard',   label: 'Dashboard',  icon: LayoutDashboard },
+  { to: '/kanban',      label: 'Kanban',     icon: KanbanIcon },
+  { to: '/leads',       label: 'Leads',      icon: Users },
+  { to: '/propostas',   label: 'Propostas',  icon: FileText },
+  { to: '/calculadora', label: 'Calculadora',icon: Calculator },
+  { to: '/conversas',   label: 'WhatsApp',   icon: MessageCircle },
+  { to: '/config',      label: 'Config',     icon: Settings },
 ];
 
 export default function BottomNavBar() {

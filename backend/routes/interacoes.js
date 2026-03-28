@@ -17,14 +17,16 @@ function withOwnerField(payload, req) {
   return { ...payload, owner_user_id: req.userId };
 }
 
-// GET /api/interacoes?lead_id=X
+// GET /api/interacoes?lead_id=X[&page=N&limit=L]
+// Sem ?page → retorna até 50 interações (padrão). Com ?page → retorna envelope paginado.
+// Campos retornados: todos os campos da tabela interacoes.
 router.get('/', async (req, res) => {
-  const { lead_id } = req.query;
+  const { lead_id, page, limit } = req.query;
   if (!lead_id) return res.status(400).json({ erro: 'lead_id é obrigatório' });
 
   try {
     const { supabase: db, organizationId } = req;
-    const { data, error } = await scopedByOwner(
+    const baseQuery = scopedByOwner(
       db
         .from('interacoes')
         .select('*')
@@ -34,6 +36,32 @@ router.get('/', async (req, res) => {
       req
     );
 
+    if (page !== undefined) {
+      // Modo paginado — retorna envelope { data, total, page, totalPages }
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const pageSize = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
+      const from = (pageNum - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error } = await baseQuery.range(from, to);
+      if (error) return handleSupabaseError(res, error, 'Erro ao listar interações');
+
+      const { count, error: countError } = await scopedByOwner(
+        db.from('interacoes').select('id', { count: 'exact', head: true }).eq('lead_id', Number(lead_id)),
+        req
+      );
+      if (countError) return handleSupabaseError(res, countError, 'Erro ao contar interações');
+
+      return res.json({
+        data: data || [],
+        total: count || 0,
+        page: pageNum,
+        totalPages: Math.ceil((count || 0) / pageSize),
+      });
+    }
+
+    // Modo legado (sem ?page) — retorna até 50 por padrão
+    const { data, error } = await baseQuery.limit(50);
     if (error) return handleSupabaseError(res, error, 'Erro ao listar interações');
     return res.json(data || []);
   } catch (error) {

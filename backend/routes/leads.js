@@ -235,6 +235,8 @@ function limitesPeriodoAnterior(periodo) {
 // ─── ROTAS FIXAS ANTES DE /:id ────────────────────────────────────────────────
 
 // GET /api/leads/stats/resumo
+// Campos retornados por lead: id, nome, etapa_funil, temperatura, origem,
+//   tipo_de_bem, restricao_cpf, snooze_ate, data_proxima_acao, tipo_proxima_acao, criado_em
 router.get('/stats/resumo', async (req, res) => {
   const { periodo = 'total' } = req.query;
   const dataInicio = dataInicioPeriodo(periodo);
@@ -242,13 +244,27 @@ router.get('/stats/resumo', async (req, res) => {
   try {
     const { supabase: db, organizationId } = req;
 
-    const { data: leads, error: leadsError } = await scopedByOwner(
-      db.from('leads').select('*'),
-      req
-    );
-    if (leadsError) return handleSupabaseError(res, leadsError, 'Erro ao calcular resumo');
+    // Mínimo de campos necessários para os cálculos — evita transferência de campos pesados
+    const CAMPOS_LEADS = 'id,nome,etapa_funil,temperatura,origem,tipo_de_bem,restricao_cpf,snooze_ate,data_proxima_acao,tipo_proxima_acao,criado_em';
 
-    const leadList = leads || [];
+    // Queries de leads e cadência em paralelo (são independentes entre si)
+    let cadenciaQuery = db
+      .from('cadencia_itens')
+      .select('id,lead_id,descricao,data_prevista,concluido,etapa_relacionada,organization_id,owner_user_id')
+      .eq('organization_id', organizationId)
+      .eq('concluido', false)
+      .lte('data_prevista', hoje);
+    if (req.userScopeEnabled) cadenciaQuery = cadenciaQuery.eq('owner_user_id', req.userId);
+
+    const [leadsResult, cadenciaResult] = await Promise.all([
+      scopedByOwner(db.from('leads').select(CAMPOS_LEADS), req),
+      cadenciaQuery,
+    ]);
+
+    if (leadsResult.error) return handleSupabaseError(res, leadsResult.error, 'Erro ao calcular resumo');
+    if (cadenciaResult.error) return handleSupabaseError(res, cadenciaResult.error, 'Erro ao calcular resumo');
+
+    const leadList = leadsResult.data || [];
     const recorte = dataInicio
       ? leadList.filter((l) => toDateOnly(l.criado_em) >= dataInicio)
       : leadList;
@@ -314,19 +330,8 @@ router.get('/stats/resumo', async (req, res) => {
       (l) => l.snooze_ate && l.snooze_ate > hoje && ['Follow-up Ativo', 'Follow-up Proposta'].includes(l.etapa_funil)
     ).length;
 
-    let cadenciaQuery = db
-      .from('cadencia_itens')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('concluido', false)
-      .lte('data_prevista', hoje);
-    if (req.userScopeEnabled) cadenciaQuery = cadenciaQuery.eq('owner_user_id', req.userId);
-
-    const { data: cadenciaRows, error: cadenciaError } = await cadenciaQuery;
-    if (cadenciaError) return handleSupabaseError(res, cadenciaError, 'Erro ao calcular resumo');
-
     const leadNameById = new Map(leadList.map((l) => [l.id, l.nome]));
-    const cadenciaHoje = (cadenciaRows || []).map((c) => ({
+    const cadenciaHoje = (cadenciaResult.data || []).map((c) => ({
       ...c,
       lead_nome: leadNameById.get(c.lead_id) || null,
     }));
@@ -514,8 +519,11 @@ router.post('/bulk-update', async (req, res) => {
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 // GET /api/leads
+// Sem ?page → retorna array (retrocompatível). Limite hard-cap: 500.
+// Com ?page=N&limit=L → retorna { data, total, page, totalPages }. Limite máximo: 100.
+// Campos retornados: todos os campos da tabela leads.
 router.get('/', async (req, res) => {
-  const { etapa, temperatura, busca, ordem, origem, periodo, tipo_de_bem } = req.query;
+  const { etapa, temperatura, busca, ordem, origem, periodo, tipo_de_bem, page, limit } = req.query;
   try {
     const { supabase: db, organizationId } = req;
     let query = scopedByOwner(db.from('leads').select('*'), req);
@@ -547,7 +555,39 @@ router.get('/', async (req, res) => {
     const order = ordemMap[ordem] || ordemMap.criado_em;
     query = query.order(order.column, { ascending: order.ascending, nullsFirst: false });
 
-    const { data, error } = await query;
+    if (page !== undefined) {
+      // Modo paginado — retorna envelope { data, total, page, totalPages }
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const pageSize = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+      const from = (pageNum - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await query.range(from, to).returns();
+      if (error) return handleSupabaseError(res, error, 'Erro ao listar leads');
+
+      // count requer select com { count: 'exact' } — fazemos query separada leve
+      let countQuery = scopedByOwner(db.from('leads').select('id', { count: 'exact', head: true }), req);
+      if (etapa) countQuery = countQuery.eq('etapa_funil', etapa);
+      if (temperatura) countQuery = countQuery.eq('temperatura', temperatura);
+      if (origem) countQuery = countQuery.eq('origem', origem);
+      if (tipo_de_bem) countQuery = countQuery.eq('tipo_de_bem', tipo_de_bem);
+      if (busca) {
+        const term = String(busca).replaceAll(',', ' ');
+        countQuery = countQuery.or(`nome.ilike.%${term}%,whatsapp.ilike.%${term}%,email.ilike.%${term}%`);
+      }
+      const { count: total, error: countError } = await countQuery;
+      if (countError) return handleSupabaseError(res, countError, 'Erro ao contar leads');
+
+      return res.json({
+        data: data || [],
+        total: total || 0,
+        page: pageNum,
+        totalPages: Math.ceil((total || 0) / pageSize),
+      });
+    }
+
+    // Modo legado (sem ?page) — retorna array com hard-cap de 500
+    const { data, error } = await query.limit(500);
     if (error) return handleSupabaseError(res, error, 'Erro ao listar leads');
     return res.json(data || []);
   } catch (error) {

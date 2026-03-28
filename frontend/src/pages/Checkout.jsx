@@ -97,6 +97,8 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
 
+  const [aceiteTermos, setAceiteTermos] = useState(false);
+
   // Dados do PIX gerado
   const [pix, setPix] = useState(null); // { pixId, brCode, qrCodeImage, amount, expiresAt }
   const [copied, setCopied] = useState(false);
@@ -329,6 +331,44 @@ export default function Checkout() {
                   <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{erro}</p>
                 )}
 
+                {/* Aceite de Termos e Privacidade — obrigatório (LGPD) */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={aceiteTermos}
+                      onChange={(e) => setAceiteTermos(e.target.checked)}
+                      className="sr-only"
+                      required
+                    />
+                    <div
+                      onClick={() => setAceiteTermos((v) => !v)}
+                      className={[
+                        'w-4 h-4 rounded border flex items-center justify-center transition-all cursor-pointer',
+                        aceiteTermos
+                          ? 'bg-[#FF4500] border-[#FF4500]'
+                          : 'border-zinc-600 bg-transparent group-hover:border-zinc-400',
+                      ].join(' ')}
+                    >
+                      {aceiteTermos && (
+                        <svg viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth={2.5} className="w-2.5 h-2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 6.5l3 3 6-6" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs leading-relaxed" style={{ color: '#888' }}>
+                    Li e aceito os{' '}
+                    <a href="/privacidade" target="_blank" rel="noopener noreferrer"
+                      className="underline underline-offset-2 transition-colors"
+                      style={{ color: '#FF4500' }}
+                      onClick={(e) => e.stopPropagation()}>
+                      Termos de Uso e Política de Privacidade
+                    </a>{' '}
+                    do GrowSorcio, incluindo a coleta de dados para processamento do pagamento.
+                  </span>
+                </label>
+
                 {/* Resumo */}
                 <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="flex items-center justify-between text-sm">
@@ -343,9 +383,9 @@ export default function Checkout() {
                   )}
                 </div>
 
-                <button type="submit" disabled={loading}
+                <button type="submit" disabled={loading || !aceiteTermos}
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white min-h-[52px] transition-all duration-200"
-                  style={{ background: loading ? 'rgba(255,69,0,0.4)' : 'linear-gradient(135deg,#FF4500,#ff6b35)', boxShadow: loading ? 'none' : '0 4px 24px rgba(255,69,0,0.25)', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                  style={{ background: (loading || !aceiteTermos) ? 'rgba(255,69,0,0.4)' : 'linear-gradient(135deg,#FF4500,#ff6b35)', boxShadow: (loading || !aceiteTermos) ? 'none' : '0 4px 24px rgba(255,69,0,0.25)', cursor: (loading || !aceiteTermos) ? 'not-allowed' : 'pointer' }}>
                   {loading ? <><Loader2 size={18} className="animate-spin" /> Gerando PIX…</> : <>Gerar QR Code PIX →</>}
                 </button>
 

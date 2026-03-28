@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
-import QuickAddModal from '../components/QuickAddModal';
 import WelcomeModal, { shouldShowWelcome } from '../components/WelcomeModal';
 import { api } from '../api/client';
 import { ETAPAS_SEM_ANUNCIO as ETAPAS_ORDEM } from '../constants/etapas';
 import Icons from '../components/Icons';
 import MetricaCard from '../components/MetricaCard';
 import OrigemCard from '../components/OrigemCard';
+import Modal from '../components/Modal';
+import { useAtividades } from '../hooks/useAtividades';
 
 // Recharts isolado — baixado só quando o Dashboard renderizar
 const DashboardCharts = lazy(() => import('../components/DashboardCharts'));
 const RelatoriosCharts = lazy(() => import('../components/RelatoriosCharts'));
+const LeadPerfil = lazy(() => import('./LeadPerfil'));
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -82,8 +84,22 @@ function DashboardSkeleton() {
 
 // ─── Alertas do dia ───────────────────────────────────────────────────────────
 
-function AlertaSection({ followUps, cadencias, reunioes }) {
-  const total = followUps.length + cadencias.length + reunioes.length;
+function AlertaSection({ followUps, cadencias, reunioes, onOpenLead }) {
+  const { concluindo, concluir } = useAtividades();
+  // IDs de cadência já concluídos nesta sessão — removidos localmente após animação
+  const [concluidosLocais, setConcluidosLocais] = useState(new Set());
+
+  const handleConcluir = useCallback(async (id) => {
+    await concluir(id);
+    // Após 800ms (mesmo tempo da animação do context) oculta o item localmente
+    setTimeout(() => {
+      setConcluidosLocais((prev) => new Set(prev).add(id));
+    }, 800);
+  }, [concluir]);
+
+  // Cadências visíveis = não concluídas localmente nesta sessão
+  const cadenciasVisiveis = cadencias.filter((c) => !concluidosLocais.has(c.id));
+  const total = followUps.length + cadenciasVisiveis.length + reunioes.length;
 
   if (total === 0) {
     return (
@@ -108,7 +124,7 @@ function AlertaSection({ followUps, cadencias, reunioes }) {
     );
   }
 
-  const AlertCard = ({ title, icon: Icon, items, colorKey }) => {
+  const AlertCard = ({ title, icon: Icon, items, colorKey, checkable = false }) => {
     const colors = {
       red:    { text: '#f87171', bg: 'rgba(255,69,0,0.08)',    border: 'rgba(255,69,0,0.28)',   badge: 'rgba(255,69,0,0.15)',   left: '#FF4500' },
       yellow: { text: '#fbbf24', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.28)', badge: 'rgba(245,158,11,0.15)', left: '#f59e0b' },
@@ -131,32 +147,84 @@ function AlertaSection({ followUps, cadencias, reunioes }) {
           </span>
         </div>
         <div className="space-y-1">
-          {items.slice(0, 4).map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between rounded-lg px-2 py-1.5 transition-colors cursor-pointer"
-              style={{ borderLeft: `2px solid ${c.left}` }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: '#f4f4f5' }}>
-                  {item.nome || item.lead_nome}
-                </p>
-                {item.etapa_funil && (
-                  <p className="text-xs truncate" style={{ color: '#a1a1aa' }}>{item.etapa_funil}</p>
+          {items.slice(0, 4).map((item) => {
+            const isConcluindo = checkable && concluindo.has(item.id);
+            return (
+              <div
+                key={item.id}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-all duration-150"
+                style={{
+                  borderLeft: `2px solid ${c.left}`,
+                  opacity: isConcluindo ? 0.4 : 1,
+                  transition: isConcluindo ? 'opacity 0.8s ease' : 'background 0.15s ease, opacity 0.8s ease',
+                }}
+                onMouseEnter={(e) => { if (!isConcluindo) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                {/* Checkbox para cadência */}
+                {checkable && (
+                  <button
+                    onClick={() => !isConcluindo && handleConcluir(item.id)}
+                    disabled={isConcluindo}
+                    className="w-4 h-4 flex-shrink-0 rounded border flex items-center justify-center cursor-pointer transition-colors duration-150 disabled:cursor-default"
+                    style={{
+                      border: isConcluindo ? '1.5px solid #22c55e' : `1.5px solid ${c.left}`,
+                      background: isConcluindo ? 'rgba(34,197,94,0.15)' : 'transparent',
+                    }}
+                    aria-label="Marcar como concluído"
+                  >
+                    {isConcluindo && (
+                      <svg viewBox="0 0 12 12" fill="none" stroke="#22c55e" strokeWidth={2} className="w-2.5 h-2.5">
+                        <polyline points="1.5,6 4.5,9 10.5,3" />
+                      </svg>
+                    )}
+                  </button>
                 )}
-                {item.descricao && (
-                  <p className="text-xs truncate" style={{ color: '#a1a1aa' }}>{item.descricao}</p>
+
+                {/* Conteúdo do item */}
+                <div className="min-w-0 flex-1">
+                  {/* Lead name — link para perfil se checkable */}
+                  {checkable && item.lead_id ? (
+                    <button
+                      onClick={() => onOpenLead && onOpenLead(item.lead_id)}
+                      className="text-sm font-medium truncate block text-left w-full transition-colors duration-150 cursor-pointer"
+                      style={{
+                        color: isConcluindo ? '#52525b' : '#f4f4f5',
+                        textDecoration: isConcluindo ? 'line-through' : 'none',
+                      }}
+                      onMouseEnter={(e) => { if (!isConcluindo) e.currentTarget.style.color = '#fbbf24'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = isConcluindo ? '#52525b' : '#f4f4f5'; }}
+                    >
+                      {item.nome || item.lead_nome}
+                    </button>
+                  ) : (
+                    <p className="text-sm font-medium truncate" style={{ color: '#f4f4f5' }}>
+                      {item.nome || item.lead_nome}
+                    </p>
+                  )}
+                  {item.etapa_funil && (
+                    <p className="text-xs truncate" style={{ color: '#a1a1aa' }}>{item.etapa_funil}</p>
+                  )}
+                  {item.descricao && (
+                    <p
+                      className="text-xs truncate"
+                      style={{
+                        color: '#a1a1aa',
+                        textDecoration: isConcluindo ? 'line-through' : 'none',
+                      }}
+                    >
+                      {item.descricao}
+                    </p>
+                  )}
+                </div>
+                {item.data_proxima_acao && (
+                  <span className="text-xs font-medium ml-1 flex-shrink-0" style={{ color: c.text }}>
+                    {formatarData(item.data_proxima_acao)}
+                  </span>
                 )}
               </div>
-              {item.data_proxima_acao && (
-                <span className="text-xs font-medium ml-3 flex-shrink-0" style={{ color: c.text }}>
-                  {formatarData(item.data_proxima_acao)}
-                </span>
-              )}
-            </div>
-          ))}
+            );
+          })}
           {items.length > 4 && (
             <p className="text-xs pt-1 pl-2" style={{ color: '#71717a' }}>+{items.length - 4} mais</p>
           )}
@@ -170,8 +238,8 @@ function AlertaSection({ followUps, cadencias, reunioes }) {
       {followUps.length > 0 && (
         <AlertCard title="Follow-ups vencidos" icon={Icons.Alert} items={followUps} colorKey="red" />
       )}
-      {cadencias.length > 0 && (
-        <AlertCard title="Cadência hoje" icon={Icons.Clock} items={cadencias} colorKey="yellow" />
+      {cadenciasVisiveis.length > 0 && (
+        <AlertCard title="Cadência hoje" icon={Icons.Clock} items={cadenciasVisiveis} colorKey="yellow" checkable />
       )}
       {reunioes.length > 0 && (
         <AlertCard title="Reuniões hoje" icon={Icons.Calendar} items={reunioes} colorKey="blue" />
@@ -186,7 +254,6 @@ function AlertaSection({ followUps, cadencias, reunioes }) {
 // ─── Dashboard Principal ──────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [showModal, setShowModal] = useState(false);
   const [showWelcome, setShowWelcome] = useState(shouldShowWelcome);
   const [stats, setStats] = useState(null);
   const [evolucao, setEvolucao] = useState([]);
@@ -199,6 +266,8 @@ export default function Dashboard() {
   const [exportando, setExportando] = useState(false);
   const [erroExport, setErroExport] = useState('');
   const [relTab, setRelTab] = useState('charts'); // 'charts' | 'tabela'
+  // Modal de perfil do lead aberto via link na seção de cadência
+  const [leadAberto, setLeadAberto] = useState(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -384,17 +453,15 @@ npm run dev`}
               disabled={exportando}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-50 cursor-pointer"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,69,0,0.15), rgba(255,69,0,0.08))',
-                border: '1px solid rgba(255,69,0,0.25)',
+                background: 'rgba(255,69,0,0.08)',
+                border: '1px solid rgba(255,69,0,0.2)',
                 color: '#FF4500',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #FF4500, #e03d00)';
-                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.background = 'rgba(255,69,0,0.16)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,69,0,0.15), rgba(255,69,0,0.08))';
-                e.currentTarget.style.color = '#FF4500';
+                e.currentTarget.style.background = 'rgba(255,69,0,0.08)';
               }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
@@ -403,9 +470,6 @@ npm run dev`}
               {exportando ? 'Exportando...' : 'Exportar CSV'}
             </button>
           )}
-          <button className="btn-primary" onClick={() => setShowModal(true)}>
-            <Icons.Plus /> Novo lead
-          </button>
         </div>
       </div>
 
@@ -434,10 +498,10 @@ npm run dev`}
               onClick={() => setTab(t.id)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer"
               style={tab === t.id ? {
-                background: 'linear-gradient(135deg, #FF4500, #e03d00)',
-                color: '#fff',
-                boxShadow: '0 4px 12px rgba(255,69,0,0.25)',
-              } : { color: '#71717a' }}
+                background: 'rgba(255,69,0,0.12)',
+                color: '#FF4500',
+                border: '1px solid rgba(255,69,0,0.25)',
+              } : { color: '#71717a', border: '1px solid transparent' }}
             >
               {t.icon}
               {t.label}
@@ -486,9 +550,9 @@ npm run dev`}
 
           {/* Origem dos Leads */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <OrigemCard label="Leads Anúncio" valor={totalAnuncio} sub={totalAnuncio > 0 ? `${taxaResposta}% responderam` : '—'} cor="#8B5CF6" icon={Icons.Megaphone} />
+            <OrigemCard label="Leads Anúncio" valor={totalAnuncio} sub={totalAnuncio > 0 ? `${taxaResposta}% responderam` : '—'} cor="#f4f4f5" icon={Icons.Megaphone} />
             <OrigemCard label="Prospecção" valor={totalProspeccao} sub="orgânico + indicação" cor="#FF4500" icon={Icons.UserPlus} />
-            <OrigemCard label="Reuniões Anúncio" valor={reunioesAnuncio} sub={totalAnuncio > 0 ? `${Math.round((reunioesAnuncio/totalAnuncio)*100)}% de conv.` : '—'} cor="#8B5CF6" icon={Icons.Calendar} />
+            <OrigemCard label="Reuniões Anúncio" valor={reunioesAnuncio} sub={totalAnuncio > 0 ? `${Math.round((reunioesAnuncio/totalAnuncio)*100)}% de conv.` : '—'} cor="#f4f4f5" icon={Icons.Calendar} />
             <OrigemCard label="Reuniões Prospecção" valor={reunioesProspeccao} sub={totalProspeccao > 0 ? `${Math.round((reunioesProspeccao/totalProspeccao)*100)}% de conv.` : '—'} cor="#FF4500" icon={Icons.Calendar} />
           </div>
 
@@ -509,6 +573,7 @@ npm run dev`}
               followUps={stats.follow_ups_vencidos}
               cadencias={stats.cadencia_hoje}
               reunioes={stats.reunioes_hoje}
+              onOpenLead={(id) => setLeadAberto(id)}
             />
           </div>
 
@@ -536,9 +601,9 @@ npm run dev`}
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <RelStatCard label="Total de leads" value={totalLeadsRel} color="#FF4500" />
-                <RelStatCard label="Fechados" value={fechadosRel} sub={`${taxaConversaoRel}% conversão`} color="#22c55e" />
-                <RelStatCard label="Perdidos" value={perdidosRel} sub={totalLeadsRel > 0 ? `${Math.round((perdidosRel/totalLeadsRel)*100)}% do total` : '—'} color="#ef4444" />
-                <RelStatCard label="Quentes" value={qtTemp.quente} sub={`${qtTemp.morno} mornos · ${qtTemp.frio} frios`} color="#f59e0b" />
+                <RelStatCard label="Fechados" value={fechadosRel} sub={`${taxaConversaoRel}% conversão`} color="#f4f4f5" />
+                <RelStatCard label="Perdidos" value={perdidosRel} sub={totalLeadsRel > 0 ? `${Math.round((perdidosRel/totalLeadsRel)*100)}% do total` : '—'} color="#f4f4f5" />
+                <RelStatCard label="Quentes" value={qtTemp.quente} sub={`${qtTemp.morno} mornos · ${qtTemp.frio} frios`} color="#f4f4f5" />
               </div>
 
               {/* Mini temperatura breakdown */}
@@ -624,12 +689,20 @@ npm run dev`}
         </div>
       )}
 
-      {showModal && (
-        <QuickAddModal onClose={() => setShowModal(false)} onCriado={() => carregar()} />
-      )}
-
       {showWelcome && (
         <WelcomeModal onClose={() => setShowWelcome(false)} />
+      )}
+
+      {/* Modal de perfil do lead — aberto ao clicar no nome na seção de cadência */}
+      {leadAberto && (
+        <Suspense fallback={null}>
+          <Modal title="Perfil do Lead" onClose={() => setLeadAberto(null)} wide>
+            <LeadPerfil
+              leadId={leadAberto}
+              onFechar={() => setLeadAberto(null)}
+            />
+          </Modal>
+        </Suspense>
       )}
     </div>
   );
@@ -639,17 +712,10 @@ npm run dev`}
 
 function RelStatCard({ label, value, sub, color = '#FF4500' }) {
   return (
-    <div className="card p-5 relative overflow-hidden group">
-      <div
-        className="absolute -top-10 -right-10 w-24 h-24 rounded-full opacity-[0.06] blur-2xl group-hover:opacity-[0.12] transition-opacity duration-500"
-        style={{ background: color }}
-      />
-      <div className="absolute top-0 left-0 right-0 h-[2px] opacity-50"
-        style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}
-      />
-      <p className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: '#52525b' }}>{label}</p>
-      <p className="text-3xl font-extrabold tabular-nums leading-none" style={{ color }}>{value}</p>
-      {sub && <p className="text-xs mt-2 font-medium" style={{ color: '#71717a' }}>{sub}</p>}
+    <div className="card p-5">
+      <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#71717a' }}>{label}</p>
+      <p className="text-2xl font-bold tabular-nums leading-none" style={{ color }}>{value}</p>
+      {sub && <p className="text-xs mt-2" style={{ color: '#52525b' }}>{sub}</p>}
     </div>
   );
 }

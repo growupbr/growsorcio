@@ -20,25 +20,51 @@ const ETAPAS_PADRAO = [
   { id: 'pad-13', name: 'Perdido',             display_order: 13, color: '#52525b', is_lost: true  },
 ];
 
-export function useFunilStages() {
-  const [etapas, setEtapas] = useState([]);
-  const [carregando, setCarregando] = useState(true);
+const CACHE_KEY = 'growsorcio:etapas';
 
-  const carregar = useCallback(async () => {
+function lerCache() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function salvarCache(dados) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(dados));
+  } catch { /* sessionStorage cheio ou indisponível — silencia */ }
+}
+
+export function useFunilStages() {
+  const cache = lerCache();
+  const [etapas, setEtapas] = useState(cache || []);
+  const [carregando, setCarregando] = useState(!cache);
+
+  const carregar = useCallback(async (forcar = false) => {
+    // Não carrega da rede se já tem cache e não foi forçado
+    const cached = lerCache();
+    if (cached && !forcar) {
+      setEtapas(cached);
+      setCarregando(false);
+      return;
+    }
+
     try {
       const dados = await api.listarEtapas();
-      // Se a API retornar vazio (org sem etapas e seed falhou), usa padrão
-      setEtapas(dados && dados.length > 0 ? dados : ETAPAS_PADRAO);
+      const resultado = dados && dados.length > 0 ? dados : ETAPAS_PADRAO;
+      setEtapas(resultado);
+      salvarCache(resultado);
     } catch (err) {
       console.error('Erro ao carregar etapas do funil — usando padrão:', err);
-      setEtapas(ETAPAS_PADRAO);
+      if (!etapas.length) setEtapas(ETAPAS_PADRAO);
     } finally {
       setCarregando(false);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  return { etapas, setEtapas, carregando, recarregar: carregar };
+  return { etapas, setEtapas, carregando, recarregar: () => carregar(true) };
 }
 
