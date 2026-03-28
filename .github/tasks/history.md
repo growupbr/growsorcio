@@ -2,6 +2,19 @@
 
 ---
 
+## [x] [FIX] Build Vercel — JSX em arquivo .js (useAtividades)
+
+**Responsável:** Matheus
+**Data de conclusão:** 2026-03-28
+
+- [x] Varredura de todos os `.js` em `frontend/src/` com JSX (grep por `<[A-Z]` e `</`)
+- [x] Único arquivo afetado: `frontend/src/hooks/useAtividades.js` (linha 69-73: `<AtividadesContext.Provider>`)
+- [x] Renomeado para `useAtividades.jsx`
+- [x] Todos os imports (`App.jsx`, `Kanban.jsx`, `Dashboard.jsx`, `AtividadesPendentes.jsx`) já usavam caminho sem extensão — nenhuma alteração necessária
+- [x] Build local validado: `✓ built in 4.06s` sem erros
+
+---
+
 ## [x] [FEAT] LGPD — Banner de cookies, Política de Privacidade e Direitos do Titular
 
 **Responsável:** Matheus  
