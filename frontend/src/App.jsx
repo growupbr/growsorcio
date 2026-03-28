@@ -21,6 +21,7 @@ const Treinamento      = lazy(() => import('./pages/Treinamento'));
 const TreinamentoAula  = lazy(() => import('./pages/TreinamentoAula'));
 const Config           = lazy(() => import('./pages/Config'));
 
+const LandingPageTEC = lazy(() => import('./pages/LandingPageTEC'));
 const Login        = lazy(() => import('./pages/Login'));
 const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'));
 const Checkout     = lazy(() => import('./pages/Checkout'));
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/tec" element={<LandingPageTEC />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />

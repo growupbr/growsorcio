@@ -40,7 +40,7 @@ export default function HeroSection() {
     <div ref={containerRef} style={{ height: '120vh' }}>
       <section
         id="hero"
-        className="sticky top-0 h-screen relative flex items-center justify-center pt-20 overflow-hidden"
+        className="sticky top-0 h-screen relative flex items-center justify-center pt-8 overflow-hidden"
       >
         {/* ── Vídeo de fundo (z-0) — scrubado pelo scroll ─────────────── */}
         <video
@@ -72,17 +72,6 @@ export default function HeroSection() {
           style={{ opacity: contentOpacity, y: contentY }}
           className="relative z-20 max-w-4xl mx-auto px-4 flex flex-col items-center text-center gap-8"
         >
-          {/* ── Badge ── */}
-          <motion.div
-            initial={{ opacity: 0, y: -12, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs font-medium text-zinc-400 backdrop-blur-sm"
-          >
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            ✦ Feito para o mercado de consórcio brasileiro
-          </motion.div>
-
           <TextReveal
             text="Pare de Perder Vendas para o Caos do WhatsApp. O Único CRM Desenhado para a Jornada do Consórcio."
             className="font-['Space_Grotesk',sans-serif] font-bold text-3xl md:text-5xl text-white tracking-tight leading-tight"
@@ -122,19 +111,7 @@ export default function HeroSection() {
           </motion.div>
         </motion.div>
 
-        {/* ── Scroll indicator (some quando começa a scrollar) ─────────── */}
-        <motion.div
-          style={{ opacity: useTransform(scrollYProgress, [0, 0.08], [1, 0]) }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center pt-2"
-          >
-            <div className="w-1 h-2 rounded-full bg-white/40" />
-          </motion.div>
-        </motion.div>
+
       </section>
     </div>
   );
